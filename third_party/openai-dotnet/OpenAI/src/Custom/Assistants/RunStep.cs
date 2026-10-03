@@ -1,0 +1,23 @@
+using Microsoft.TypeSpec.Generator.Customizations;
+
+namespace OpenAI.Assistants;
+
+[CodeGenType("RunStepObject")]
+public partial class RunStep
+{
+    // CUSTOM: Made internal.
+    /// <summary> The object type, which is always `thread.run.step`. </summary>
+    [CodeGenMember("Object")]
+    internal string Object { get; } = "thread.run.step";
+
+    /// <summary>
+    /// The <c>step_details</c> associated with this run step.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Please note <see cref="RunStepDetails"/> is the base class.
+    /// </para>
+    /// </remarks>
+    [CodeGenMember("StepDetails")]
+    public RunStepDetails Details { get; }
+}

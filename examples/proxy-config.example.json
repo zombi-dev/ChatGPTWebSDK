@@ -1,0 +1,56 @@
+{
+  "baseUri": "https://chatgpt.com/",
+  "sessionDirectory": ".sessions",
+  "profile": {
+    "session": "api/auth/session",
+    "conversation": "backend-api/f/conversation",
+    "conversationById": "backend-api/conversation/{conversation_id}",
+    "conversations": "backend-api/conversations",
+    "models": "backend-api/models",
+    "requirements": "backend-api/sentinel/chat-requirements",
+    "requirementsBody": {},
+    "conversationDefaults": {
+      "supported_encodings": [
+        "v1"
+      ],
+      "is_do_not_remember": false
+    },
+    "conversationPrepare": "backend-api/f/conversation/prepare",
+    "requirementsPrepare": "backend-api/sentinel/chat-requirements/prepare",
+    "requirementsFinalize": "backend-api/sentinel/chat-requirements/finalize",
+    "accounts": "backend-api/accounts/check/v4-2023-04-27"
+  },
+  "accounts": [
+    {
+      "id": "my-account",
+      "credentials": {
+        "accessToken": "SET_LOCALLY",
+        "cookieHeader": "SET_LOCALLY",
+        "userAgent": "USE_CAPTURED_USER_AGENT",
+        "headers": {}
+      }
+    }
+  ],
+  "clients": [
+    {
+      "apiKey": "GENERATE_A_UNIQUE_LONG_RANDOM_PROXY_KEY_FOR_ALICE",
+      "accountId": "my-account",
+      "userId": "alice",
+      "allowConversationLinking": false
+    },
+    {
+      "apiKey": "GENERATE_A_DIFFERENT_LONG_RANDOM_PROXY_KEY_FOR_BOB",
+      "accountId": "my-account",
+      "userId": "bob",
+      "allowConversationLinking": false
+    }
+  ],
+  "modelAliases": {},
+  "mode": "hybrid",
+  "httpDriver": "systemCurl",
+  "browser": {
+    "timeout": "00:02:00",
+    "maxRetries": 3,
+    "retryDelay": "00:00:05"
+  }
+}

@@ -1,0 +1,6181 @@
+{
+  "specSource": "https://raw.githubusercontent.com/openai/openai-openapi/refs/heads/main/openapi.yaml",
+  "specVersion": "2.3.0",
+  "sha256": "2cf225eb2eb480bf7d57e04e3e7d3198fe7f47c49bc5defb53bf86966706c5f9",
+  "operations": [
+    {
+      "id": "listAssistants",
+      "method": "GET",
+      "path": "/assistants",
+      "summary": "List assistants",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": true
+    },
+    {
+      "id": "createAssistant",
+      "method": "POST",
+      "path": "/assistants",
+      "summary": "Create assistant",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": true
+    },
+    {
+      "id": "getAssistant",
+      "method": "GET",
+      "path": "/assistants/{assistant_id}",
+      "summary": "Retrieve assistant",
+      "requiredPath": [
+        "assistant_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": true
+    },
+    {
+      "id": "modifyAssistant",
+      "method": "POST",
+      "path": "/assistants/{assistant_id}",
+      "summary": "Modify assistant",
+      "requiredPath": [
+        "assistant_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": true
+    },
+    {
+      "id": "deleteAssistant",
+      "method": "DELETE",
+      "path": "/assistants/{assistant_id}",
+      "summary": "Delete assistant",
+      "requiredPath": [
+        "assistant_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": true
+    },
+    {
+      "id": "createSpeech",
+      "method": "POST",
+      "path": "/audio/speech",
+      "summary": "Create speech",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/octet-stream",
+        "audio/mpeg",
+        "audio/aac",
+        "audio/opus",
+        "audio/flac",
+        "audio/pcm",
+        "audio/wav",
+        "text/event-stream"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createTranscription",
+      "method": "POST",
+      "path": "/audio/transcriptions",
+      "summary": "Create transcription",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "multipart/form-data"
+      ],
+      "responseMediaTypes": [
+        "application/json",
+        "text/plain",
+        "text/event-stream"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createTranslation",
+      "method": "POST",
+      "path": "/audio/translations",
+      "summary": "Create translation",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "multipart/form-data"
+      ],
+      "responseMediaTypes": [
+        "application/json",
+        "text/plain"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createVoiceConsent",
+      "method": "POST",
+      "path": "/audio/voice_consents",
+      "summary": "Create voice consent",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "multipart/form-data"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listVoiceConsents",
+      "method": "GET",
+      "path": "/audio/voice_consents",
+      "summary": "List voice consents",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "getVoiceConsent",
+      "method": "GET",
+      "path": "/audio/voice_consents/{consent_id}",
+      "summary": "Retrieve voice consent",
+      "requiredPath": [
+        "consent_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "updateVoiceConsent",
+      "method": "POST",
+      "path": "/audio/voice_consents/{consent_id}",
+      "summary": "Update voice consent",
+      "requiredPath": [
+        "consent_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "deleteVoiceConsent",
+      "method": "DELETE",
+      "path": "/audio/voice_consents/{consent_id}",
+      "summary": "Delete voice consent",
+      "requiredPath": [
+        "consent_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createVoice",
+      "method": "POST",
+      "path": "/audio/voices",
+      "summary": "Create voice",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json",
+        "multipart/form-data"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createBatch",
+      "method": "POST",
+      "path": "/batches",
+      "summary": "Create batch",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listBatches",
+      "method": "GET",
+      "path": "/batches",
+      "summary": "List batches",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieveBatch",
+      "method": "GET",
+      "path": "/batches/{batch_id}",
+      "summary": "Retrieve batch",
+      "requiredPath": [
+        "batch_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "cancelBatch",
+      "method": "POST",
+      "path": "/batches/{batch_id}/cancel",
+      "summary": "Cancel batch",
+      "requiredPath": [
+        "batch_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listChatCompletions",
+      "method": "GET",
+      "path": "/chat/completions",
+      "summary": "List Chat Completions",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createChatCompletion",
+      "method": "POST",
+      "path": "/chat/completions",
+      "summary": "Create chat completion",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json",
+        "text/event-stream"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "getChatCompletion",
+      "method": "GET",
+      "path": "/chat/completions/{completion_id}",
+      "summary": "Get chat completion",
+      "requiredPath": [
+        "completion_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "updateChatCompletion",
+      "method": "POST",
+      "path": "/chat/completions/{completion_id}",
+      "summary": "Update chat completion",
+      "requiredPath": [
+        "completion_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "deleteChatCompletion",
+      "method": "DELETE",
+      "path": "/chat/completions/{completion_id}",
+      "summary": "Delete chat completion",
+      "requiredPath": [
+        "completion_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "getChatCompletionMessages",
+      "method": "GET",
+      "path": "/chat/completions/{completion_id}/messages",
+      "summary": "Get chat messages",
+      "requiredPath": [
+        "completion_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createCompletion",
+      "method": "POST",
+      "path": "/completions",
+      "summary": "Create completion",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "ListContainers",
+      "method": "GET",
+      "path": "/containers",
+      "summary": "List containers",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "CreateContainer",
+      "method": "POST",
+      "path": "/containers",
+      "summary": "Create container",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "RetrieveContainer",
+      "method": "GET",
+      "path": "/containers/{container_id}",
+      "summary": "Retrieve container",
+      "requiredPath": [
+        "container_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "DeleteContainer",
+      "method": "DELETE",
+      "path": "/containers/{container_id}",
+      "summary": "Delete a container",
+      "requiredPath": [
+        "container_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "CreateContainerFile",
+      "method": "POST",
+      "path": "/containers/{container_id}/files",
+      "summary": "Create container file",
+      "requiredPath": [
+        "container_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json",
+        "multipart/form-data"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "ListContainerFiles",
+      "method": "GET",
+      "path": "/containers/{container_id}/files",
+      "summary": "List container files",
+      "requiredPath": [
+        "container_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "RetrieveContainerFile",
+      "method": "GET",
+      "path": "/containers/{container_id}/files/{file_id}",
+      "summary": "Retrieve container file",
+      "requiredPath": [
+        "container_id",
+        "file_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "DeleteContainerFile",
+      "method": "DELETE",
+      "path": "/containers/{container_id}/files/{file_id}",
+      "summary": "Delete a container file",
+      "requiredPath": [
+        "container_id",
+        "file_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "RetrieveContainerFileContent",
+      "method": "GET",
+      "path": "/containers/{container_id}/files/{file_id}/content",
+      "summary": "Retrieve container file content",
+      "requiredPath": [
+        "container_id",
+        "file_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "*/*"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createConversationItems",
+      "method": "POST",
+      "path": "/conversations/{conversation_id}/items",
+      "summary": "Create items",
+      "requiredPath": [
+        "conversation_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listConversationItems",
+      "method": "GET",
+      "path": "/conversations/{conversation_id}/items",
+      "summary": "List items",
+      "requiredPath": [
+        "conversation_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "getConversationItem",
+      "method": "GET",
+      "path": "/conversations/{conversation_id}/items/{item_id}",
+      "summary": "Retrieve an item",
+      "requiredPath": [
+        "conversation_id",
+        "item_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "deleteConversationItem",
+      "method": "DELETE",
+      "path": "/conversations/{conversation_id}/items/{item_id}",
+      "summary": "Delete an item",
+      "requiredPath": [
+        "conversation_id",
+        "item_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createEmbedding",
+      "method": "POST",
+      "path": "/embeddings",
+      "summary": "Create embeddings",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listEvals",
+      "method": "GET",
+      "path": "/evals",
+      "summary": "List evals",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createEval",
+      "method": "POST",
+      "path": "/evals",
+      "summary": "Create eval",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "getEval",
+      "method": "GET",
+      "path": "/evals/{eval_id}",
+      "summary": "Get an eval",
+      "requiredPath": [
+        "eval_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "updateEval",
+      "method": "POST",
+      "path": "/evals/{eval_id}",
+      "summary": "Update an eval",
+      "requiredPath": [
+        "eval_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "deleteEval",
+      "method": "DELETE",
+      "path": "/evals/{eval_id}",
+      "summary": "Delete an eval",
+      "requiredPath": [
+        "eval_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "getEvalRuns",
+      "method": "GET",
+      "path": "/evals/{eval_id}/runs",
+      "summary": "Get eval runs",
+      "requiredPath": [
+        "eval_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createEvalRun",
+      "method": "POST",
+      "path": "/evals/{eval_id}/runs",
+      "summary": "Create eval run",
+      "requiredPath": [
+        "eval_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "getEvalRun",
+      "method": "GET",
+      "path": "/evals/{eval_id}/runs/{run_id}",
+      "summary": "Get an eval run",
+      "requiredPath": [
+        "eval_id",
+        "run_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "deleteEvalRun",
+      "method": "DELETE",
+      "path": "/evals/{eval_id}/runs/{run_id}",
+      "summary": "Delete eval run",
+      "requiredPath": [
+        "eval_id",
+        "run_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "cancelEvalRun",
+      "method": "POST",
+      "path": "/evals/{eval_id}/runs/{run_id}/cancel",
+      "summary": "Cancel eval run",
+      "requiredPath": [
+        "eval_id",
+        "run_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "getEvalRunOutputItems",
+      "method": "GET",
+      "path": "/evals/{eval_id}/runs/{run_id}/output_items",
+      "summary": "Get eval run output items",
+      "requiredPath": [
+        "eval_id",
+        "run_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "getEvalRunOutputItem",
+      "method": "GET",
+      "path": "/evals/{eval_id}/runs/{run_id}/output_items/{output_item_id}",
+      "summary": "Get an output item of an eval run",
+      "requiredPath": [
+        "eval_id",
+        "run_id",
+        "output_item_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listFiles",
+      "method": "GET",
+      "path": "/files",
+      "summary": "List files",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createFile",
+      "method": "POST",
+      "path": "/files",
+      "summary": "Upload file",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "multipart/form-data"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "deleteFile",
+      "method": "DELETE",
+      "path": "/files/{file_id}",
+      "summary": "Delete file",
+      "requiredPath": [
+        "file_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieveFile",
+      "method": "GET",
+      "path": "/files/{file_id}",
+      "summary": "Retrieve file",
+      "requiredPath": [
+        "file_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "downloadFile",
+      "method": "GET",
+      "path": "/files/{file_id}/content",
+      "summary": "Retrieve file content",
+      "requiredPath": [
+        "file_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/octet-stream"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "runGrader",
+      "method": "POST",
+      "path": "/fine_tuning/alpha/graders/run",
+      "summary": "Run grader",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "validateGrader",
+      "method": "POST",
+      "path": "/fine_tuning/alpha/graders/validate",
+      "summary": "Validate grader",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listFineTuningCheckpointPermissions",
+      "method": "GET",
+      "path": "/fine_tuning/checkpoints/{fine_tuned_model_checkpoint}/permissions",
+      "summary": "List checkpoint permissions",
+      "requiredPath": [
+        "fine_tuned_model_checkpoint"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createFineTuningCheckpointPermission",
+      "method": "POST",
+      "path": "/fine_tuning/checkpoints/{fine_tuned_model_checkpoint}/permissions",
+      "summary": "Create checkpoint permissions",
+      "requiredPath": [
+        "fine_tuned_model_checkpoint"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "deleteFineTuningCheckpointPermission",
+      "method": "DELETE",
+      "path": "/fine_tuning/checkpoints/{fine_tuned_model_checkpoint}/permissions/{permission_id}",
+      "summary": "Delete checkpoint permission",
+      "requiredPath": [
+        "fine_tuned_model_checkpoint",
+        "permission_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createFineTuningJob",
+      "method": "POST",
+      "path": "/fine_tuning/jobs",
+      "summary": "Create fine-tuning job",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listPaginatedFineTuningJobs",
+      "method": "GET",
+      "path": "/fine_tuning/jobs",
+      "summary": "List fine-tuning jobs",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieveFineTuningJob",
+      "method": "GET",
+      "path": "/fine_tuning/jobs/{fine_tuning_job_id}",
+      "summary": "Retrieve fine-tuning job",
+      "requiredPath": [
+        "fine_tuning_job_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "cancelFineTuningJob",
+      "method": "POST",
+      "path": "/fine_tuning/jobs/{fine_tuning_job_id}/cancel",
+      "summary": "Cancel fine-tuning",
+      "requiredPath": [
+        "fine_tuning_job_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listFineTuningJobCheckpoints",
+      "method": "GET",
+      "path": "/fine_tuning/jobs/{fine_tuning_job_id}/checkpoints",
+      "summary": "List fine-tuning checkpoints",
+      "requiredPath": [
+        "fine_tuning_job_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listFineTuningEvents",
+      "method": "GET",
+      "path": "/fine_tuning/jobs/{fine_tuning_job_id}/events",
+      "summary": "List fine-tuning events",
+      "requiredPath": [
+        "fine_tuning_job_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "pauseFineTuningJob",
+      "method": "POST",
+      "path": "/fine_tuning/jobs/{fine_tuning_job_id}/pause",
+      "summary": "Pause fine-tuning",
+      "requiredPath": [
+        "fine_tuning_job_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "resumeFineTuningJob",
+      "method": "POST",
+      "path": "/fine_tuning/jobs/{fine_tuning_job_id}/resume",
+      "summary": "Resume fine-tuning",
+      "requiredPath": [
+        "fine_tuning_job_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createImageEdit",
+      "method": "POST",
+      "path": "/images/edits",
+      "summary": "Create image edit",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "multipart/form-data",
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json",
+        "text/event-stream"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createImage",
+      "method": "POST",
+      "path": "/images/generations",
+      "summary": "Create image",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json",
+        "text/event-stream"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createImageVariation",
+      "method": "POST",
+      "path": "/images/variations",
+      "summary": "Create image variation",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "multipart/form-data"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": true
+    },
+    {
+      "id": "create-live",
+      "method": "POST",
+      "path": "/live/sessions",
+      "summary": "Create session",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "accept-live-session",
+      "method": "POST",
+      "path": "/live/sessions/{session_id}/accept",
+      "summary": "Accept call",
+      "requiredPath": [
+        "session_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [],
+      "deprecated": false
+    },
+    {
+      "id": "fork-live-session",
+      "method": "POST",
+      "path": "/live/sessions/{session_id}/fork",
+      "summary": "Fork session",
+      "requiredPath": [
+        "session_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "hangup-live-session",
+      "method": "POST",
+      "path": "/live/sessions/{session_id}/hangup",
+      "summary": "Hang up session",
+      "requiredPath": [
+        "session_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [],
+      "deprecated": false
+    },
+    {
+      "id": "refer-live-session",
+      "method": "POST",
+      "path": "/live/sessions/{session_id}/refer",
+      "summary": "Transfer call",
+      "requiredPath": [
+        "session_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [],
+      "deprecated": false
+    },
+    {
+      "id": "reject-live-session",
+      "method": "POST",
+      "path": "/live/sessions/{session_id}/reject",
+      "summary": "Reject call",
+      "requiredPath": [
+        "session_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [],
+      "deprecated": false
+    },
+    {
+      "id": "listModels",
+      "method": "GET",
+      "path": "/models",
+      "summary": "List models",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieveModel",
+      "method": "GET",
+      "path": "/models/{model}",
+      "summary": "Retrieve model",
+      "requiredPath": [
+        "model"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "deleteModel",
+      "method": "DELETE",
+      "path": "/models/{model}",
+      "summary": "Delete a fine-tuned model",
+      "requiredPath": [
+        "model"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createModeration",
+      "method": "POST",
+      "path": "/moderations",
+      "summary": "Create moderation",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "admin-api-keys-list",
+      "method": "GET",
+      "path": "/organization/admin_api_keys",
+      "summary": "List all organization and project API keys.",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "admin-api-keys-create",
+      "method": "POST",
+      "path": "/organization/admin_api_keys",
+      "summary": "Create admin API key",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "admin-api-keys-get",
+      "method": "GET",
+      "path": "/organization/admin_api_keys/{key_id}",
+      "summary": "Retrieve admin API key",
+      "requiredPath": [
+        "key_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "admin-api-keys-delete",
+      "method": "DELETE",
+      "path": "/organization/admin_api_keys/{key_id}",
+      "summary": "Delete admin API key",
+      "requiredPath": [
+        "key_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "list-audit-logs",
+      "method": "GET",
+      "path": "/organization/audit_logs",
+      "summary": "List audit logs",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listOrganizationCertificates",
+      "method": "GET",
+      "path": "/organization/certificates",
+      "summary": "List organization certificates",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "uploadCertificate",
+      "method": "POST",
+      "path": "/organization/certificates",
+      "summary": "Upload certificate",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "activateOrganizationCertificates",
+      "method": "POST",
+      "path": "/organization/certificates/activate",
+      "summary": "Activate certificates for organization",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "deactivateOrganizationCertificates",
+      "method": "POST",
+      "path": "/organization/certificates/deactivate",
+      "summary": "Deactivate certificates for organization",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "getCertificate",
+      "method": "GET",
+      "path": "/organization/certificates/{certificate_id}",
+      "summary": "Get certificate",
+      "requiredPath": [
+        "certificate_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "modifyCertificate",
+      "method": "POST",
+      "path": "/organization/certificates/{certificate_id}",
+      "summary": "Modify certificate",
+      "requiredPath": [
+        "certificate_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "deleteCertificate",
+      "method": "DELETE",
+      "path": "/organization/certificates/{certificate_id}",
+      "summary": "Delete certificate",
+      "requiredPath": [
+        "certificate_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "usage-costs",
+      "method": "GET",
+      "path": "/organization/costs",
+      "summary": "Costs",
+      "requiredPath": [],
+      "requiredQuery": [
+        "start_time"
+      ],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieve-organization-data-retention",
+      "method": "GET",
+      "path": "/organization/data_retention",
+      "summary": "Retrieve organization data retention",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "update-organization-data-retention",
+      "method": "POST",
+      "path": "/organization/data_retention",
+      "summary": "Update organization data retention",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "list-groups",
+      "method": "GET",
+      "path": "/organization/groups",
+      "summary": "List groups",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "create-group",
+      "method": "POST",
+      "path": "/organization/groups",
+      "summary": "Create group",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieve-group",
+      "method": "GET",
+      "path": "/organization/groups/{group_id}",
+      "summary": "Retrieve group",
+      "requiredPath": [
+        "group_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "update-group",
+      "method": "POST",
+      "path": "/organization/groups/{group_id}",
+      "summary": "Update group",
+      "requiredPath": [
+        "group_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "delete-group",
+      "method": "DELETE",
+      "path": "/organization/groups/{group_id}",
+      "summary": "Delete group",
+      "requiredPath": [
+        "group_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "list-group-role-assignments",
+      "method": "GET",
+      "path": "/organization/groups/{group_id}/roles",
+      "summary": "List group organization role assignments",
+      "requiredPath": [
+        "group_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "assign-group-role",
+      "method": "POST",
+      "path": "/organization/groups/{group_id}/roles",
+      "summary": "Assign organization role to group",
+      "requiredPath": [
+        "group_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieve-group-role",
+      "method": "GET",
+      "path": "/organization/groups/{group_id}/roles/{role_id}",
+      "summary": "Retrieve group organization role",
+      "requiredPath": [
+        "group_id",
+        "role_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "unassign-group-role",
+      "method": "DELETE",
+      "path": "/organization/groups/{group_id}/roles/{role_id}",
+      "summary": "Unassign organization role from group",
+      "requiredPath": [
+        "group_id",
+        "role_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "list-group-users",
+      "method": "GET",
+      "path": "/organization/groups/{group_id}/users",
+      "summary": "List group users",
+      "requiredPath": [
+        "group_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "add-group-user",
+      "method": "POST",
+      "path": "/organization/groups/{group_id}/users",
+      "summary": "Add group user",
+      "requiredPath": [
+        "group_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieve-group-user",
+      "method": "GET",
+      "path": "/organization/groups/{group_id}/users/{user_id}",
+      "summary": "Retrieve group user",
+      "requiredPath": [
+        "group_id",
+        "user_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "remove-group-user",
+      "method": "DELETE",
+      "path": "/organization/groups/{group_id}/users/{user_id}",
+      "summary": "Remove group user",
+      "requiredPath": [
+        "group_id",
+        "user_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "list-invites",
+      "method": "GET",
+      "path": "/organization/invites",
+      "summary": "List invites",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "inviteUser",
+      "method": "POST",
+      "path": "/organization/invites",
+      "summary": "Create invite",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieve-invite",
+      "method": "GET",
+      "path": "/organization/invites/{invite_id}",
+      "summary": "Retrieve invite",
+      "requiredPath": [
+        "invite_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "delete-invite",
+      "method": "DELETE",
+      "path": "/organization/invites/{invite_id}",
+      "summary": "Delete invite",
+      "requiredPath": [
+        "invite_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "list-projects",
+      "method": "GET",
+      "path": "/organization/projects",
+      "summary": "List projects",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "create-project",
+      "method": "POST",
+      "path": "/organization/projects",
+      "summary": "Create project",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieve-project",
+      "method": "GET",
+      "path": "/organization/projects/{project_id}",
+      "summary": "Retrieve project",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "modify-project",
+      "method": "POST",
+      "path": "/organization/projects/{project_id}",
+      "summary": "Modify project",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "list-project-api-keys",
+      "method": "GET",
+      "path": "/organization/projects/{project_id}/api_keys",
+      "summary": "List project API keys",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieve-project-api-key",
+      "method": "GET",
+      "path": "/organization/projects/{project_id}/api_keys/{api_key_id}",
+      "summary": "Retrieve project API key",
+      "requiredPath": [
+        "project_id",
+        "api_key_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "delete-project-api-key",
+      "method": "DELETE",
+      "path": "/organization/projects/{project_id}/api_keys/{api_key_id}",
+      "summary": "Delete project API key",
+      "requiredPath": [
+        "project_id",
+        "api_key_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "archive-project",
+      "method": "POST",
+      "path": "/organization/projects/{project_id}/archive",
+      "summary": "Archive project",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listProjectCertificates",
+      "method": "GET",
+      "path": "/organization/projects/{project_id}/certificates",
+      "summary": "List project certificates",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "activateProjectCertificates",
+      "method": "POST",
+      "path": "/organization/projects/{project_id}/certificates/activate",
+      "summary": "Activate certificates for project",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "deactivateProjectCertificates",
+      "method": "POST",
+      "path": "/organization/projects/{project_id}/certificates/deactivate",
+      "summary": "Deactivate certificates for project",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieve-project-data-retention",
+      "method": "GET",
+      "path": "/organization/projects/{project_id}/data_retention",
+      "summary": "Retrieve project data retention",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "update-project-data-retention",
+      "method": "POST",
+      "path": "/organization/projects/{project_id}/data_retention",
+      "summary": "Update project data retention",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "list-project-groups",
+      "method": "GET",
+      "path": "/organization/projects/{project_id}/groups",
+      "summary": "List project groups",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "add-project-group",
+      "method": "POST",
+      "path": "/organization/projects/{project_id}/groups",
+      "summary": "Add project group",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieve-project-group",
+      "method": "GET",
+      "path": "/organization/projects/{project_id}/groups/{group_id}",
+      "summary": "Retrieve project group",
+      "requiredPath": [
+        "project_id",
+        "group_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "remove-project-group",
+      "method": "DELETE",
+      "path": "/organization/projects/{project_id}/groups/{group_id}",
+      "summary": "Remove project group",
+      "requiredPath": [
+        "project_id",
+        "group_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieve-project-hosted-tool-permissions",
+      "method": "GET",
+      "path": "/organization/projects/{project_id}/hosted_tool_permissions",
+      "summary": "Retrieve project hosted tool permissions",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "update-project-hosted-tool-permissions",
+      "method": "POST",
+      "path": "/organization/projects/{project_id}/hosted_tool_permissions",
+      "summary": "Modify project hosted tool permissions",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieve-project-model-permissions",
+      "method": "GET",
+      "path": "/organization/projects/{project_id}/model_permissions",
+      "summary": "Retrieve project model permissions",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "update-project-model-permissions",
+      "method": "POST",
+      "path": "/organization/projects/{project_id}/model_permissions",
+      "summary": "Modify project model permissions",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "delete-project-model-permissions",
+      "method": "DELETE",
+      "path": "/organization/projects/{project_id}/model_permissions",
+      "summary": "Delete project model permissions",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "list-project-rate-limits",
+      "method": "GET",
+      "path": "/organization/projects/{project_id}/rate_limits",
+      "summary": "List project rate limits",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "update-project-rate-limits",
+      "method": "POST",
+      "path": "/organization/projects/{project_id}/rate_limits/{rate_limit_id}",
+      "summary": "Modify project rate limit",
+      "requiredPath": [
+        "project_id",
+        "rate_limit_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "list-project-service-accounts",
+      "method": "GET",
+      "path": "/organization/projects/{project_id}/service_accounts",
+      "summary": "List project service accounts",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "create-project-service-account",
+      "method": "POST",
+      "path": "/organization/projects/{project_id}/service_accounts",
+      "summary": "Create project service account",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieve-project-service-account",
+      "method": "GET",
+      "path": "/organization/projects/{project_id}/service_accounts/{service_account_id}",
+      "summary": "Retrieve project service account",
+      "requiredPath": [
+        "project_id",
+        "service_account_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "update-project-service-account",
+      "method": "POST",
+      "path": "/organization/projects/{project_id}/service_accounts/{service_account_id}",
+      "summary": "Update project service account",
+      "requiredPath": [
+        "project_id",
+        "service_account_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "delete-project-service-account",
+      "method": "DELETE",
+      "path": "/organization/projects/{project_id}/service_accounts/{service_account_id}",
+      "summary": "Delete project service account",
+      "requiredPath": [
+        "project_id",
+        "service_account_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "list-project-spend-alerts",
+      "method": "GET",
+      "path": "/organization/projects/{project_id}/spend_alerts",
+      "summary": "List project spend alerts",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "create-project-spend-alert",
+      "method": "POST",
+      "path": "/organization/projects/{project_id}/spend_alerts",
+      "summary": "Create project spend alert",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieve-project-spend-alert",
+      "method": "GET",
+      "path": "/organization/projects/{project_id}/spend_alerts/{alert_id}",
+      "summary": "Retrieve project spend alert",
+      "requiredPath": [
+        "project_id",
+        "alert_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "update-project-spend-alert",
+      "method": "POST",
+      "path": "/organization/projects/{project_id}/spend_alerts/{alert_id}",
+      "summary": "Update project spend alert",
+      "requiredPath": [
+        "project_id",
+        "alert_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "delete-project-spend-alert",
+      "method": "DELETE",
+      "path": "/organization/projects/{project_id}/spend_alerts/{alert_id}",
+      "summary": "Delete project spend alert",
+      "requiredPath": [
+        "project_id",
+        "alert_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "list-project-users",
+      "method": "GET",
+      "path": "/organization/projects/{project_id}/users",
+      "summary": "List project users",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "create-project-user",
+      "method": "POST",
+      "path": "/organization/projects/{project_id}/users",
+      "summary": "Create project user",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieve-project-user",
+      "method": "GET",
+      "path": "/organization/projects/{project_id}/users/{user_id}",
+      "summary": "Retrieve project user",
+      "requiredPath": [
+        "project_id",
+        "user_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "modify-project-user",
+      "method": "POST",
+      "path": "/organization/projects/{project_id}/users/{user_id}",
+      "summary": "Modify project user",
+      "requiredPath": [
+        "project_id",
+        "user_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "delete-project-user",
+      "method": "DELETE",
+      "path": "/organization/projects/{project_id}/users/{user_id}",
+      "summary": "Delete project user",
+      "requiredPath": [
+        "project_id",
+        "user_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "list-roles",
+      "method": "GET",
+      "path": "/organization/roles",
+      "summary": "List organization roles",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "create-role",
+      "method": "POST",
+      "path": "/organization/roles",
+      "summary": "Create organization role",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieve-role",
+      "method": "GET",
+      "path": "/organization/roles/{role_id}",
+      "summary": "Retrieve organization role",
+      "requiredPath": [
+        "role_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "update-role",
+      "method": "POST",
+      "path": "/organization/roles/{role_id}",
+      "summary": "Update organization role",
+      "requiredPath": [
+        "role_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "delete-role",
+      "method": "DELETE",
+      "path": "/organization/roles/{role_id}",
+      "summary": "Delete organization role",
+      "requiredPath": [
+        "role_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "list-organization-spend-alerts",
+      "method": "GET",
+      "path": "/organization/spend_alerts",
+      "summary": "List organization spend alerts",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "create-organization-spend-alert",
+      "method": "POST",
+      "path": "/organization/spend_alerts",
+      "summary": "Create organization spend alert",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieve-organization-spend-alert",
+      "method": "GET",
+      "path": "/organization/spend_alerts/{alert_id}",
+      "summary": "Retrieve organization spend alert",
+      "requiredPath": [
+        "alert_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "update-organization-spend-alert",
+      "method": "POST",
+      "path": "/organization/spend_alerts/{alert_id}",
+      "summary": "Update organization spend alert",
+      "requiredPath": [
+        "alert_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "delete-organization-spend-alert",
+      "method": "DELETE",
+      "path": "/organization/spend_alerts/{alert_id}",
+      "summary": "Delete organization spend alert",
+      "requiredPath": [
+        "alert_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "usage-audio-speeches",
+      "method": "GET",
+      "path": "/organization/usage/audio_speeches",
+      "summary": "Audio speeches",
+      "requiredPath": [],
+      "requiredQuery": [
+        "start_time"
+      ],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "usage-audio-transcriptions",
+      "method": "GET",
+      "path": "/organization/usage/audio_transcriptions",
+      "summary": "Audio transcriptions",
+      "requiredPath": [],
+      "requiredQuery": [
+        "start_time"
+      ],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "usage-code-interpreter-sessions",
+      "method": "GET",
+      "path": "/organization/usage/code_interpreter_sessions",
+      "summary": "Code interpreter sessions",
+      "requiredPath": [],
+      "requiredQuery": [
+        "start_time"
+      ],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "usage-completions",
+      "method": "GET",
+      "path": "/organization/usage/completions",
+      "summary": "Completions",
+      "requiredPath": [],
+      "requiredQuery": [
+        "start_time"
+      ],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "usage-embeddings",
+      "method": "GET",
+      "path": "/organization/usage/embeddings",
+      "summary": "Embeddings",
+      "requiredPath": [],
+      "requiredQuery": [
+        "start_time"
+      ],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "usage-file-search-calls",
+      "method": "GET",
+      "path": "/organization/usage/file_search_calls",
+      "summary": "File search calls",
+      "requiredPath": [],
+      "requiredQuery": [
+        "start_time"
+      ],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "usage-images",
+      "method": "GET",
+      "path": "/organization/usage/images",
+      "summary": "Images",
+      "requiredPath": [],
+      "requiredQuery": [
+        "start_time"
+      ],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "usage-moderations",
+      "method": "GET",
+      "path": "/organization/usage/moderations",
+      "summary": "Moderations",
+      "requiredPath": [],
+      "requiredQuery": [
+        "start_time"
+      ],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "usage-vector-stores",
+      "method": "GET",
+      "path": "/organization/usage/vector_stores",
+      "summary": "Vector stores",
+      "requiredPath": [],
+      "requiredQuery": [
+        "start_time"
+      ],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "usage-web-search-calls",
+      "method": "GET",
+      "path": "/organization/usage/web_search_calls",
+      "summary": "Web search calls",
+      "requiredPath": [],
+      "requiredQuery": [
+        "start_time"
+      ],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "list-users",
+      "method": "GET",
+      "path": "/organization/users",
+      "summary": "List users",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieve-user",
+      "method": "GET",
+      "path": "/organization/users/{user_id}",
+      "summary": "Retrieve user",
+      "requiredPath": [
+        "user_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "modify-user",
+      "method": "POST",
+      "path": "/organization/users/{user_id}",
+      "summary": "Modify user",
+      "requiredPath": [
+        "user_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "delete-user",
+      "method": "DELETE",
+      "path": "/organization/users/{user_id}",
+      "summary": "Delete user",
+      "requiredPath": [
+        "user_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "list-user-role-assignments",
+      "method": "GET",
+      "path": "/organization/users/{user_id}/roles",
+      "summary": "List user organization role assignments",
+      "requiredPath": [
+        "user_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "assign-user-role",
+      "method": "POST",
+      "path": "/organization/users/{user_id}/roles",
+      "summary": "Assign organization role to user",
+      "requiredPath": [
+        "user_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieve-user-role",
+      "method": "GET",
+      "path": "/organization/users/{user_id}/roles/{role_id}",
+      "summary": "Retrieve user organization role",
+      "requiredPath": [
+        "user_id",
+        "role_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "unassign-user-role",
+      "method": "DELETE",
+      "path": "/organization/users/{user_id}/roles/{role_id}",
+      "summary": "Unassign organization role from user",
+      "requiredPath": [
+        "user_id",
+        "role_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "list-project-group-role-assignments",
+      "method": "GET",
+      "path": "/projects/{project_id}/groups/{group_id}/roles",
+      "summary": "List project group role assignments",
+      "requiredPath": [
+        "project_id",
+        "group_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "assign-project-group-role",
+      "method": "POST",
+      "path": "/projects/{project_id}/groups/{group_id}/roles",
+      "summary": "Assign project role to group",
+      "requiredPath": [
+        "project_id",
+        "group_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieve-project-group-role",
+      "method": "GET",
+      "path": "/projects/{project_id}/groups/{group_id}/roles/{role_id}",
+      "summary": "Retrieve project group role",
+      "requiredPath": [
+        "project_id",
+        "group_id",
+        "role_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "unassign-project-group-role",
+      "method": "DELETE",
+      "path": "/projects/{project_id}/groups/{group_id}/roles/{role_id}",
+      "summary": "Unassign project role from group",
+      "requiredPath": [
+        "project_id",
+        "group_id",
+        "role_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "list-project-roles",
+      "method": "GET",
+      "path": "/projects/{project_id}/roles",
+      "summary": "List project roles",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "create-project-role",
+      "method": "POST",
+      "path": "/projects/{project_id}/roles",
+      "summary": "Create project role",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieve-project-role",
+      "method": "GET",
+      "path": "/projects/{project_id}/roles/{role_id}",
+      "summary": "Retrieve project role",
+      "requiredPath": [
+        "project_id",
+        "role_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "update-project-role",
+      "method": "POST",
+      "path": "/projects/{project_id}/roles/{role_id}",
+      "summary": "Update project role",
+      "requiredPath": [
+        "project_id",
+        "role_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "delete-project-role",
+      "method": "DELETE",
+      "path": "/projects/{project_id}/roles/{role_id}",
+      "summary": "Delete project role",
+      "requiredPath": [
+        "project_id",
+        "role_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "list-project-user-role-assignments",
+      "method": "GET",
+      "path": "/projects/{project_id}/users/{user_id}/roles",
+      "summary": "List project user role assignments",
+      "requiredPath": [
+        "project_id",
+        "user_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "assign-project-user-role",
+      "method": "POST",
+      "path": "/projects/{project_id}/users/{user_id}/roles",
+      "summary": "Assign project role to user",
+      "requiredPath": [
+        "project_id",
+        "user_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieve-project-user-role",
+      "method": "GET",
+      "path": "/projects/{project_id}/users/{user_id}/roles/{role_id}",
+      "summary": "Retrieve project user role",
+      "requiredPath": [
+        "project_id",
+        "user_id",
+        "role_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "unassign-project-user-role",
+      "method": "DELETE",
+      "path": "/projects/{project_id}/users/{user_id}/roles/{role_id}",
+      "summary": "Unassign project role from user",
+      "requiredPath": [
+        "project_id",
+        "user_id",
+        "role_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "create-realtime-call",
+      "method": "POST",
+      "path": "/realtime/calls",
+      "summary": "Create call",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "multipart/form-data",
+        "application/sdp"
+      ],
+      "responseMediaTypes": [
+        "application/sdp"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "accept-realtime-call",
+      "method": "POST",
+      "path": "/realtime/calls/{call_id}/accept",
+      "summary": "Accept call",
+      "requiredPath": [
+        "call_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [],
+      "deprecated": false
+    },
+    {
+      "id": "hangup-realtime-call",
+      "method": "POST",
+      "path": "/realtime/calls/{call_id}/hangup",
+      "summary": "Hang up call",
+      "requiredPath": [
+        "call_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [],
+      "deprecated": false
+    },
+    {
+      "id": "refer-realtime-call",
+      "method": "POST",
+      "path": "/realtime/calls/{call_id}/refer",
+      "summary": "Refer call",
+      "requiredPath": [
+        "call_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [],
+      "deprecated": false
+    },
+    {
+      "id": "reject-realtime-call",
+      "method": "POST",
+      "path": "/realtime/calls/{call_id}/reject",
+      "summary": "Reject call",
+      "requiredPath": [
+        "call_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [],
+      "deprecated": false
+    },
+    {
+      "id": "create-realtime-client-secret",
+      "method": "POST",
+      "path": "/realtime/client_secrets",
+      "summary": "Create client secret",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "create-realtime-session",
+      "method": "POST",
+      "path": "/realtime/sessions",
+      "summary": "Create session",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "create-realtime-transcription-session",
+      "method": "POST",
+      "path": "/realtime/transcription_sessions",
+      "summary": "Create transcription session",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "create-realtime-translation-client-secret",
+      "method": "POST",
+      "path": "/realtime/translations/client_secrets",
+      "summary": "Create translation client secret",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createResponse",
+      "method": "POST",
+      "path": "/responses",
+      "summary": "Create a model response",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json",
+        "text/event-stream"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "getResponse",
+      "method": "GET",
+      "path": "/responses/{response_id}",
+      "summary": "Get a model response",
+      "requiredPath": [
+        "response_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "deleteResponse",
+      "method": "DELETE",
+      "path": "/responses/{response_id}",
+      "summary": "Delete a model response",
+      "requiredPath": [
+        "response_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "cancelResponse",
+      "method": "POST",
+      "path": "/responses/{response_id}/cancel",
+      "summary": "Cancel a response",
+      "requiredPath": [
+        "response_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listInputItems",
+      "method": "GET",
+      "path": "/responses/{response_id}/input_items",
+      "summary": "List input items",
+      "requiredPath": [
+        "response_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createThread",
+      "method": "POST",
+      "path": "/threads",
+      "summary": "Create thread",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createThreadAndRun",
+      "method": "POST",
+      "path": "/threads/runs",
+      "summary": "Create thread and run",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json",
+        "text/event-stream"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "getThread",
+      "method": "GET",
+      "path": "/threads/{thread_id}",
+      "summary": "Retrieve thread",
+      "requiredPath": [
+        "thread_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "modifyThread",
+      "method": "POST",
+      "path": "/threads/{thread_id}",
+      "summary": "Modify thread",
+      "requiredPath": [
+        "thread_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "deleteThread",
+      "method": "DELETE",
+      "path": "/threads/{thread_id}",
+      "summary": "Delete thread",
+      "requiredPath": [
+        "thread_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listMessages",
+      "method": "GET",
+      "path": "/threads/{thread_id}/messages",
+      "summary": "List messages",
+      "requiredPath": [
+        "thread_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createMessage",
+      "method": "POST",
+      "path": "/threads/{thread_id}/messages",
+      "summary": "Create message",
+      "requiredPath": [
+        "thread_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "getMessage",
+      "method": "GET",
+      "path": "/threads/{thread_id}/messages/{message_id}",
+      "summary": "Retrieve message",
+      "requiredPath": [
+        "thread_id",
+        "message_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "modifyMessage",
+      "method": "POST",
+      "path": "/threads/{thread_id}/messages/{message_id}",
+      "summary": "Modify message",
+      "requiredPath": [
+        "thread_id",
+        "message_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "deleteMessage",
+      "method": "DELETE",
+      "path": "/threads/{thread_id}/messages/{message_id}",
+      "summary": "Delete message",
+      "requiredPath": [
+        "thread_id",
+        "message_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listRuns",
+      "method": "GET",
+      "path": "/threads/{thread_id}/runs",
+      "summary": "List runs",
+      "requiredPath": [
+        "thread_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createRun",
+      "method": "POST",
+      "path": "/threads/{thread_id}/runs",
+      "summary": "Create run",
+      "requiredPath": [
+        "thread_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json",
+        "text/event-stream"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "getRun",
+      "method": "GET",
+      "path": "/threads/{thread_id}/runs/{run_id}",
+      "summary": "Retrieve run",
+      "requiredPath": [
+        "thread_id",
+        "run_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "modifyRun",
+      "method": "POST",
+      "path": "/threads/{thread_id}/runs/{run_id}",
+      "summary": "Modify run",
+      "requiredPath": [
+        "thread_id",
+        "run_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "cancelRun",
+      "method": "POST",
+      "path": "/threads/{thread_id}/runs/{run_id}/cancel",
+      "summary": "Cancel a run",
+      "requiredPath": [
+        "thread_id",
+        "run_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listRunSteps",
+      "method": "GET",
+      "path": "/threads/{thread_id}/runs/{run_id}/steps",
+      "summary": "List run steps",
+      "requiredPath": [
+        "thread_id",
+        "run_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "getRunStep",
+      "method": "GET",
+      "path": "/threads/{thread_id}/runs/{run_id}/steps/{step_id}",
+      "summary": "Retrieve run step",
+      "requiredPath": [
+        "thread_id",
+        "run_id",
+        "step_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "submitToolOuputsToRun",
+      "method": "POST",
+      "path": "/threads/{thread_id}/runs/{run_id}/submit_tool_outputs",
+      "summary": "Submit tool outputs to run",
+      "requiredPath": [
+        "thread_id",
+        "run_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json",
+        "text/event-stream"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createUpload",
+      "method": "POST",
+      "path": "/uploads",
+      "summary": "Create upload",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "cancelUpload",
+      "method": "POST",
+      "path": "/uploads/{upload_id}/cancel",
+      "summary": "Cancel upload",
+      "requiredPath": [
+        "upload_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "completeUpload",
+      "method": "POST",
+      "path": "/uploads/{upload_id}/complete",
+      "summary": "Complete upload",
+      "requiredPath": [
+        "upload_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "addUploadPart",
+      "method": "POST",
+      "path": "/uploads/{upload_id}/parts",
+      "summary": "Add upload part",
+      "requiredPath": [
+        "upload_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "multipart/form-data"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listVectorStores",
+      "method": "GET",
+      "path": "/vector_stores",
+      "summary": "List vector stores",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createVectorStore",
+      "method": "POST",
+      "path": "/vector_stores",
+      "summary": "Create vector store",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "getVectorStore",
+      "method": "GET",
+      "path": "/vector_stores/{vector_store_id}",
+      "summary": "Retrieve vector store",
+      "requiredPath": [
+        "vector_store_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "modifyVectorStore",
+      "method": "POST",
+      "path": "/vector_stores/{vector_store_id}",
+      "summary": "Modify vector store",
+      "requiredPath": [
+        "vector_store_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "deleteVectorStore",
+      "method": "DELETE",
+      "path": "/vector_stores/{vector_store_id}",
+      "summary": "Delete vector store",
+      "requiredPath": [
+        "vector_store_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createVectorStoreFileBatch",
+      "method": "POST",
+      "path": "/vector_stores/{vector_store_id}/file_batches",
+      "summary": "Create vector store file batch",
+      "requiredPath": [
+        "vector_store_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "getVectorStoreFileBatch",
+      "method": "GET",
+      "path": "/vector_stores/{vector_store_id}/file_batches/{batch_id}",
+      "summary": "Retrieve vector store file batch",
+      "requiredPath": [
+        "vector_store_id",
+        "batch_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "cancelVectorStoreFileBatch",
+      "method": "POST",
+      "path": "/vector_stores/{vector_store_id}/file_batches/{batch_id}/cancel",
+      "summary": "Cancel vector store file batch",
+      "requiredPath": [
+        "vector_store_id",
+        "batch_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listFilesInVectorStoreBatch",
+      "method": "GET",
+      "path": "/vector_stores/{vector_store_id}/file_batches/{batch_id}/files",
+      "summary": "List vector store files in a batch",
+      "requiredPath": [
+        "vector_store_id",
+        "batch_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listVectorStoreFiles",
+      "method": "GET",
+      "path": "/vector_stores/{vector_store_id}/files",
+      "summary": "List vector store files",
+      "requiredPath": [
+        "vector_store_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createVectorStoreFile",
+      "method": "POST",
+      "path": "/vector_stores/{vector_store_id}/files",
+      "summary": "Create vector store file",
+      "requiredPath": [
+        "vector_store_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "getVectorStoreFile",
+      "method": "GET",
+      "path": "/vector_stores/{vector_store_id}/files/{file_id}",
+      "summary": "Retrieve vector store file",
+      "requiredPath": [
+        "vector_store_id",
+        "file_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "deleteVectorStoreFile",
+      "method": "DELETE",
+      "path": "/vector_stores/{vector_store_id}/files/{file_id}",
+      "summary": "Delete vector store file",
+      "requiredPath": [
+        "vector_store_id",
+        "file_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "updateVectorStoreFileAttributes",
+      "method": "POST",
+      "path": "/vector_stores/{vector_store_id}/files/{file_id}",
+      "summary": "Update vector store file attributes",
+      "requiredPath": [
+        "vector_store_id",
+        "file_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieveVectorStoreFileContent",
+      "method": "GET",
+      "path": "/vector_stores/{vector_store_id}/files/{file_id}/content",
+      "summary": "Retrieve vector store file content",
+      "requiredPath": [
+        "vector_store_id",
+        "file_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "searchVectorStore",
+      "method": "POST",
+      "path": "/vector_stores/{vector_store_id}/search",
+      "summary": "Search vector store",
+      "requiredPath": [
+        "vector_store_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createConversation",
+      "method": "POST",
+      "path": "/conversations",
+      "summary": "Create a conversation",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "getConversation",
+      "method": "GET",
+      "path": "/conversations/{conversation_id}",
+      "summary": "Retrieve a conversation",
+      "requiredPath": [
+        "conversation_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "deleteConversation",
+      "method": "DELETE",
+      "path": "/conversations/{conversation_id}",
+      "summary": "Delete a conversation",
+      "requiredPath": [
+        "conversation_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "updateConversation",
+      "method": "POST",
+      "path": "/conversations/{conversation_id}",
+      "summary": "Update a conversation",
+      "requiredPath": [
+        "conversation_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "Getsafetycase",
+      "method": "GET",
+      "path": "/safety/cases/{id}",
+      "summary": "Get safety case",
+      "requiredPath": [
+        "id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "Getprojectsafetyalert",
+      "method": "GET",
+      "path": "/safety/alerts/{id}",
+      "summary": "Get project safety alert",
+      "requiredPath": [
+        "id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "download-live-recording",
+      "method": "GET",
+      "path": "/live/sessions/{session_id}/content",
+      "summary": "Download recording",
+      "requiredPath": [
+        "session_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "audio/wav"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "Listexternalstorageconfigurations",
+      "method": "GET",
+      "path": "/organization/external_storage",
+      "summary": "List external storage configurations",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "Createanexternalstorageconfiguration",
+      "method": "POST",
+      "path": "/organization/external_storage",
+      "summary": "Create an external storage configuration",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "Getanexternalstorageconfiguration",
+      "method": "GET",
+      "path": "/organization/external_storage/{external_storage_id}",
+      "summary": "Get an external storage configuration",
+      "requiredPath": [
+        "external_storage_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "Deleteanexternalstorageconfiguration",
+      "method": "DELETE",
+      "path": "/organization/external_storage/{external_storage_id}",
+      "summary": "Delete an external storage configuration",
+      "requiredPath": [
+        "external_storage_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "Validateanexternalstorageconfiguration",
+      "method": "POST",
+      "path": "/organization/external_storage/{external_storage_id}/validate",
+      "summary": "Validate an external storage configuration",
+      "requiredPath": [
+        "external_storage_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "Getorganizationspendlimit",
+      "method": "GET",
+      "path": "/organization/spend_limit",
+      "summary": "Get organization spend limit",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "Updateorganizationspendlimit",
+      "method": "POST",
+      "path": "/organization/spend_limit",
+      "summary": "Update organization spend limit",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "Deleteorganizationspendlimit",
+      "method": "DELETE",
+      "path": "/organization/spend_limit",
+      "summary": "Delete organization spend limit",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "Getprojectspendlimit",
+      "method": "GET",
+      "path": "/organization/projects/{project_id}/spend_limit",
+      "summary": "Get project spend limit",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "Deleteprojectspendlimit",
+      "method": "DELETE",
+      "path": "/organization/projects/{project_id}/spend_limit",
+      "summary": "Delete project spend limit",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "Updateprojectspendlimit",
+      "method": "POST",
+      "path": "/organization/projects/{project_id}/spend_limit",
+      "summary": "Update project spend limit",
+      "requiredPath": [
+        "project_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "CreateanAPIkeyforaserviceaccount",
+      "method": "POST",
+      "path": "/organization/projects/{project_id}/service_accounts/{service_account_id}/api_keys",
+      "summary": "Create an API key for a service account",
+      "requiredPath": [
+        "project_id",
+        "service_account_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "Createcontentprovenancecheck",
+      "method": "POST",
+      "path": "/content_provenance_checks",
+      "summary": "Create content provenance check",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "multipart/form-data"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createVideo",
+      "method": "POST",
+      "path": "/videos",
+      "summary": "Create a video",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "multipart/form-data",
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": true
+    },
+    {
+      "id": "ListVideos",
+      "method": "GET",
+      "path": "/videos",
+      "summary": "List videos",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": true
+    },
+    {
+      "id": "CreateVideoCharacter",
+      "method": "POST",
+      "path": "/videos/characters",
+      "summary": "Create a character",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "multipart/form-data"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": true
+    },
+    {
+      "id": "GetVideoCharacter",
+      "method": "GET",
+      "path": "/videos/characters/{character_id}",
+      "summary": "Retrieve a character",
+      "requiredPath": [
+        "character_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": true
+    },
+    {
+      "id": "CreateVideoEdit",
+      "method": "POST",
+      "path": "/videos/edits",
+      "summary": "Create a video edit",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "multipart/form-data",
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": true
+    },
+    {
+      "id": "CreateVideoExtend",
+      "method": "POST",
+      "path": "/videos/extensions",
+      "summary": "Create a video extension",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "multipart/form-data",
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": true
+    },
+    {
+      "id": "GetVideo",
+      "method": "GET",
+      "path": "/videos/{video_id}",
+      "summary": "Retrieve a video",
+      "requiredPath": [
+        "video_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": true
+    },
+    {
+      "id": "DeleteVideo",
+      "method": "DELETE",
+      "path": "/videos/{video_id}",
+      "summary": "Delete a video",
+      "requiredPath": [
+        "video_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": true
+    },
+    {
+      "id": "RetrieveVideoContent",
+      "method": "GET",
+      "path": "/videos/{video_id}/content",
+      "summary": "Download video content",
+      "requiredPath": [
+        "video_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "video/mp4",
+        "image/webp",
+        "application/json"
+      ],
+      "deprecated": true
+    },
+    {
+      "id": "CreateVideoRemix",
+      "method": "POST",
+      "path": "/videos/{video_id}/remix",
+      "summary": "Create a video remix",
+      "requiredPath": [
+        "video_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "multipart/form-data",
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": true
+    },
+    {
+      "id": "Getinputtokencounts",
+      "method": "POST",
+      "path": "/responses/input_tokens",
+      "summary": "Get input token counts",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "Compactconversation",
+      "method": "POST",
+      "path": "/responses/compact",
+      "summary": "Compact conversation",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "CreateSkill",
+      "method": "POST",
+      "path": "/skills",
+      "summary": "Create Skill",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "multipart/form-data",
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "ListSkills",
+      "method": "GET",
+      "path": "/skills",
+      "summary": "List Skills",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "DeleteSkill",
+      "method": "DELETE",
+      "path": "/skills/{skill_id}",
+      "summary": "Delete Skill",
+      "requiredPath": [
+        "skill_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "GetSkill",
+      "method": "GET",
+      "path": "/skills/{skill_id}",
+      "summary": "Get Skill",
+      "requiredPath": [
+        "skill_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "UpdateSkillDefaultVersion",
+      "method": "POST",
+      "path": "/skills/{skill_id}",
+      "summary": "Update Skill Default Version",
+      "requiredPath": [
+        "skill_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "GetSkillContent",
+      "method": "GET",
+      "path": "/skills/{skill_id}/content",
+      "summary": "Get Skill Content",
+      "requiredPath": [
+        "skill_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/zip",
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "CreateSkillVersion",
+      "method": "POST",
+      "path": "/skills/{skill_id}/versions",
+      "summary": "Create Skill Version",
+      "requiredPath": [
+        "skill_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "multipart/form-data",
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "ListSkillVersions",
+      "method": "GET",
+      "path": "/skills/{skill_id}/versions",
+      "summary": "List Skill Versions",
+      "requiredPath": [
+        "skill_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "GetSkillVersion",
+      "method": "GET",
+      "path": "/skills/{skill_id}/versions/{version}",
+      "summary": "Get Skill Version",
+      "requiredPath": [
+        "skill_id",
+        "version"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "DeleteSkillVersion",
+      "method": "DELETE",
+      "path": "/skills/{skill_id}/versions/{version}",
+      "summary": "Delete Skill Version",
+      "requiredPath": [
+        "skill_id",
+        "version"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "GetSkillVersionContent",
+      "method": "GET",
+      "path": "/skills/{skill_id}/versions/{version}/content",
+      "summary": "Get Skill Version Content",
+      "requiredPath": [
+        "skill_id",
+        "version"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/zip",
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "CancelChatSessionMethod",
+      "method": "POST",
+      "path": "/chatkit/sessions/{session_id}/cancel",
+      "summary": "Cancel a ChatKit session",
+      "requiredPath": [
+        "session_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "CreateChatSessionMethod",
+      "method": "POST",
+      "path": "/chatkit/sessions",
+      "summary": "Create a ChatKit session",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "ListThreadItemsMethod",
+      "method": "GET",
+      "path": "/chatkit/threads/{thread_id}/items",
+      "summary": "List ChatKit thread items",
+      "requiredPath": [
+        "thread_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "GetThreadMethod",
+      "method": "GET",
+      "path": "/chatkit/threads/{thread_id}",
+      "summary": "Retrieve a ChatKit thread",
+      "requiredPath": [
+        "thread_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "DeleteThreadMethod",
+      "method": "DELETE",
+      "path": "/chatkit/threads/{thread_id}",
+      "summary": "Delete a ChatKit thread",
+      "requiredPath": [
+        "thread_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "ListThreadsMethod",
+      "method": "GET",
+      "path": "/chatkit/threads",
+      "summary": "List ChatKit threads",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieveAgentEnvironment",
+      "method": "GET",
+      "path": "/agents/environments/{environment_id}",
+      "summary": "Retrieve an agent environment",
+      "requiredPath": [
+        "environment_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listAgentEnvironmentFiles",
+      "method": "GET",
+      "path": "/agents/environments/{environment_id}/files",
+      "summary": "List agent environment files",
+      "requiredPath": [
+        "environment_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createAgentEnvironmentFile",
+      "method": "POST",
+      "path": "/agents/environments/{environment_id}/files",
+      "summary": "Create an agent environment file",
+      "requiredPath": [
+        "environment_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listAgentSessionSubagents",
+      "method": "GET",
+      "path": "/agents/sessions/{session_id}/subagents",
+      "summary": "List session subagents",
+      "requiredPath": [
+        "session_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieveAgentSessionSubagent",
+      "method": "GET",
+      "path": "/agents/sessions/{session_id}/subagents/{subagent_id}",
+      "summary": "Retrieve a session subagent",
+      "requiredPath": [
+        "session_id",
+        "subagent_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listAgentSessionSubagentItems",
+      "method": "GET",
+      "path": "/agents/sessions/{session_id}/subagents/{subagent_id}/items",
+      "summary": "List subagent items",
+      "requiredPath": [
+        "session_id",
+        "subagent_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listAgentSessionSubagentTurns",
+      "method": "GET",
+      "path": "/agents/sessions/{session_id}/subagents/{subagent_id}/turns",
+      "summary": "List subagent turns",
+      "requiredPath": [
+        "session_id",
+        "subagent_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieveAgentSessionSubagentTurn",
+      "method": "GET",
+      "path": "/agents/sessions/{session_id}/subagents/{subagent_id}/turns/{turn_id}",
+      "summary": "Retrieve a subagent turn",
+      "requiredPath": [
+        "session_id",
+        "subagent_id",
+        "turn_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listAgentSessionSubagentTurnItems",
+      "method": "GET",
+      "path": "/agents/sessions/{session_id}/subagents/{subagent_id}/turns/{turn_id}/items",
+      "summary": "List subagent turn items",
+      "requiredPath": [
+        "session_id",
+        "subagent_id",
+        "turn_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listAgents",
+      "method": "GET",
+      "path": "/agents",
+      "summary": "List agents",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createAgent",
+      "method": "POST",
+      "path": "/agents",
+      "summary": "Create an agent",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieveAgent",
+      "method": "GET",
+      "path": "/agents/{agent_id}",
+      "summary": "Retrieve an agent",
+      "requiredPath": [
+        "agent_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "updateAgent",
+      "method": "POST",
+      "path": "/agents/{agent_id}",
+      "summary": "Update an agent",
+      "requiredPath": [
+        "agent_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "deleteAgent",
+      "method": "DELETE",
+      "path": "/agents/{agent_id}",
+      "summary": "Delete an agent",
+      "requiredPath": [
+        "agent_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listAgentEnvironmentTemplates",
+      "method": "GET",
+      "path": "/agents/environments/templates",
+      "summary": "List agent environment templates",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createAgentEnvironmentTemplate",
+      "method": "POST",
+      "path": "/agents/environments/templates",
+      "summary": "Create an agent environment template",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieveAgentEnvironmentTemplate",
+      "method": "GET",
+      "path": "/agents/environments/templates/{environment_template_id}",
+      "summary": "Retrieve an agent environment template",
+      "requiredPath": [
+        "environment_template_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "updateAgentEnvironmentTemplate",
+      "method": "POST",
+      "path": "/agents/environments/templates/{environment_template_id}",
+      "summary": "Update an agent environment template",
+      "requiredPath": [
+        "environment_template_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "deleteAgentEnvironmentTemplate",
+      "method": "DELETE",
+      "path": "/agents/environments/templates/{environment_template_id}",
+      "summary": "Delete an agent environment template",
+      "requiredPath": [
+        "environment_template_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listAgentSessions",
+      "method": "GET",
+      "path": "/agents/sessions",
+      "summary": "List agent sessions",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createAgentSession",
+      "method": "POST",
+      "path": "/agents/sessions",
+      "summary": "Create an agent session",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json",
+        "text/event-stream"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieveAgentSession",
+      "method": "GET",
+      "path": "/agents/sessions/{session_id}",
+      "summary": "Retrieve an agent session",
+      "requiredPath": [
+        "session_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "updateAgentSession",
+      "method": "POST",
+      "path": "/agents/sessions/{session_id}",
+      "summary": "Update an agent session",
+      "requiredPath": [
+        "session_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "deleteAgentSession",
+      "method": "DELETE",
+      "path": "/agents/sessions/{session_id}",
+      "summary": "Delete an agent session",
+      "requiredPath": [
+        "session_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listAgentSessionArtifacts",
+      "method": "GET",
+      "path": "/agents/sessions/{session_id}/artifacts",
+      "summary": "List agent session artifacts",
+      "requiredPath": [
+        "session_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieveAgentSessionArtifact",
+      "method": "GET",
+      "path": "/agents/sessions/{session_id}/artifacts/{artifact_id}",
+      "summary": "Retrieve an agent session artifact",
+      "requiredPath": [
+        "session_id",
+        "artifact_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "deleteAgentSessionArtifact",
+      "method": "DELETE",
+      "path": "/agents/sessions/{session_id}/artifacts/{artifact_id}",
+      "summary": "Delete an agent session artifact",
+      "requiredPath": [
+        "session_id",
+        "artifact_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieveAgentSessionArtifactContent",
+      "method": "GET",
+      "path": "/agents/sessions/{session_id}/artifacts/{artifact_id}/content",
+      "summary": "Retrieve agent session artifact content",
+      "requiredPath": [
+        "session_id",
+        "artifact_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/octet-stream"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listAgentSessionEvents",
+      "method": "GET",
+      "path": "/agents/sessions/{session_id}/events",
+      "summary": "Stream agent session events",
+      "requiredPath": [
+        "session_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "text/event-stream"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createAgentSessionEvents",
+      "method": "POST",
+      "path": "/agents/sessions/{session_id}/events",
+      "summary": "Create agent session input events",
+      "requiredPath": [
+        "session_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [],
+      "deprecated": false
+    },
+    {
+      "id": "listAgentSessionItems",
+      "method": "GET",
+      "path": "/agents/sessions/{session_id}/items",
+      "summary": "List agent session items",
+      "requiredPath": [
+        "session_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listAgentSessionTraces",
+      "method": "GET",
+      "path": "/agents/sessions/{session_id}/traces",
+      "summary": "List agent session traces",
+      "requiredPath": [
+        "session_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listAgentSessionTurns",
+      "method": "GET",
+      "path": "/agents/sessions/{session_id}/turns",
+      "summary": "List agent session turns",
+      "requiredPath": [
+        "session_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieveAgentSessionTurn",
+      "method": "GET",
+      "path": "/agents/sessions/{session_id}/turns/{turn_id}",
+      "summary": "Retrieve an agent session turn",
+      "requiredPath": [
+        "session_id",
+        "turn_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listVaults",
+      "method": "GET",
+      "path": "/vaults",
+      "summary": "List vaults",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createVault",
+      "method": "POST",
+      "path": "/vaults",
+      "summary": "Create a vault",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieveVault",
+      "method": "GET",
+      "path": "/vaults/{vault_id}",
+      "summary": "Retrieve a vault",
+      "requiredPath": [
+        "vault_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "deleteVault",
+      "method": "DELETE",
+      "path": "/vaults/{vault_id}",
+      "summary": "Delete a vault",
+      "requiredPath": [
+        "vault_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "listVaultCredentials",
+      "method": "GET",
+      "path": "/vaults/{vault_id}/credentials",
+      "summary": "List vault credentials",
+      "requiredPath": [
+        "vault_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "createVaultCredential",
+      "method": "POST",
+      "path": "/vaults/{vault_id}/credentials",
+      "summary": "Create a vault credential",
+      "requiredPath": [
+        "vault_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "retrieveVaultCredential",
+      "method": "GET",
+      "path": "/vaults/{vault_id}/credentials/{credential_id}",
+      "summary": "Retrieve a vault credential",
+      "requiredPath": [
+        "vault_id",
+        "credential_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "rotateVaultCredential",
+      "method": "POST",
+      "path": "/vaults/{vault_id}/credentials/{credential_id}",
+      "summary": "Update a vault credential",
+      "requiredPath": [
+        "vault_id",
+        "credential_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "deleteVaultCredential",
+      "method": "DELETE",
+      "path": "/vaults/{vault_id}/credentials/{credential_id}",
+      "summary": "Delete a vault credential",
+      "requiredPath": [
+        "vault_id",
+        "credential_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "ListWebhookEndpoints",
+      "method": "GET",
+      "path": "/webhook_endpoints",
+      "summary": "List Webhook Endpoints",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "CreateWebhookEndpoint",
+      "method": "POST",
+      "path": "/webhook_endpoints",
+      "summary": "Create Webhook Endpoint",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "RetrieveWebhookEndpoint",
+      "method": "GET",
+      "path": "/webhook_endpoints/{webhook_endpoint_id}",
+      "summary": "Retrieve Webhook Endpoint",
+      "requiredPath": [
+        "webhook_endpoint_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "UpdateWebhookEndpoint",
+      "method": "POST",
+      "path": "/webhook_endpoints/{webhook_endpoint_id}",
+      "summary": "Update Webhook Endpoint",
+      "requiredPath": [
+        "webhook_endpoint_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "DeleteWebhookEndpoint",
+      "method": "DELETE",
+      "path": "/webhook_endpoints/{webhook_endpoint_id}",
+      "summary": "Delete Webhook Endpoint",
+      "requiredPath": [
+        "webhook_endpoint_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "RotateWebhookEndpointSigningSecret",
+      "method": "POST",
+      "path": "/webhook_endpoints/{webhook_endpoint_id}/rotate_secret",
+      "summary": "Rotate Webhook Endpoint Signing Secret",
+      "requiredPath": [
+        "webhook_endpoint_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "TestWebhookEndpoint",
+      "method": "POST",
+      "path": "/webhook_endpoints/{webhook_endpoint_id}/test",
+      "summary": "Test Webhook Endpoint",
+      "requiredPath": [
+        "webhook_endpoint_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "ListWebhookEventTypes",
+      "method": "GET",
+      "path": "/webhook_event_types",
+      "summary": "List Webhook Event Types",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "beta_createResponse",
+      "method": "POST",
+      "path": "/responses?beta=true",
+      "summary": "Create a model response",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": true,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json",
+        "text/event-stream"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "beta_getResponse",
+      "method": "GET",
+      "path": "/responses/{response_id}?beta=true",
+      "summary": "Get a model response",
+      "requiredPath": [
+        "response_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "beta_deleteResponse",
+      "method": "DELETE",
+      "path": "/responses/{response_id}?beta=true",
+      "summary": "Delete a model response",
+      "requiredPath": [
+        "response_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "beta_cancelResponse",
+      "method": "POST",
+      "path": "/responses/{response_id}/cancel?beta=true",
+      "summary": "Cancel a response",
+      "requiredPath": [
+        "response_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "beta_Compactconversation",
+      "method": "POST",
+      "path": "/responses/compact?beta=true",
+      "summary": "Compact conversation",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "beta_listInputItems",
+      "method": "GET",
+      "path": "/responses/{response_id}/input_items?beta=true",
+      "summary": "List input items",
+      "requiredPath": [
+        "response_id"
+      ],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    },
+    {
+      "id": "beta_Getinputtokencounts",
+      "method": "POST",
+      "path": "/responses/input_tokens?beta=true",
+      "summary": "Get input token counts",
+      "requiredPath": [],
+      "requiredQuery": [],
+      "requiredHeaders": [],
+      "requiresBody": false,
+      "requestMediaTypes": [
+        "application/json"
+      ],
+      "responseMediaTypes": [
+        "application/json"
+      ],
+      "deprecated": false
+    }
+  ]
+}

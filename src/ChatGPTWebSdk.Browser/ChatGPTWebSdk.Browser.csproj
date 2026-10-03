@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net8.0</TargetFramework><PackageId>ChatGPTWebSdk.Browser</PackageId><Version>0.2.0</Version><PackageLicenseExpression>MIT</PackageLicenseExpression><PackageReadmeFile>README.md</PackageReadmeFile><Description>Short-lived, visible browser bootstrap for ChatGPT Sentinel credentials.</Description></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../ChatGPTWebSdk/ChatGPTWebSdk.csproj" /><PackageReference Include="Microsoft.Playwright" Version="1.63.0" /></ItemGroup>
+  <ItemGroup><None Include="../../README.md" Pack="true" PackagePath="/" /></ItemGroup>
+  <ItemGroup><InternalsVisibleTo Include="ChatGPTWebSdk.Tests" /><InternalsVisibleTo Include="ChatGPTWebSdk.Cli" /></ItemGroup>
+</Project>
