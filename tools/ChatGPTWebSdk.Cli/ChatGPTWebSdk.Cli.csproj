@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ChatGPTWebSdk\ChatGPTWebSdk.csproj" />
+    <ProjectReference Include="..\..\src\ChatGPTWebSdk.OpenAI\ChatGPTWebSdk.OpenAI.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);OPENAI001;OPENAI002</NoWarn>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

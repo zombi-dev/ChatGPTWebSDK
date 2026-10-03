@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>OpenAI</AssemblyName>
+    <RootNamespace>OpenAI</RootNamespace>
+    <PackageId>ChatGPTWebSdk.OpenAI</PackageId>
+    <Version>2.14.0-web.1</Version>
+    <AssemblyVersion>2.14.0.0</AssemblyVersion>
+    <Description>OpenAI .NET public clients with an in-process ChatGPT web HTTP transport.</Description>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <NoWarn>$(NoWarn);0618;0169;OPENAI001;OPENAI002;SCME0001;SCME0002</NoWarn>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../third_party/openai-dotnet/OpenAI/src/**/*.cs" LinkBase="Upstream" />
+    <Compile Include="../../third_party/openai-dotnet/OpenAI.Responses/src/**/*.cs" LinkBase="Upstream/Responses" />
+    <ProjectReference Include="../ChatGPTWebSdk/ChatGPTWebSdk.csproj" />
+    <ProjectReference Include="../ChatGPTWebSdk.Browser/ChatGPTWebSdk.Browser.csproj" />
+    <PackageReference Include="System.ClientModel" Version="1.15.0" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="10.0.11" />
+    <PackageReference Include="System.Net.ServerSentEvents" Version="10.0.11" />
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <None Include="../../third_party/openai-dotnet/LICENSE" Pack="true" PackagePath="licenses/" />
+  </ItemGroup>
+</Project>
