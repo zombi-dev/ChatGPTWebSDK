@@ -1,0 +1,64 @@
+name: Build
+run-name: "Build after tests #${{ github.event.workflow_run.id }}"
+on:
+  workflow_run:
+    workflows: [Tests]
+    types: [completed]
+permissions:
+  contents: read
+jobs:
+  build:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event != 'pull_request' && github.event.workflow_run.head_repository.full_name == github.repository
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win-x64
+          - os: ubuntu-latest
+            platform: linux-x64
+          - os: macos-15-intel
+            platform: osx-x64
+          - os: macos-15
+            platform: osx-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+      - name: Build SDK, extensions, and pinned browser bundle
+        shell: pwsh
+        run: ./build.ps1 -SkipTests -BundleBrowser -BuildRoot artifacts/build
+      - name: Validate Firefox extension
+        if: matrix.platform == 'linux-x64'
+        run: npx --yes web-ext@10.7.0 lint --source-dir artifacts/extensions/firefox --warnings-as-errors
+      - name: Upload platform browser bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: browser-${{ matrix.platform }}
+          path: |
+            artifacts/release/ChatGPTWebSdk-Bundle-${{ matrix.platform }}-*.zip
+            artifacts/release/ChatGPTWebSdk-Bundle-${{ matrix.platform }}-*.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+      - name: Upload common SDK and extension assets
+        if: matrix.platform == 'linux-x64'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-common
+          path: |
+            artifacts/release/*
+            !artifacts/release/ChatGPTWebSdk-Bundle-*
+            !artifacts/release/SHA256SUMS.txt
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14

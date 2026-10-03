@@ -203,11 +203,19 @@ public sealed class ModernFeaturesTests
     }
 
     [Theory]
-    [InlineData(false, true)]
-    [InlineData(true, true)]
-    [InlineData(false, false)]
-    [InlineData(true, false)]
-    public async Task Official_image_generation_and_edit_clients_return_downloaded_image_bytes(bool edit, bool finalText)
+    [InlineData(false, true, "normal")]
+    [InlineData(true, true, "normal")]
+    [InlineData(false, false, "normal")]
+    [InlineData(true, false, "normal")]
+    [InlineData(false, true, "project")]
+    [InlineData(true, true, "project")]
+    [InlineData(false, false, "project")]
+    [InlineData(true, false, "project")]
+    [InlineData(false, true, "temporary")]
+    [InlineData(true, true, "temporary")]
+    [InlineData(false, false, "temporary")]
+    [InlineData(true, false, "temporary")]
+    public async Task Official_image_generation_and_edit_clients_return_downloaded_image_bytes(bool edit, bool finalText, string context)
     {
         JsonObject? turn = null;
         using var handler = new RecordingHandler(async (request, ct) =>
@@ -235,11 +243,13 @@ public sealed class ModernFeaturesTests
             }
             return new(HttpStatusCode.NotFound);
         });
-        using var runtime = Runtime(handler); var images = runtime.CreateClient().GetImageClient("fixture-model");
+        using var runtime = Runtime(handler); var images = runtime.CreateClient(projectId: context == "project" ? "g-p-synthetic-project" : null, temporaryChat: context == "temporary").GetImageClient("fixture-model");
         var result = edit ? await images.GenerateImageEditAsync(new MemoryStream(Png), "pixel.png", "Make it blue") : await images.GenerateImageAsync("A blue circle");
         Assert.Equal(Png, result.Value.ImageBytes.ToArray());
         Assert.Equal(finalText ? "assistant-generated" : "image-tool", (await runtime.Web.GetStateAsync(Scope)).ParentMessageId);
         if (edit) Assert.Equal("multimodal_text", turn!["messages"]![0]!["content"]!["content_type"]!.GetValue<string>());
+        if (context == "project") Assert.Equal("g-p-synthetic-project", turn!["gizmo_id"]!.GetValue<string>());
+        if (context == "temporary") Assert.True(turn!["history_and_training_disabled"]!.GetValue<bool>());
     }
 
     [Fact]

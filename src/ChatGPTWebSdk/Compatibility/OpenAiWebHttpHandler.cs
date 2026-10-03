@@ -65,6 +65,7 @@ public sealed class OpenAiWebHttpHandler(OpenAiWebAdapter adapter, Func<string, 
         if (path is "/images/generations" or "/images/edits" && verb == "POST") return await ImageAsync(scope, path, request, ct).ConfigureAwait(false);
         if (verb == "POST" && path is "/chat/completions" or "/responses")
         {
+            var generation = GenerationAdapter(request);
             var body = await Body(request, ct).ConfigureAwait(false);
             if (body["conversation"] is not null && body["previous_response_id"] is not null) throw new ArgumentException("conversation and previous_response_id cannot be combined.");
             if (thread is null && path == "/responses" && body["previous_response_id"]?.GetValue<string>() is { } previous)
@@ -84,7 +85,7 @@ public sealed class OpenAiWebHttpHandler(OpenAiWebAdapter adapter, Func<string, 
             }
             if (body["stream"]?.GetValue<bool>() == true)
             {
-                var events = path == "/responses" ? adapter.ResponsesAsync(scope, body, ct) : adapter.ChatAsync(scope, body, ct);
+                var events = path == "/responses" ? generation.ResponsesAsync(scope, body, ct) : generation.ChatAsync(scope, body, ct);
                 var iterator = events.GetAsyncEnumerator(ct);
                 try
                 {
@@ -95,13 +96,21 @@ public sealed class OpenAiWebHttpHandler(OpenAiWebAdapter adapter, Func<string, 
                 }
                 catch { await iterator.DisposeAsync().ConfigureAwait(false); throw; }
             }
-            var turn = path == "/responses" ? await adapter.PrepareResponseAsync(scope, body, ct).ConfigureAwait(false) : await adapter.PrepareChatAsync(scope, body, ct).ConfigureAwait(false);
+            var turn = path == "/responses" ? await generation.PrepareResponseAsync(scope, body, ct).ConfigureAwait(false) : await generation.PrepareChatAsync(scope, body, ct).ConfigureAwait(false);
             var result = await adapter.Client.SendAsync(scope, turn, ct).ConfigureAwait(false);
             var output = path == "/responses" ? OpenAiWebAdapter.ResponseJson(result.Response) : OpenAiWebAdapter.ChatJson(result.Response);
             if (scope.ThreadId.StartsWith("conv_web_", StringComparison.Ordinal) && path == "/responses") output["conversation"] = new JsonObject { ["id"] = scope.ThreadId };
             return Json(output);
         }
         throw new UnsupportedWebFeatureException(verb + " " + path);
+    }
+
+    private OpenAiWebAdapter GenerationAdapter(HttpRequestMessage request)
+    {
+        var project = request.Headers.TryGetValues("X-ChatGPT-Project-Id", out var projectValues) ? projectValues.Single() : null;
+        bool? temporary = request.Headers.TryGetValues("X-ChatGPT-Temporary-Chat", out var temporaryValues)
+            ? bool.TryParse(temporaryValues.Single(), out var parsedTemporary) ? parsedTemporary : throw new ArgumentException("X-ChatGPT-Temporary-Chat must be true or false.") : null;
+        return adapter.WithContext(project, temporary);
     }
 
     private async Task<HttpResponseMessage> ConversationAsync(ConversationScope scope, string[] path, string verb, HttpRequestMessage request, CancellationToken ct)
@@ -205,7 +214,7 @@ public sealed class OpenAiWebHttpHandler(OpenAiWebAdapter adapter, Func<string, 
         if (body["n"]?.GetValue<int>() is { } n && n != 1) throw new UnsupportedWebFeatureException("multiple generated images");
         if (body["response_format"]?.GetValue<string>() is not (null or "b64_json")) throw new UnsupportedWebFeatureException("image URL response format");
         var prompt = body["prompt"]?.GetValue<string>() ?? throw new ArgumentException("Missing image prompt.");
-        var probe = await adapter.PrepareResponseAsync(scope, new JsonObject { ["model"] = body["model"]?.DeepClone(), ["input"] = "Generate an image: " + prompt }, ct).ConfigureAwait(false);
+        var probe = await GenerationAdapter(request).PrepareResponseAsync(scope, new JsonObject { ["model"] = body["model"]?.DeepClone(), ["input"] = "Generate an image: " + prompt }, ct).ConfigureAwait(false);
         WebUploadedFile? reference = null;
         if (referencePart is { } part)
         {
@@ -213,7 +222,7 @@ public sealed class OpenAiWebHttpHandler(OpenAiWebAdapter adapter, Func<string, 
             using var input = new MemoryStream(part.Bytes, false);
             reference = await adapter.UploadOwnedFileAsync(scope, input, new() { FileName = part.FileName ?? "image.png", MimeType = mime, Width = dimensions.Width, Height = dimensions.Height }, ct).ConfigureAwait(false);
         }
-        var turn = reference is null ? probe : new WebTurnRequest { Model = probe.Model, Messages = [reference.ToMessage("Edit this image: " + prompt)] };
+        var turn = reference is null ? probe : new WebTurnRequest { Model = probe.Model, Messages = [reference.ToMessage("Edit this image: " + prompt)], ProjectId = probe.ProjectId, GizmoId = probe.GizmoId, TemporaryChat = probe.TemporaryChat };
         var result = await adapter.Client.SendAsync(scope, turn, ct).ConfigureAwait(false);
         if (result.Response.Assets.Count == 0) throw new SdkException("ChatGPT returned no generated image for this turn.", "image_generation_unavailable", HttpStatusCode.UnprocessableEntity);
         var data = new JsonArray();

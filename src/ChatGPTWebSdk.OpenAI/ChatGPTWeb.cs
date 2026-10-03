@@ -40,6 +40,8 @@ public sealed class ChatGPTWebRuntimeOptions
     public IWebSentinelChallengeProvider? SentinelChallengeProvider { get; init; }
     public IWebRequirementsBodyProvider? RequirementsBodyProvider { get; init; }
     public IReadOnlyDictionary<string, string>? ModelAliases { get; init; }
+    public string? ProjectId { get; init; }
+    public bool TemporaryChat { get; init; }
     public TimeSpan RequestTimeout { get; init; } = TimeSpan.FromMinutes(10);
 }
 
@@ -62,6 +64,7 @@ public sealed class ChatGPTWebRuntime : IDisposable
         if (!Enum.IsDefined(options.Mode) || !Enum.IsDefined(options.HttpDriver)) throw new ArgumentOutOfRangeException(nameof(options), "Unknown web mode or HTTP driver.");
         if (options.Mode == ChatGPTWebMode.BrowserOnly) throw new NotSupportedException("Browser-only mode is reserved and is not implemented.");
         _options = options;
+        new WebChatContext { ProjectId = options.ProjectId, TemporaryChat = options.TemporaryChat }.ResolveGizmoId();
         if (options.RequestTimeout <= TimeSpan.Zero) throw new ArgumentException("RequestTimeout must be positive.");
         ClientKey = options.ClientKey ?? (options.Clients is { Count: 1 } single ? System.Linq.Enumerable.Single(single.Keys) :
             options.Clients is null ? Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant() : throw new ArgumentException("Set ClientKey when configuring multiple application users."));
@@ -72,7 +75,7 @@ public sealed class ChatGPTWebRuntime : IDisposable
         var transport = new ChatGptWebTransport(_http, options.Credentials, new() { BaseUri = options.BaseUri, Endpoints = options.Endpoints, SentinelSessionProvider = browser,
             SentinelChallengeProvider = options.SentinelChallengeProvider, RequirementsBodyProvider = options.RequirementsBodyProvider });
         Web = new(transport, options.ConversationStore ?? new FileConversationStore(options.SessionDirectory));
-        _compatibilityHttp = new(new OpenAiWebHttpHandler(new(Web, options.ModelAliases), ResolveScope)) { Timeout = options.RequestTimeout };
+        _compatibilityHttp = new(new OpenAiWebHttpHandler(new(Web, options.ModelAliases, new() { ProjectId = options.ProjectId, TemporaryChat = options.TemporaryChat }), ResolveScope)) { Timeout = options.RequestTimeout };
         _transport = new(_compatibilityHttp);
         ChatGPTWeb.RegisterTransport(_transport);
     }
@@ -82,13 +85,15 @@ public sealed class ChatGPTWebRuntime : IDisposable
         if (!_clients.TryGetValue(clientKey, out var scope)) throw new SdkException("Unknown application client key.", "authentication_required", System.Net.HttpStatusCode.Unauthorized);
         return threadId is null ? scope : new(scope.AccountId, scope.UserId, threadId);
     }
-    public OpenAIClientOptions CreateClientOptions(string? threadId = null)
+    public OpenAIClientOptions CreateClientOptions(string? threadId = null, string? projectId = null, bool? temporaryChat = null)
     {
+        new WebChatContext { ProjectId = projectId ?? _options.ProjectId, TemporaryChat = temporaryChat ?? _options.TemporaryChat }.ResolveGizmoId();
         var options = new OpenAIClientOptions { Transport = _transport, RetryPolicy = new ClientRetryPolicy(0), NetworkTimeout = _options.RequestTimeout };
         if (threadId is not null) options.AddPolicy(new ThreadPolicy(threadId), PipelinePosition.PerCall);
+        if (projectId is not null || temporaryChat is not null) options.AddPolicy(new ContextPolicy(projectId, temporaryChat), PipelinePosition.PerCall);
         return options;
     }
-    public OpenAIClient CreateClient(string? clientKey = null, string? threadId = null) => new(new System.ClientModel.ApiKeyCredential(clientKey ?? ClientKey), CreateClientOptions(threadId));
+    public OpenAIClient CreateClient(string? clientKey = null, string? threadId = null, string? projectId = null, bool? temporaryChat = null) => new(new System.ClientModel.ApiKeyCredential(clientKey ?? ClientKey), CreateClientOptions(threadId, projectId, temporaryChat));
     internal void Apply(ClientPipelineOptions options)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -106,6 +111,16 @@ public sealed class ChatGPTWebRuntime : IDisposable
     {
         public override void Process(PipelineMessage message, IReadOnlyList<PipelinePolicy> pipeline, int index) { message.Request.Headers.Set("X-ChatGPT-Thread-Id", thread); ProcessNext(message, pipeline, index); }
         public override ValueTask ProcessAsync(PipelineMessage message, IReadOnlyList<PipelinePolicy> pipeline, int index) { message.Request.Headers.Set("X-ChatGPT-Thread-Id", thread); return ProcessNextAsync(message, pipeline, index); }
+    }
+    private sealed class ContextPolicy(string? project, bool? temporary) : PipelinePolicy
+    {
+        private void Set(PipelineMessage message)
+        {
+            if (project is not null) message.Request.Headers.Set("X-ChatGPT-Project-Id", project);
+            if (temporary is not null) message.Request.Headers.Set("X-ChatGPT-Temporary-Chat", temporary.Value ? "true" : "false");
+        }
+        public override void Process(PipelineMessage message, IReadOnlyList<PipelinePolicy> pipeline, int index) { Set(message); ProcessNext(message, pipeline, index); }
+        public override ValueTask ProcessAsync(PipelineMessage message, IReadOnlyList<PipelinePolicy> pipeline, int index) { Set(message); return ProcessNextAsync(message, pipeline, index); }
     }
 }
 
@@ -132,11 +147,11 @@ public static class ChatGPTWeb
     }
     /// <summary>Initializes from the one string copied by the Chromium or Firefox authentication extension.</summary>
     public static ChatGPTWebRuntime Initialize(string authenticationString, string sessionDirectory = ".sessions",
-        string userId = "default", ChatGPTWebMode mode = ChatGPTWebMode.Hybrid, BrowserSentinelOptions? browser = null, string accountId = "default") =>
+        string userId = "default", ChatGPTWebMode mode = ChatGPTWebMode.Hybrid, BrowserSentinelOptions? browser = null, string accountId = "default", string? projectId = null, bool temporaryChat = false) =>
         Initialize(new ChatGPTWebRuntimeOptions
         {
             Credentials = new StaticWebCredentialProvider(accountId, WebAuthentication.Import(authenticationString)),
-            AccountId = accountId, UserId = userId, SessionDirectory = sessionDirectory, Mode = mode, Browser = browser ?? new()
+            AccountId = accountId, UserId = userId, SessionDirectory = sessionDirectory, Mode = mode, Browser = browser ?? new(), ProjectId = projectId, TemporaryChat = temporaryChat
         });
     public static void Configure(ChatGPTWebRuntime runtime) => Interlocked.Exchange(ref _current, runtime ?? throw new ArgumentNullException(nameof(runtime)));
     internal static void Unconfigure(ChatGPTWebRuntime runtime) => Interlocked.CompareExchange(ref _current, null, runtime);

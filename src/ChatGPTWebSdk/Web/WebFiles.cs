@@ -12,6 +12,8 @@ public sealed class WebFileUploadOptions
     public int Height { get; init; }
     public bool StoreInLibrary { get; init; }
     public bool IndexForRetrieval { get; init; }
+    public string? EntrySurface { get; init; }
+    public string? LibraryPersistenceMode { get; init; }
     public string Purpose { get; init; } = "user_data";
     public long MaxBytes { get; init; } = 64 * 1024 * 1024;
 }
@@ -30,14 +32,17 @@ public sealed partial class ChatGptWebTransport
             if (buffer.Length + count > options.MaxBytes) throw new ArgumentException("Upload exceeds MaxBytes.");
             await buffer.WriteAsync(bytes.AsMemory(0, count), ct).ConfigureAwait(false);
         }
-        var creation = await SendJsonAsync(account, HttpMethod.Post, _options.Endpoints.Files, new JsonObject
+        var creationBody = new JsonObject
         {
             ["file_name"] = options.FileName, ["file_size"] = buffer.Length, ["mime_type"] = options.MimeType,
             ["client_resolved_mime_type"] = options.MimeType, ["mime_resolution_source"] = "user_provided",
             ["use_case"] = "multimodal", ["store_in_library"] = options.StoreInLibrary,
             ["reset_rate_limits"] = false, ["supports_direct_azure_multipart"] = true,
             ["timezone_offset_min"] = _options.Endpoints.ConversationDefaults["timezone_offset_min"]?.DeepClone() ?? JsonValue.Create(0)
-        }, ct).ConfigureAwait(false);
+        };
+        if (options.EntrySurface is { } surface) creationBody["entry_surface"] = surface;
+        if (options.LibraryPersistenceMode is { } persistence) creationBody["library_persistence_mode"] = persistence;
+        var creation = await SendJsonAsync(account, HttpMethod.Post, _options.Endpoints.Files, creationBody, ct).ConfigureAwait(false);
         var id = creation["file_id"]?.GetValue<string>() ?? throw new SdkException("Upload response has no file ID.", "unsupported_file_response");
         var upload = AssetUri(creation["upload_url"]?.GetValue<string>() ?? throw new SdkException("Upload response has no URL.", "unsupported_file_response"));
         if (upload.Authority == _options.BaseUri.Authority) throw new SdkException("Expected an external signed upload URL.", "unsupported_file_response");
@@ -55,6 +60,8 @@ public sealed partial class ChatGptWebTransport
         var processBody = new JsonObject { ["file_id"] = id, ["file_name"] = options.FileName, ["mime_type"] = options.MimeType,
             ["use_case"] = "multimodal", ["index_for_retrieval"] = options.IndexForRetrieval,
             ["metadata"] = new JsonObject { ["store_in_library"] = options.StoreInLibrary } };
+        if (options.EntrySurface is { } processSurface) processBody["entry_surface"] = processSurface;
+        if (options.LibraryPersistenceMode is { } processPersistence) processBody["library_persistence_mode"] = processPersistence;
         using (var request = Build(credentials, HttpMethod.Post, _options.Endpoints.ProcessUpload, processBody))
         using (var response = await http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false))
         {

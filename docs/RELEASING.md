@@ -1,24 +1,30 @@
-# Builds and releases
+# Tests, builds and releases
 
-`VERSION` is the shared three-part release version for all SDK NuGet packages, tools and browser extensions. Keep both `extensions/chatgpt-auth/manifest.*.json` files and its `package.json` synchronized with that value. The replacement's OpenAI assembly version remains `2.14.0.0` for the pinned upstream C# surface.
+`VERSION` is the shared three-part version for SDK packages, tools and browser extensions. Synchronize both extension manifests and their package.json. The upstream OpenAI assembly version remains `2.14.0.0`.
 
-Every push to a branch and every pull request runs `.github/workflows/build-release.yml`. The build validates that the commit title or body mentions the current version, runs the SDK and extension tests, validates the Firefox package, builds all artifacts, and uploads a downloadable Actions artifact. A successful push to `main` additionally creates a GitHub release tagged `vVERSION` with:
+Three separate workflow files run in sequence:
 
-- All three NuGet packages.
-- A ZIP containing the SDK DLLs and their runtime dependencies.
-- A ZIP containing the HTTP proxy and its dependencies.
+1. **Tests** (`.github/workflows/tests.yml`) runs on every branch push, pull request and manual dispatch. It validates the version in the commit title/body and runs extension and SDK tests on Windows x64, Linux x64, Intel macOS and Apple Silicon macOS. The gate requires at least 798 passing SDK cases, 331 beyond the v1.0.0 baseline. Tests compile their dependencies; release asset builds wait for the complete successful test workflow.
+2. **Build** (`.github/workflows/build.yml`) starts only after successful repository tests. It checks out the exact tested SHA, builds SDK packages and extensions, validates Firefox and downloads Chromium through pinned Microsoft.Playwright 1.63.0. Four platform jobs package their matching browser and driver, then check the actual native launcher headlessly in automatic and software rendering modes. Pull request runs do not trigger this workflow chain. Branch pushes produce downloadable Actions artifacts.
+3. **Release** (`.github/workflows/release.yml`) starts after a successful Build. It independently checks the linked test run's workflow, repository, conclusion, branch and commit. Only a tested `main` commit publishes. It downloads assets from that specific Build run, requires every asset, generates checksums and creates `vVERSION`.
+
+Every release attaches 13 assets:
+
+- Three NuGet packages: ChatGPTWebSdk, ChatGPTWebSdk.Browser, ChatGPTWebSdk.OpenAI.
+- SDK DLL and proxy ZIPs with dependencies and all platform Playwright drivers.
 - Chromium and Firefox extension ZIPs and an unsigned Firefox XPI.
-- `SHA256SUMS.txt` for the binary assets.
+- Four complete SDK/browser bundles: Windows x64 ZIP; Linux x64, Intel macOS and Apple Silicon macOS tar.gz.
+- SHA256SUMS.txt covering the 12 binary assets.
 
-The SDK/proxy bundles include the Playwright driver but no browser. Libraries target .NET 8; the proxy/tools target .NET 10. The workflow installs both runtime families and Node 24. Actions are pinned to their reviewed commit SHAs. The release job alone receives write access to repository contents.
+Complete bundles include a .NET 8 example, SDK DLLs, the optional .NET 10 proxy and Chromium. Tar preserves Unix executable permissions and macOS application symlinks. Browser and driver licenses/notices are included. Linux requires Chromium's system libraries. Bundles contain no HARs, user profiles or credentials.
 
-To release an update, complete these steps:
+To release an update:
 
-1. Bump `VERSION`, both extension manifests, and the extension `package.json` once for the update.
-2. Run `./build.ps1 -BuildRoot artifacts/build` and verify the requested behavior.
-3. Commit with the new version in the title or body, for example `v1.0.1: Fix session import`. Follow the exact co-author trailer rule in `AGENTS.md`.
-4. Push `main` when the user authorizes pushing. The workflow publishes the release after validation succeeds.
+1. Bump VERSION and the extension manifests/package.json once.
+2. Run `./build.ps1 -BuildRoot artifacts/build -BundleBrowser`, verify the requested behavior and inspect archives. Tests run before artifact builds; `-SkipTests` is used by the gated CI Build workflow.
+3. Commit with the version in the title or body and AGENTS.md's exact co-author trailer.
+4. Push main when the user authorizes it. The three workflows handle testing, builds and publication.
 
-Running the same workflow again for the same commit uploads replacement assets to the same release. A version already tagged at another commit is rejected; bump the version for a new update. Commits without a version fail validation instead of silently producing an unversioned release.
+A version tagged at another commit is rejected. An immutable release for the same tested commit and complete asset set is preserved on a rerun. New updates require a new version. v1.0.0 was already immutable when the browser/project follow-up was requested, so that work is released as v1.1.0.
 
-`workflow_dispatch` can retry a committed release manually. No NuGet registry or browser store publication is configured. Firefox permanent installation requires Mozilla signing outside this unsigned development/release packaging flow.
+Dispatch Tests manually to restart the chain. Actions use pinned SHAs. Only Release receives repository contents write permission. No NuGet registry or browser store publication is configured. Permanent installation in normal Firefox requires Mozilla signing.

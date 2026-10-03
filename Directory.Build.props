@@ -4,6 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Deterministic>true</Deterministic>
+    <PlaywrightPlatform>all</PlaywrightPlatform>
     <Version>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)VERSION').Trim())</Version>
     <RepositoryUrl>https://github.com/zombi-dev/ChatGPTWebSDK</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

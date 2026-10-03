@@ -8,19 +8,35 @@ using ChatGPTWebSdk.Web;
 namespace ChatGPTWebSdk.Compatibility;
 
 /// <summary>Maps observed web operations and rejects controls with no equivalent web behavior.</summary>
-public sealed class OpenAiWebAdapter(ChatGptWebClient client, IReadOnlyDictionary<string, string>? modelAliases = null)
+public sealed class OpenAiWebAdapter(ChatGptWebClient client, IReadOnlyDictionary<string, string>? modelAliases = null, WebChatContext? defaultContext = null)
 {
     public ChatGptWebClient Client => client;
+    public OpenAiWebAdapter WithContext(string? projectId = null, bool? temporaryChat = null) =>
+        new(client, modelAliases, (defaultContext ?? new()) with { ProjectId = projectId ?? defaultContext?.ProjectId, TemporaryChat = temporaryChat ?? defaultContext?.TemporaryChat ?? false });
+    private WebChatContext Context(JsonObject body)
+    {
+        var context = defaultContext ?? new();
+        if (body["store"] is { } store)
+        {
+            var temporary = !store.GetValue<bool>();
+            if (context.TemporaryChat && !temporary) throw new ArgumentException("store=true conflicts with the configured temporary chat context.");
+            context = context with { TemporaryChat = temporary || context.TemporaryChat };
+        }
+        context.ResolveGizmoId();
+        return context;
+    }
     public async Task<WebTurnRequest> PrepareResponseAsync(ConversationScope scope, JsonObject body, CancellationToken ct = default)
     {
         CheckFields(body, ["model", "input", "stream", "conversation", "previous_response_id", "store", "reasoning"]);
+        var context = Context(body);
+        await client.ValidateContextAsync(scope, context, ct).ConfigureAwait(false);
         var conversationNode = body["conversation"];
         var conversationId = conversationNode is JsonObject obj ? obj["id"]?.GetValue<string>() : conversationNode?.GetValue<string>();
         var previous = body["previous_response_id"]?.GetValue<string>();
         if (conversationId is not null && previous is not null) throw new ArgumentException("conversation and previous_response_id cannot be combined.");
         var model = Model(body);
         var thinking = Reasoning(body["reasoning"]);
-        if (scope.ThreadId.StartsWith("conv_web_", StringComparison.Ordinal) && body["store"]?.GetValue<bool>() == false)
+        if (scope.ThreadId.StartsWith("conv_web_", StringComparison.Ordinal) && context.TemporaryChat)
             throw new UnsupportedWebFeatureException("temporary chats within a persistent Conversations API resource; use a separate thread");
         // Validate unsupported input before linking anything or making a network request.
         var messages = await ParseResponseInputAsync(scope, body["input"], ct).ConfigureAwait(false);
@@ -30,12 +46,13 @@ public sealed class OpenAiWebAdapter(ChatGptWebClient client, IReadOnlyDictionar
             if (state.ConversationId is null) await client.LinkAsync(scope, conversationId, ct).ConfigureAwait(false);
             else if (state.ConversationId != conversationId) throw new SdkException("The requested conversation belongs to a different binding. Select another thread ID.", "conversation_binding_conflict", HttpStatusCode.Conflict);
         }
-        return new() { Model = model, Messages = messages, PreviousResponseId = previous, TemporaryChat = body["store"]?.GetValue<bool>() == false, ThinkingEffort = thinking };
+        return new() { Model = model, Messages = messages, PreviousResponseId = previous, TemporaryChat = context.TemporaryChat, ProjectId = context.ProjectId, GizmoId = context.GizmoId, ThinkingEffort = thinking };
     }
 
     public WebTurnRequest PrepareChat(JsonObject body)
     {
-        CheckFields(body, ["model", "messages", "stream", "n", "stream_options", "reasoning_effort"]);
+        CheckFields(body, ["model", "messages", "stream", "n", "stream_options", "reasoning_effort", "store"]);
+        var context = Context(body);
         ValidateStreamOptions(body["stream_options"]);
         if (body["n"]?.GetValue<int>() is { } n && n != 1) throw new UnsupportedWebFeatureException("n other than 1");
         if (body["messages"] is not JsonArray array || array.Count == 0) throw new ArgumentException("messages must be a nonempty array.");
@@ -50,12 +67,14 @@ public sealed class OpenAiWebAdapter(ChatGptWebClient client, IReadOnlyDictionar
         }).ToArray();
         var appended = history.All(m => m.Role == "user");
         return new() { Model = Model(body), Messages = appended ? history.Select(m => WebInputMessage.User(m.Text)).ToArray() : [], ExpectedHistory = appended ? null : history,
-            ThinkingEffort = ReasoningEffort(body["reasoning_effort"]?.GetValue<string>()) };
+            ThinkingEffort = ReasoningEffort(body["reasoning_effort"]?.GetValue<string>()), TemporaryChat = context.TemporaryChat, ProjectId = context.ProjectId, GizmoId = context.GizmoId };
     }
 
     public async Task<WebTurnRequest> PrepareChatAsync(ConversationScope scope, JsonObject body, CancellationToken ct = default)
     {
-        CheckFields(body, ["model", "messages", "stream", "n", "stream_options", "reasoning_effort"]);
+        CheckFields(body, ["model", "messages", "stream", "n", "stream_options", "reasoning_effort", "store"]);
+        var context = Context(body);
+        await client.ValidateContextAsync(scope, context, ct).ConfigureAwait(false);
         ValidateStreamOptions(body["stream_options"]);
         if (body["n"]?.GetValue<int>() is { } n && n != 1) throw new UnsupportedWebFeatureException("n other than 1");
         var model = Model(body);
@@ -73,7 +92,7 @@ public sealed class OpenAiWebAdapter(ChatGptWebClient client, IReadOnlyDictionar
         }
         bool append = messages.All(m => m.Role == "user");
         return new() { Model = model, Messages = append ? messages.Select(m => new WebInputMessage(m.Id, m.Role, m.Text) { Content = m.Content, Metadata = m.Metadata }).ToArray() : [], ExpectedHistory = append ? null : messages,
-            ThinkingEffort = thinking };
+            ThinkingEffort = thinking, TemporaryChat = context.TemporaryChat, ProjectId = context.ProjectId, GizmoId = context.GizmoId };
     }
 
     private static void ValidateStreamOptions(JsonNode? options)

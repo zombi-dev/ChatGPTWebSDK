@@ -8,6 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="Generated/openapi-operations.json" />
+    <EmbeddedResource Include="Generated/web-operations.json" />
     <None Include="../../README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 </Project>

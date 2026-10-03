@@ -21,6 +21,7 @@ public sealed class WebTurnRequest
     public bool TemporaryChat { get; init; }
     public string? ThinkingEffort { get; init; }
     public string? GizmoId { get; init; }
+    public string? ProjectId { get; init; }
 }
 
 public sealed record WebChatResult(WebResponseRecord Response)
@@ -61,7 +62,9 @@ public sealed class ChatGptWebClient(ChatGptWebTransport transport, IConversatio
         if (lease.State.TemporaryChat == true)
         {
             await lease.DisposeAsync().ConfigureAwait(false);
-            return await _temporary.AcquireAsync(scope, ct).ConfigureAwait(false);
+            var temporaryLease = await _temporary.AcquireAsync(scope, ct).ConfigureAwait(false);
+            temporaryLease.State.TemporaryChat = true;
+            return temporaryLease;
         }
         return lease;
     }
@@ -79,8 +82,10 @@ public sealed class ChatGptWebClient(ChatGptWebTransport transport, IConversatio
     public async IAsyncEnumerable<WebChatEvent> StreamAsync(ConversationScope scope, WebTurnRequest request,
         [EnumeratorCancellation] CancellationToken ct = default)
     {
+        var requestedGizmo = new WebChatContext { ProjectId = request.ProjectId, GizmoId = request.GizmoId, TemporaryChat = request.TemporaryChat }.ResolveGizmoId();
         await using var lease = await LeaseAsync(scope, request.TemporaryChat, ct).ConfigureAwait(false);
         var state = lease.State;
+        ValidateContext(state, requestedGizmo, request.TemporaryChat);
         state.TemporaryChat = request.TemporaryChat;
         if (state.RequiresReconciliation) throw new ConversationReconciliationException();
         if (request.PreviousResponseId is not null && request.PreviousResponseId != state.LastResponseId)
@@ -121,8 +126,10 @@ public sealed class ChatGptWebClient(ChatGptWebTransport transport, IConversatio
             else body.Remove("temporary_chat_requests_personalization");
         }
         if (request.ThinkingEffort is not null) body["thinking_effort"] = request.ThinkingEffort;
-        if (request.GizmoId is not null) { body["gizmo_id"] = request.GizmoId; body["conversation_mode"] = new JsonObject { ["kind"] = "gizmo_interaction", ["gizmo_id"] = request.GizmoId }; }
+        var gizmo = requestedGizmo ?? state.GizmoId;
+        if (gizmo is not null) { body["gizmo_id"] = gizmo; body["conversation_mode"] = new JsonObject { ["kind"] = "gizmo_interaction", ["gizmo_id"] = gizmo }; }
         using var turn = await transport.OpenTurnAsync(scope.AccountId, body, ct).ConfigureAwait(false);
+        state.GizmoId = gizmo;
         state.RequiresReconciliation = true;
         state.PendingMessages = messages.ToList();
         state.PreviousAssistantBeforePendingTurn = request.Action == WebTurnAction.Regenerate ? state.History.LastOrDefault(m => m.Role == "assistant")?.Id : null;
@@ -196,6 +203,24 @@ public sealed class ChatGptWebClient(ChatGptWebTransport transport, IConversatio
         return JsonSerializer.Deserialize<ConversationState>(JsonSerializer.Serialize(lease.State))!;
     }
 
+    public async Task ValidateContextAsync(ConversationScope scope, WebChatContext context, CancellationToken ct = default)
+    {
+        var id = context.ResolveGizmoId();
+        var state = await GetStateAsync(scope, ct).ConfigureAwait(false);
+        if (state.TemporaryChat is { } temporary && temporary != context.TemporaryChat)
+            throw new SdkException("Temporary and persistent chats require different thread IDs.", "conversation_mode_conflict", HttpStatusCode.Conflict);
+        ValidateContext(state, id, context.TemporaryChat);
+    }
+
+    private static void ValidateContext(ConversationState state, string? requestedGizmo, bool temporary)
+    {
+        if (temporary && state.ProjectId is not null)
+            throw new SdkException("Temporary chats cannot belong to projects.", "temporary_project_conflict", HttpStatusCode.BadRequest);
+        if (requestedGizmo is not null && (state.GizmoId is not null && state.GizmoId != requestedGizmo
+            || state.GizmoId is null && (state.ConversationId is not null || state.History.Count > 0)))
+            throw new SdkException("This thread belongs to another ChatGPT project or chat context. Select a new thread ID.", "project_binding_conflict", HttpStatusCode.Conflict);
+    }
+
     public async Task<WebResponseRecord> GetResponseAsync(ConversationScope scope, string id, CancellationToken ct = default)
     {
         await using var lease = await LeaseAsync(scope, null, ct).ConfigureAwait(false);
@@ -226,10 +251,14 @@ public sealed class ChatGptWebClient(ChatGptWebTransport transport, IConversatio
         var state = lease.State;
         if (state.RequiresReconciliation) throw new ConversationReconciliationException();
         var id = state.ConversationId ?? throw new ArgumentException("No linked conversation.");
+        if (state.TemporaryChat == true && (title is not null || archived is not null))
+            throw new UnsupportedWebFeatureException("renaming or archiving temporary chats, which have no persistent history resource");
         if (title is not null) await transport.RenameConversationAsync(scope.AccountId, id, title, ct).ConfigureAwait(false);
         if (archived is not null) await transport.ArchiveConversationAsync(scope.AccountId, id, archived.Value, ct).ConfigureAwait(false);
         if (!delete) return;
-        await transport.DeleteConversationAsync(scope.AccountId, id, ct).ConfigureAwait(false);
+        try { await transport.DeleteConversationAsync(scope.AccountId, id, ct).ConfigureAwait(false); }
+        catch (SdkException ex) when (state.TemporaryChat == true && ex.StatusCode == HttpStatusCode.NotFound)
+        { /* Temporary chats can already be absent from the backend's persistent history resource. Clear only the owned in-memory binding. */ }
         state.ConversationId = null; state.ParentMessageId = "client-created-root"; state.LastResponseId = null;
         state.History.Clear(); state.Responses.Clear(); state.PendingMessages.Clear(); state.PreviousAssistantBeforePendingTurn = null;
         await lease.SaveAsync(CancellationToken.None).ConfigureAwait(false);
@@ -241,8 +270,8 @@ public sealed class ChatGptWebClient(ChatGptWebTransport transport, IConversatio
         if (lease.State.ConversationId is not null || lease.State.RequiresReconciliation || lease.State.History.Count > 0)
             throw new SdkException("This thread is already bound. Select a new thread ID before linking another conversation.", "thread_already_linked", HttpStatusCode.Conflict);
         var remote = await transport.GetConversationAsync(scope.AccountId, conversationId, ct).ConfigureAwait(false);
-        await store.ClaimRemoteConversationAsync(scope, conversationId, ct).ConfigureAwait(false);
         ImportBranch(lease.State, remote, conversationId);
+        await store.ClaimRemoteConversationAsync(scope, conversationId, ct).ConfigureAwait(false);
         await lease.SaveAsync(ct).ConfigureAwait(false);
     }
 
@@ -310,6 +339,16 @@ public sealed class ChatGptWebClient(ChatGptWebTransport transport, IConversatio
     private static void ImportBranch(ConversationState state, System.Text.Json.Nodes.JsonNode remote, string id)
     {
         var nodes = Branch(remote);
+        if (remote["is_temporary_chat"]?.GetValue<bool>() == true && state.TemporaryChat != true)
+            throw new SdkException("A temporary conversation cannot be imported into persistent history.", "conversation_mode_conflict", HttpStatusCode.Conflict);
+        var remoteGizmo = remote["gizmo_id"]?.GetValue<string>() ?? remote["conversation_mode"]?["gizmo_id"]?.GetValue<string>();
+        if (remoteGizmo is not null)
+        {
+            new WebChatContext { GizmoId = remoteGizmo, TemporaryChat = state.TemporaryChat == true }.ResolveGizmoId();
+            if (state.GizmoId is not null && state.GizmoId != remoteGizmo)
+                throw new SdkException("The remote conversation belongs to a different project or gizmo.", "project_binding_conflict", HttpStatusCode.Conflict);
+            state.GizmoId = remoteGizmo;
+        }
         state.ConversationId = id;
         state.ParentMessageId = remote["current_node"]!.GetValue<string>();
         state.History = nodes.Select(n => n["message"]).Where(m => m is not null)
