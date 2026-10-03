@@ -81,7 +81,7 @@ app.MapMethods("/v1/{**path}", ["GET", "POST", "DELETE", "PATCH", "PUT"], async 
 app.MapGet("/web/binding", async Task<IResult> (HttpContext ctx) =>
 {
     var state = await client.GetStateAsync(Scope(ctx), ctx.RequestAborted);
-    return Results.Json(new { state.Scope, state.ConversationId, state.ParentMessageId, state.LastResponseId, state.RequiresReconciliation, state.Revision, messageCount = state.History.Count });
+    return Results.Json(new { state.Scope, state.ConversationId, state.ParentMessageId, state.LastResponseId, state.RequiresReconciliation, state.TemporaryChat, state.ProjectId, state.GizmoId, state.Revision, messageCount = state.History.Count });
 });
 app.MapPost("/web/link", async Task<IResult> (HttpContext ctx) =>
 {
