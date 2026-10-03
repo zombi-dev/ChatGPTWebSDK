@@ -1,0 +1,38 @@
+using Microsoft.TypeSpec.Generator.Customizations;
+
+namespace OpenAI.Administration;
+
+[CodeGenType("AuditLogActorServiceAccount")] internal partial class InternalAuditLogActorServiceAccount { }
+[CodeGenType("AuditLogActorUser")] internal partial class InternalAuditLogActorUser { }
+[CodeGenType("AuditLogActorApiKey")] internal partial class InternalAuditLogActorApiKey { }
+[CodeGenType("AuditLogActorSession")] internal partial class InternalAuditLogActorSession { }
+[CodeGenType("AuditLogActor")] internal partial class InternalAuditLogActor { }
+[CodeGenType("AuditLog")] internal partial class InternalAuditLog { }
+[CodeGenType("ListAuditLogsResponse")] internal partial class InternalListAuditLogsResponse { }
+[CodeGenType("Invite")] internal partial class InternalInvite { }
+[CodeGenType("InviteListResponse")] internal partial class InternalInviteListResponse { }
+[CodeGenType("InviteRequest")] internal partial class InternalInviteRequest { }
+[CodeGenType("InviteDeleteResponse")] internal partial class InternalInviteDeleteResponse { }
+[CodeGenType("User")] internal partial class InternalUser { }
+[CodeGenType("UserListResponse")] internal partial class InternalUserListResponse { }
+[CodeGenType("UserRoleUpdateRequest")] internal partial class InternalUserRoleUpdateRequest { }
+[CodeGenType("UserDeleteResponse")] internal partial class InternalUserDeleteResponse { }
+[CodeGenType("Project")] internal partial class InternalProject { }
+[CodeGenType("ProjectListResponse")] internal partial class InternalProjectListResponse { }
+[CodeGenType("ProjectCreateRequest")] internal partial class InternalProjectCreateRequest { }
+[CodeGenType("ProjectUpdateRequest")] internal partial class InternalProjectUpdateRequest { }
+[CodeGenType("DefaultProjectErrorResponse")] internal partial class InternalDefaultProjectErrorResponse { }
+[CodeGenType("ProjectUser")] internal partial class InternalProjectUser { }
+[CodeGenType("ProjectUserListResponse")] internal partial class InternalProjectUserListResponse { }
+[CodeGenType("ProjectUserCreateRequest")] internal partial class InternalProjectUserCreateRequest { }
+[CodeGenType("ProjectUserUpdateRequest")] internal partial class InternalProjectUserUpdateRequest { }
+[CodeGenType("ProjectUserDeleteResponse")] internal partial class InternalProjectUserDeleteResponse { }
+[CodeGenType("ProjectServiceAccount")] internal partial class InternalProjectServiceAccount { }
+[CodeGenType("ProjectServiceAccountListResponse")] internal partial class InternalProjectServiceAccountListResponse { }
+[CodeGenType("ProjectServiceAccountCreateRequest")] internal partial class InternalProjectServiceAccountCreateRequest { }
+[CodeGenType("ProjectServiceAccountCreateResponse")] internal partial class InternalProjectServiceAccountCreateResponse { }
+[CodeGenType("ProjectServiceAccountApiKey")] internal partial class InternalProjectServiceAccountApiKey { }
+[CodeGenType("ProjectServiceAccountDeleteResponse")] internal partial class InternalProjectServiceAccountDeleteResponse { }
+[CodeGenType("ProjectApiKey")] internal partial class InternalProjectApiKey { }
+[CodeGenType("ProjectApiKeyListResponse")] internal partial class InternalProjectApiKeyListResponse { }
+[CodeGenType("ProjectApiKeyDeleteResponse")] internal partial class InternalProjectApiKeyDeleteResponse { }
