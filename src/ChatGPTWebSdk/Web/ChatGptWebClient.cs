@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using ChatGPTWebSdk.Protocol;
 using ChatGPTWebSdk.Storage;
+using ChatGPTWebSdk.Mcp;
 
 namespace ChatGPTWebSdk.Web;
 
@@ -22,6 +23,9 @@ public sealed class WebTurnRequest
     public string? ThinkingEffort { get; init; }
     public string? GizmoId { get; init; }
     public string? ProjectId { get; init; }
+    public bool UseMcp { get; init; } = true;
+    internal IReadOnlyList<McpServerSelection>? McpSelections { get; init; }
+    internal bool InternalMcpTurn { get; init; }
 }
 
 public sealed record WebChatResult(WebResponseRecord Response)
@@ -37,6 +41,14 @@ public sealed record WebChatEvent(WebStreamUpdate Update, WebResponseRecord? Res
 
 public sealed class ChatGptWebClient(ChatGptWebTransport transport, IConversationStore store)
 {
+    private readonly McpConversationBridge? _mcp;
+    public McpConversationOptions? Mcp => _mcp?.Options;
+    public ChatGptWebClient(ChatGptWebTransport transport, IConversationStore store, McpConversationOptions mcp) : this(transport, store)
+    {
+        ArgumentNullException.ThrowIfNull(mcp);
+        mcp.Validate();
+        if (mcp.Servers.Count > 0) _mcp = new(this, mcp);
+    }
     public ChatGptWebTransport Transport => transport;
     public IConversationStore Store => store;
     public async Task<WebChatResult> EditAsync(ConversationScope scope, string messageId, string text, string model, CancellationToken ct = default) =>
@@ -82,21 +94,52 @@ public sealed class ChatGptWebClient(ChatGptWebTransport transport, IConversatio
     public async IAsyncEnumerable<WebChatEvent> StreamAsync(ConversationScope scope, WebTurnRequest request,
         [EnumeratorCancellation] CancellationToken ct = default)
     {
+        // One lease spans the entire tool loop, including the time between remote generation turns.
+        await using var operation = await store.AcquireAsync(new(scope.AccountId, scope.UserId, "__sdk_operation_" + scope.StorageKey), ct).ConfigureAwait(false);
+        var events = _mcp is not null && request.UseMcp ? _mcp.StreamAsync(scope, request, ct) : StreamCoreAsync(scope, request, ct);
+        await foreach (var item in events.ConfigureAwait(false)) yield return item;
+    }
+
+    internal ValueTask<IConversationLease> AcquireMcpStateAsync(ConversationScope scope, CancellationToken ct, bool? temporary = null) => LeaseAsync(scope, temporary, ct);
+
+    /// <summary>Returns calls whose outcome is unknown. Never retry these calls without independent confirmation.</summary>
+    public async Task<IReadOnlyList<McpToolExecution>> GetPendingMcpToolCallsAsync(ConversationScope scope, CancellationToken ct = default) =>
+        (await GetStateAsync(scope, ct).ConfigureAwait(false)).McpExecutions.Where(c => c.Status is "executing" or "uncertain").ToArray();
+
+    /// <summary>Records an independently confirmed result without executing the tool again. The next MCP turn appends it.</summary>
+    public async Task ResolveMcpToolCallAsync(ConversationScope scope, string callId, JsonObject confirmedResult, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(confirmedResult);
+        if (confirmedResult.ToJsonString().Length > (Mcp?.MaxToolResultCharacters ?? 512 * 1024)) throw new ArgumentException("MCP result exceeds its configured limit.");
+        await using var operation = await store.AcquireAsync(new(scope.AccountId, scope.UserId, "__sdk_operation_" + scope.StorageKey), ct).ConfigureAwait(false);
+        await using var lease = await LeaseAsync(scope, null, ct).ConfigureAwait(false);
+        var call = lease.State.McpExecutions.SingleOrDefault(c => c.Id == callId) ?? throw new ArgumentException("Unknown MCP call ID.");
+        if (call.Status is not ("executing" or "uncertain")) throw new ArgumentException("This MCP call already has a confirmed result.");
+        call.Result = (JsonObject)confirmedResult.DeepClone(); call.Status = "completed";
+        await lease.SaveAsync(ct).ConfigureAwait(false);
+    }
+
+    internal async IAsyncEnumerable<WebChatEvent> StreamCoreAsync(ConversationScope scope, WebTurnRequest request,
+        [EnumeratorCancellation] CancellationToken ct = default)
+    {
         var requestedGizmo = new WebChatContext { ProjectId = request.ProjectId, GizmoId = request.GizmoId, TemporaryChat = request.TemporaryChat }.ResolveGizmoId();
         await using var lease = await LeaseAsync(scope, request.TemporaryChat, ct).ConfigureAwait(false);
         var state = lease.State;
         ValidateContext(state, requestedGizmo, request.TemporaryChat);
         state.TemporaryChat = request.TemporaryChat;
         if (state.RequiresReconciliation) throw new ConversationReconciliationException();
+        if (!request.InternalMcpTurn && state.McpExecutions.Any(c => c.Status is "executing" or "uncertain"))
+            throw new SdkException("An MCP call has an unknown outcome. Confirm it with ResolveMcpToolCallAsync before continuing.", "mcp_tool_outcome_unknown", HttpStatusCode.Conflict);
         if (request.PreviousResponseId is not null && request.PreviousResponseId != state.LastResponseId)
             throw new SdkException("previous_response_id must be the latest response in this account/user/thread. Use a separate linked thread to branch.", "response_lineage_conflict", HttpStatusCode.Conflict);
         IReadOnlyList<WebInputMessage> messages = request.Messages;
         if (request.ExpectedHistory is not null)
         {
             var expected = request.ExpectedHistory;
-            if (expected.Count < state.History.Count || state.History.Where((m, i) => m.Role != expected[i].Role || m.Text != expected[i].Text || !JsonNode.DeepEquals(m.Content, expected[i].Content)).Any())
+            var history = state.VisibleHistory ?? state.History;
+            if (expected.Count < history.Count || history.Where((m, i) => m.Role != expected[i].Role || m.Text != expected[i].Text || !JsonNode.DeepEquals(m.Content, expected[i].Content)).Any())
                 throw new SdkException("The supplied history does not match the linked conversation. Choose a new thread or send only the appended input through Responses.", "history_mismatch", HttpStatusCode.Conflict);
-            var tail = expected.Skip(state.History.Count).ToArray();
+            var tail = expected.Skip(history.Count).ToArray();
             if (tail.Length == 0 || tail.Any(m => m.Role != "user")) throw new UnsupportedWebFeatureException("history tail containing assistant, system, developer or tool messages");
             messages = tail.Select(m => WebInputMessage.User(m.Text) with { Content = m.Content, Metadata = m.Metadata }).ToArray();
         }
@@ -181,6 +224,11 @@ public sealed class ChatGptWebClient(ChatGptWebTransport transport, IConversatio
             state.ParentMessageId = response.MessageId;
             state.LastResponseId = response.Id;
             state.Responses.Add(response);
+            if (!request.InternalMcpTurn && state.VisibleHistory is { } visible)
+            {
+                visible.AddRange(input);
+                visible.Add(new(response.MessageId, "assistant", response.Text));
+            }
             state.PendingMessages.Clear();
             state.PreviousAssistantBeforePendingTurn = null;
             state.RequiresReconciliation = false;
@@ -261,6 +309,7 @@ public sealed class ChatGptWebClient(ChatGptWebTransport transport, IConversatio
         { /* Temporary chats can already be absent from the backend's persistent history resource. Clear only the owned in-memory binding. */ }
         state.ConversationId = null; state.ParentMessageId = "client-created-root"; state.LastResponseId = null;
         state.History.Clear(); state.Responses.Clear(); state.PendingMessages.Clear(); state.PreviousAssistantBeforePendingTurn = null;
+        state.VisibleHistory = null; state.McpExecutions.Clear();
         await lease.SaveAsync(CancellationToken.None).ConfigureAwait(false);
     }
 
@@ -326,7 +375,10 @@ public sealed class ChatGptWebClient(ChatGptWebTransport transport, IConversatio
     {
         var branch = Branch(remote);
         var ids = branch.Select(n => n["message"]?["id"]?.GetValue<string>()).ToHashSet();
-        if (state.PendingMessages.Any(m => !ids.Contains(m.Id)))
+        // ChatGPT can redact a hidden user's message while retaining its node on the current branch.
+        bool HiddenNodeOnBranch(WebInputMessage message) => message.Metadata?["is_visually_hidden_from_conversation"]?.GetValue<bool>() == true &&
+            remote["mapping"]?[message.Id] is { } node && branch.Any(n => ReferenceEquals(n, node));
+        if (state.PendingMessages.Any(m => !ids.Contains(m.Id) && !HiddenNodeOnBranch(m)))
             throw new SdkException("The remote branch does not contain every pending message ID. Resolve the remote branch before appending; no resend was attempted.", "pending_turn_not_found", HttpStatusCode.Conflict);
         var last = branch.LastOrDefault(n => n["message"] is not null)?["message"];
         if (state.PreviousAssistantBeforePendingTurn is { } previous && last?["id"]?.GetValue<string>() == previous)
