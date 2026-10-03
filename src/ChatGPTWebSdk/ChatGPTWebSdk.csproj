@@ -7,6 +7,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="ModelContextProtocol.Core" Version="2.2.0" />
     <EmbeddedResource Include="Generated/openapi-operations.json" />
     <EmbeddedResource Include="Generated/web-operations.json" />
     <None Include="../../README.md" Pack="true" PackagePath="/" />
