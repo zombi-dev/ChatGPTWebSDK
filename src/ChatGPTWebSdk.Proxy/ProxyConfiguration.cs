@@ -1,6 +1,7 @@
 using System.Text.Json;
 using ChatGPTWebSdk.Web;
 using ChatGPTWebSdk.Browser;
+using ChatGPTWebSdk.Mcp;
 
 namespace ChatGPTWebSdk.Proxy;
 
@@ -15,6 +16,7 @@ public sealed class ProxyConfiguration
     public List<ProxyClient> Clients { get; init; } = [];
     public string SessionDirectory { get; init; } = ".sessions";
     public Dictionary<string, string> ModelAliases { get; init; } = [];
+    public McpConversationOptions Mcp { get; init; } = new();
     public static ProxyConfiguration Load()
     {
         var path = Environment.GetEnvironmentVariable("CHATGPT_WEB_CONFIG");
@@ -57,5 +59,6 @@ public sealed class ProxyClient
     public required string AccountId { get; init; }
     public required string UserId { get; init; }
     public bool AllowConversationLinking { get; init; }
+    public List<string> McpServers { get; init; } = [];
 }
 
