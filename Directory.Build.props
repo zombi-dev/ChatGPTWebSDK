@@ -4,6 +4,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Deterministic>true</Deterministic>
+    <Version>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)VERSION').Trim())</Version>
+    <RepositoryUrl>https://github.com/zombi-dev/ChatGPTWebSDK</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <BaseOutputPath Condition="'$(ChatGPTWebBuildRoot)' != ''">$(ChatGPTWebBuildRoot)/$(MSBuildProjectName)/</BaseOutputPath>
   </PropertyGroup>
 </Project>
