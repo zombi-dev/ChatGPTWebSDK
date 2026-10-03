@@ -42,6 +42,8 @@ public sealed class ConversationState
     public string? LastResponseId { get; set; }
     public bool RequiresReconciliation { get; set; }
     public bool? TemporaryChat { get; set; }
+    public string? GizmoId { get; set; }
+    public string? ProjectId => GizmoId?.StartsWith("g-p-", StringComparison.Ordinal) == true ? GizmoId : null;
     public string? PreviousAssistantBeforePendingTurn { get; set; }
     public string? ConversationAlias { get; set; }
     public System.Text.Json.Nodes.JsonObject Metadata { get; set; } = new();
