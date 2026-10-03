@@ -14,6 +14,7 @@ using ChatGPTWebSdk.Compatibility;
 using ChatGPTWebSdk.Protocol;
 using ChatGPTWebSdk.Storage;
 using ChatGPTWebSdk.Web;
+using ChatGPTWebSdk.Mcp;
 
 namespace OpenAI;
 
@@ -42,6 +43,7 @@ public sealed class ChatGPTWebRuntimeOptions
     public IReadOnlyDictionary<string, string>? ModelAliases { get; init; }
     public string? ProjectId { get; init; }
     public bool TemporaryChat { get; init; }
+    public McpConversationOptions? Mcp { get; init; }
     public TimeSpan RequestTimeout { get; init; } = TimeSpan.FromMinutes(10);
 }
 
@@ -74,7 +76,8 @@ public sealed class ChatGPTWebRuntime : IDisposable
         var browser = options.SentinelSessionProvider ?? (options.Mode == ChatGPTWebMode.Hybrid ? new BrowserSentinelProvider(options.Browser) : null);
         var transport = new ChatGptWebTransport(_http, options.Credentials, new() { BaseUri = options.BaseUri, Endpoints = options.Endpoints, SentinelSessionProvider = browser,
             SentinelChallengeProvider = options.SentinelChallengeProvider, RequirementsBodyProvider = options.RequirementsBodyProvider });
-        Web = new(transport, options.ConversationStore ?? new FileConversationStore(options.SessionDirectory));
+        var store = options.ConversationStore ?? new FileConversationStore(options.SessionDirectory);
+        Web = options.Mcp is null ? new(transport, store) : new(transport, store, options.Mcp);
         _compatibilityHttp = new(new OpenAiWebHttpHandler(new(Web, options.ModelAliases, new() { ProjectId = options.ProjectId, TemporaryChat = options.TemporaryChat }), ResolveScope)) { Timeout = options.RequestTimeout };
         _transport = new(_compatibilityHttp);
         ChatGPTWeb.RegisterTransport(_transport);
@@ -154,6 +157,14 @@ public static class ChatGPTWeb
             AccountId = accountId, UserId = userId, SessionDirectory = sessionDirectory, Mode = mode, Browser = browser ?? new(), ProjectId = projectId, TemporaryChat = temporaryChat
         });
     public static void Configure(ChatGPTWebRuntime runtime) => Interlocked.Exchange(ref _current, runtime ?? throw new ArgumentNullException(nameof(runtime)));
+    /// <summary>Initializes extension authentication and registered MCP servers for automatic conversation tool calls.</summary>
+    public static ChatGPTWebRuntime Initialize(string authenticationString, McpConversationOptions mcp, string sessionDirectory = ".sessions",
+        string userId = "default", ChatGPTWebMode mode = ChatGPTWebMode.Hybrid, BrowserSentinelOptions? browser = null, string accountId = "default", string? projectId = null, bool temporaryChat = false) =>
+        Initialize(new ChatGPTWebRuntimeOptions
+        {
+            Credentials = new StaticWebCredentialProvider(accountId, WebAuthentication.Import(authenticationString)), Mcp = mcp,
+            AccountId = accountId, UserId = userId, SessionDirectory = sessionDirectory, Mode = mode, Browser = browser ?? new(), ProjectId = projectId, TemporaryChat = temporaryChat
+        });
     internal static void Unconfigure(ChatGPTWebRuntime runtime) => Interlocked.CompareExchange(ref _current, null, runtime);
     public static async Task<ChatGPTWebRuntime> InitializeFromHarAsync(string harPath, string sessionDirectory,
         string userId = "default", ChatGPTWebMode mode = ChatGPTWebMode.Hybrid, BrowserSentinelOptions? browser = null, CancellationToken ct = default)

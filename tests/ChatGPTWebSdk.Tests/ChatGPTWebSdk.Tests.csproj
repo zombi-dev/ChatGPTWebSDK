@@ -19,6 +19,7 @@
   <ItemGroup>
     <Using Include="Xunit" />
     <None Include="Fixtures/*.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Fixtures/*.mjs" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

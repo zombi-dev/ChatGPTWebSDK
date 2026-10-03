@@ -214,7 +214,7 @@ public sealed class OpenAiWebHttpHandler(OpenAiWebAdapter adapter, Func<string, 
         if (body["n"]?.GetValue<int>() is { } n && n != 1) throw new UnsupportedWebFeatureException("multiple generated images");
         if (body["response_format"]?.GetValue<string>() is not (null or "b64_json")) throw new UnsupportedWebFeatureException("image URL response format");
         var prompt = body["prompt"]?.GetValue<string>() ?? throw new ArgumentException("Missing image prompt.");
-        var probe = await GenerationAdapter(request).PrepareResponseAsync(scope, new JsonObject { ["model"] = body["model"]?.DeepClone(), ["input"] = "Generate an image: " + prompt }, ct).ConfigureAwait(false);
+        var probe = await GenerationAdapter(request).PrepareResponseAsync(scope, new JsonObject { ["model"] = body["model"]?.DeepClone(), ["input"] = "Generate an image: " + prompt, ["tools"] = new JsonArray() }, ct).ConfigureAwait(false);
         WebUploadedFile? reference = null;
         if (referencePart is { } part)
         {
@@ -222,7 +222,7 @@ public sealed class OpenAiWebHttpHandler(OpenAiWebAdapter adapter, Func<string, 
             using var input = new MemoryStream(part.Bytes, false);
             reference = await adapter.UploadOwnedFileAsync(scope, input, new() { FileName = part.FileName ?? "image.png", MimeType = mime, Width = dimensions.Width, Height = dimensions.Height }, ct).ConfigureAwait(false);
         }
-        var turn = reference is null ? probe : new WebTurnRequest { Model = probe.Model, Messages = [reference.ToMessage("Edit this image: " + prompt)], ProjectId = probe.ProjectId, GizmoId = probe.GizmoId, TemporaryChat = probe.TemporaryChat };
+        var turn = reference is null ? probe : new WebTurnRequest { Model = probe.Model, Messages = [reference.ToMessage("Edit this image: " + prompt)], ProjectId = probe.ProjectId, GizmoId = probe.GizmoId, TemporaryChat = probe.TemporaryChat, UseMcp = false };
         var result = await adapter.Client.SendAsync(scope, turn, ct).ConfigureAwait(false);
         if (result.Response.Assets.Count == 0) throw new SdkException("ChatGPT returned no generated image for this turn.", "image_generation_unavailable", HttpStatusCode.UnprocessableEntity);
         var data = new JsonArray();

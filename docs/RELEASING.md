@@ -4,7 +4,7 @@
 
 Three separate workflow files run in sequence:
 
-1. **Tests** (`.github/workflows/tests.yml`) runs on every branch push, pull request and manual dispatch. It validates the version in the commit title/body and runs extension and SDK tests on Windows x64, Linux x64, Intel macOS and Apple Silicon macOS. The gate requires at least 798 passing SDK cases, 331 beyond the v1.0.0 baseline. Tests compile their dependencies; release asset builds wait for the complete successful test workflow.
+1. **Tests** (`.github/workflows/tests.yml`) runs on every branch push, pull request and manual dispatch. It validates the version in the commit title/body and runs extension and SDK tests on Windows x64, Linux x64, Intel macOS and Apple Silicon macOS. The gate requires at least 945 passing SDK cases, 147 beyond the v1.1.0 baseline. Tests compile their dependencies; release asset builds wait for the complete successful test workflow.
 2. **Build** (`.github/workflows/build.yml`) starts only after successful repository tests. It checks out the exact tested SHA, builds SDK packages and extensions, validates Firefox and downloads Chromium through pinned Microsoft.Playwright 1.63.0. Four platform jobs package their matching browser and driver, then check the actual native launcher headlessly in automatic and software rendering modes. Pull request runs do not trigger this workflow chain. Branch pushes produce downloadable Actions artifacts.
 3. **Release** (`.github/workflows/release.yml`) starts after a successful Build. It independently checks the linked test run's workflow, repository, conclusion, branch and commit. Only a tested `main` commit publishes. It downloads assets from that specific Build run, requires every asset, generates checksums and creates `vVERSION`.
 

@@ -26,6 +26,10 @@ try {
     Copy-Item -LiteralPath README.md -Destination artifacts/sdk/README.md
     Copy-Item -LiteralPath LICENSE -Destination artifacts/sdk/LICENSE
     Copy-Item -LiteralPath third_party/openai-dotnet/LICENSE -Destination artifacts/sdk/LICENSE.openai-dotnet
+    Copy-Item -LiteralPath third_party/modelcontextprotocol/LICENSE -Destination artifacts/sdk/LICENSE.modelcontextprotocol
+    Copy-Item -LiteralPath docs/MCP.md -Destination artifacts/sdk/MCP.md
+    Copy-Item -LiteralPath third_party/modelcontextprotocol/LICENSE -Destination artifacts/proxy/LICENSE.modelcontextprotocol
+    Copy-Item -LiteralPath docs/MCP.md -Destination artifacts/proxy/MCP.md
     New-Item -ItemType Directory -Path artifacts/release -Force | Out-Null
     foreach ($taskPackage in @('ChatGPTWebSdk', 'ChatGPTWebSdk.Browser', 'ChatGPTWebSdk.OpenAI')) {
         Copy-Item -LiteralPath "artifacts/packages/$taskPackage.$taskVersion.nupkg" -Destination artifacts/release

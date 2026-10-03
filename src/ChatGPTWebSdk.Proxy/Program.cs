@@ -9,6 +9,7 @@ using ChatGPTWebSdk.Protocol;
 using ChatGPTWebSdk.Proxy;
 using ChatGPTWebSdk.Storage;
 using ChatGPTWebSdk.Web;
+using ChatGPTWebSdk.Mcp;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 64 * 1024 * 1024);
@@ -17,7 +18,13 @@ var config = ProxyConfiguration.Load();
 using var http = config.HttpDriver == "systemCurl" ? WebHttpClient.CreateCurl() : WebHttpClient.Create();
 builder.Services.AddSingleton<IConversationStore>(new FileConversationStore(config.SessionDirectory));
 builder.Services.AddSingleton(new ChatGptWebTransport(http, new StaticWebCredentialProvider(config.Accounts.ToDictionary(a => a.Id, a => a.Credentials)), new() { BaseUri = config.BaseUri, Endpoints = config.Profile, SentinelSessionProvider = config.Mode == "hybrid" ? new BrowserSentinelProvider(config.Browser) : null }));
-builder.Services.AddSingleton<ChatGptWebClient>();
+builder.Services.AddSingleton(sp => new ChatGptWebClient(sp.GetRequiredService<ChatGptWebTransport>(), sp.GetRequiredService<IConversationStore>(), new McpConversationOptions
+{
+    Servers = config.Mcp.Servers, MaxToolRounds = config.Mcp.MaxToolRounds, MaxToolCalls = config.Mcp.MaxToolCalls,
+    MaxManifestCharacters = config.Mcp.MaxManifestCharacters, MaxToolArgumentsCharacters = config.Mcp.MaxToolArgumentsCharacters,
+    MaxToolResultCharacters = config.Mcp.MaxToolResultCharacters, ToolTimeout = config.Mcp.ToolTimeout,
+    IsServerAllowed = (scope, label) => config.Clients.Any(c => c.AccountId == scope.AccountId && c.UserId == scope.UserId && c.McpServers.Contains(label, StringComparer.Ordinal))
+}));
 builder.Services.AddSingleton(sp => new OpenAiWebAdapter(sp.GetRequiredService<ChatGptWebClient>(), config.ModelAliases));
 var app = builder.Build();
 var client = app.Services.GetRequiredService<ChatGptWebClient>();
@@ -122,7 +129,8 @@ app.MapGet("/capabilities", () => Results.Json(new
     transport = "chatgpt-web-http", mode = config.Mode, httpDriver = config.HttpDriver, liveVerified = false,
     spec = new { ApiCatalog.Current.SpecVersion, ApiCatalog.Current.Sha256, operationCount = ApiCatalog.Current.Operations.Length },
     webMappings = new[] { "responses.create", "responses.retrieve/delete/input_items (local)", "chat.completions.create", "models.list/retrieve", "files.create/retrieve/list/content", "images.generate/edit (one image)", "conversations.create/retrieve/update/delete/items.list/items.retrieve", "conversation.link/rename/archive/delete/reconcile/edit/regenerate" },
-    unsupportedBehavior = "Unmapped API operations and controls return 501. No platform API fallback or automatic generation retry."
+    mcp = new { configuredServers = config.Mcp.Servers.Count, transports = new[] { "stdio", "streamableHttp", "sse" }, automaticToolLoop = true, hiddenFromApplicationOutput = true },
+    unsupportedBehavior = "Unmapped API operations and controls return 501. No platform API fallback or automatic generation/tool retry."
 
 }));
 app.MapFallback((Func<IResult>)(() => throw new UnsupportedWebFeatureException("requested endpoint")));
