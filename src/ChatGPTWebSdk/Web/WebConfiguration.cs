@@ -55,6 +55,11 @@ public sealed class WebEndpointProfile
     public string Shares { get; init; } = "backend-api/shared_conversations";
     public string ShareCreate { get; init; } = "backend-api/share/create";
     public string ShareById { get; init; } = "backend-api/share/{share_id}";
+    public string ProjectsSidebar { get; init; } = "backend-api/gizmos/snorlax/sidebar";
+    public string ProjectById { get; init; } = "backend-api/gizmos/{project_id}";
+    public string ProjectConversations { get; init; } = "backend-api/gizmos/{project_id}/conversations";
+    public string ProjectConnectorScopes { get; init; } = "backend-api/projects/{project_id}/connector_scopes";
+    public string ProjectSaves { get; init; } = "backend-api/projects/{project_id}/saves";
     public JsonObject RequirementsBody { get; init; } = new();
     // Captured non-identity defaults; the SDK always replaces messages, model and conversation IDs.
     public JsonObject ConversationDefaults { get; init; } = new();
