@@ -18,6 +18,8 @@ Every release attaches 13 assets:
 
 Complete bundles include a .NET 8 example, SDK DLLs, the optional .NET 10 proxy and Chromium. Tar preserves Unix executable permissions and macOS application symlinks. Browser and driver licenses/notices are included. Linux requires Chromium's system libraries. Bundles contain no HARs, user profiles or credentials.
 
+The Linux Build job installs the pinned Playwright browser dependencies and, when Ubuntu's namespace restriction is present, loads an AppArmor profile scoped to the staged browser path. This grants the sandbox's required user namespace on that disposable runner. It does not add --no-sandbox or change a user's server configuration.
+
 To release an update:
 
 1. Bump VERSION and the extension manifests/package.json once.
