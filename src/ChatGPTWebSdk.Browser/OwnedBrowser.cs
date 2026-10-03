@@ -1,31 +1,63 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
+using System.Text.Json;
 using ChatGPTWebSdk.Protocol;
 using Microsoft.Playwright;
 
 namespace ChatGPTWebSdk.Browser;
 
-internal sealed class OwnedBrowser(IBrowser browser, Process? process = null, string? profile = null) : IAsyncDisposable
+internal sealed class OwnedBrowser(IBrowser browser, Process? process = null, string? profile = null, bool software = false) : IAsyncDisposable
 {
     internal IBrowser Browser { get; } = browser;
+    internal bool SoftwareRendering { get; } = software;
     private static readonly string ProfileRoot = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "ChatGPTWebSdk.Browser"));
 
     internal static async Task<OwnedBrowser> LaunchAsync(IPlaywright playwright, BrowserSentinelOptions options, CancellationToken ct)
     {
+        if (!Enum.IsDefined(options.Acceleration)) throw new ArgumentOutOfRangeException(nameof(options.Acceleration));
+        var software = options.Acceleration == BrowserAcceleration.Software;
+        OwnedBrowser launched;
+        try { launched = await LaunchOnceAsync(playwright, options, software, ct).ConfigureAwait(false); }
+        catch (SdkException ex) when (options.Acceleration == BrowserAcceleration.Automatic && ex.Code == "sentinel_browser_failed")
+        {
+            ct.ThrowIfCancellationRequested();
+            options.Progress?.Invoke("Chromium startup failed. Retrying the owned browser with software rendering.");
+            return await LaunchOnceAsync(playwright, options, true, ct).ConfigureAwait(false);
+        }
+        if (software) return launched;
+        bool? hardware;
+        try
+        {
+            var session = await launched.Browser.NewBrowserCDPSessionAsync().WaitAsync(ct).ConfigureAwait(false);
+            try { hardware = HasHardwareAcceleration(await session.SendAsync("SystemInfo.getInfo").WaitAsync(ct).ConfigureAwait(false)); }
+            finally { await session.DetachAsync().ConfigureAwait(false); }
+        }
+        catch (PlaywrightException) { hardware = null; }
+        catch { await launched.DisposeAsync().ConfigureAwait(false); throw; }
+        if (hardware != false) return launched;
+        await launched.DisposeAsync().ConfigureAwait(false);
+        if (options.Acceleration == BrowserAcceleration.Hardware)
+            throw new SdkException("Chromium reported that hardware rendering is unavailable. Use Automatic or Software acceleration.", "sentinel_hardware_unavailable", HttpStatusCode.ServiceUnavailable);
+        options.Progress?.Invoke("Hardware rendering is unavailable. Restarting the owned browser with software rendering.");
+        return await LaunchOnceAsync(playwright, options, true, ct).ConfigureAwait(false);
+    }
+
+    private static async Task<OwnedBrowser> LaunchOnceAsync(IPlaywright playwright, BrowserSentinelOptions options, bool software, CancellationToken ct)
+    {
         if (!options.UseDesktopLauncher)
-            return new(await playwright.Chromium.LaunchAsync(new() { Headless = false,
-                Channel = options.ExecutablePath is null ? options.Channel : null, ExecutablePath = options.ExecutablePath }).WaitAsync(ct).ConfigureAwait(false));
+            return new(await playwright.Chromium.LaunchAsync(new() { Headless = options.Headless, Args = software ? ["--disable-gpu", "--disable-gpu-compositing"] : [],
+                Channel = options.ExecutablePath is null ? options.Channel : null, ExecutablePath = options.ExecutablePath ?? (options.Channel is null ? BundledBrowser.FindExecutable(options.BundledBrowserDirectory) : null) }).WaitAsync(ct).ConfigureAwait(false), software: software);
         var executable = ResolveExecutable(playwright.Chromium.ExecutablePath, options);
         if (!File.Exists(executable))
-            throw new SdkException("No installed Chromium browser was found. Configure Browser.ExecutablePath or explicitly install Playwright Chromium.", "sentinel_browser_unavailable", HttpStatusCode.ServiceUnavailable);
+            throw new SdkException("No Chromium browser was found. Extract a complete SDK browser bundle, configure Browser.ExecutablePath, or install Playwright Chromium.", "sentinel_browser_unavailable", HttpStatusCode.ServiceUnavailable);
         using var listener = new TcpListener(IPAddress.Loopback, 0);
         listener.Start();
         var port = ((IPEndPoint)listener.LocalEndpoint).Port;
         listener.Stop();
         var profile = Path.Combine(ProfileRoot, Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(profile);
-        var start = CreateStartInfo(executable, profile, port);
+        var start = CreateStartInfo(executable, profile, port, options.Headless, software);
         Process? process = null;
         IBrowser? browser = null;
         try
@@ -50,7 +82,7 @@ internal sealed class OwnedBrowser(IBrowser browser, Process? process = null, st
             }
             browser = await playwright.Chromium.ConnectOverCDPAsync(endpoint.AbsoluteUri,
                 new() { Timeout = (float)options.Timeout.TotalMilliseconds }).WaitAsync(ct).ConfigureAwait(false);
-            return new(browser, process, profile);
+            return new(browser, process, profile, software);
         }
         catch
         {
@@ -61,14 +93,32 @@ internal sealed class OwnedBrowser(IBrowser browser, Process? process = null, st
         }
     }
 
-    internal static ProcessStartInfo CreateStartInfo(string executable, string profile, int port)
+    internal static ProcessStartInfo CreateStartInfo(string executable, string profile, int port, bool headless = false, bool software = false)
     {
         if (port is <= 0 or > 65535) throw new ArgumentOutOfRangeException(nameof(port));
-        var start = new ProcessStartInfo(executable) { UseShellExecute = false, CreateNoWindow = false, WindowStyle = ProcessWindowStyle.Normal,
+        var start = new ProcessStartInfo(executable) { UseShellExecute = false, CreateNoWindow = headless, WindowStyle = headless ? ProcessWindowStyle.Hidden : ProcessWindowStyle.Normal,
             RedirectStandardOutput = true, RedirectStandardError = true };
         foreach (var argument in new[] { "--remote-debugging-address=127.0.0.1", $"--remote-debugging-port={port}",
             $"--user-data-dir={profile}", "--no-first-run", "--no-default-browser-check", "--no-startup-window" }) start.ArgumentList.Add(argument);
+        if (headless) { start.ArgumentList.Add("--headless=new"); start.ArgumentList.Add("--window-size=1440,900"); }
+        if (software) { start.ArgumentList.Add("--disable-gpu"); start.ArgumentList.Add("--disable-gpu-compositing"); }
         return start;
+    }
+
+    internal static bool? HasHardwareAcceleration(JsonElement? information)
+    {
+        if (information is not { ValueKind: JsonValueKind.Object } value || !value.TryGetProperty("gpu", out var gpu) || gpu.ValueKind != JsonValueKind.Object) return null;
+        if (gpu.TryGetProperty("featureStatus", out var features) && features.ValueKind == JsonValueKind.Object
+            && features.TryGetProperty("gpu_compositing", out var compositing) && compositing.ValueKind == JsonValueKind.String)
+        {
+            var status = compositing.GetString()!;
+            if (status.StartsWith("enabled", StringComparison.Ordinal) && !status.Contains("software", StringComparison.Ordinal)) return true;
+            if (status.StartsWith("disabled", StringComparison.Ordinal) || status.Contains("software", StringComparison.Ordinal) || status.StartsWith("unavailable", StringComparison.Ordinal)) return false;
+        }
+        if (gpu.TryGetProperty("auxAttributes", out var auxiliary) && auxiliary.ValueKind == JsonValueKind.Object
+            && auxiliary.TryGetProperty("glRenderer", out var renderer) && renderer.ValueKind == JsonValueKind.String
+            && new[] { "SwiftShader", "llvmpipe", "Software", "Microsoft Basic Render" }.Any(s => renderer.GetString()!.Contains(s, StringComparison.OrdinalIgnoreCase))) return false;
+        return null;
     }
 
     private static string ResolveExecutable(string bundled, BrowserSentinelOptions options)
@@ -77,6 +127,7 @@ internal sealed class OwnedBrowser(IBrowser browser, Process? process = null, st
         var channel = options.Channel;
         if (channel is not (null or "chrome" or "msedge"))
             throw new ArgumentException("The desktop launcher supports chrome, msedge, or an explicit ExecutablePath. UseDesktopLauncher=false enables Playwright's other channels.");
+        if (channel is null && BundledBrowser.FindExecutable(options.BundledBrowserDirectory) is { } packaged) return packaged;
         var candidates = new List<string>();
         if (OperatingSystem.IsWindows())
         {
