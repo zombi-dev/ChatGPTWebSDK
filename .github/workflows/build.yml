@@ -22,6 +22,7 @@ jobs:
           - os: macos-15
             platform: osx-arm64
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -50,9 +51,14 @@ jobs:
           EOF
             sudo apparmor_parser -r /etc/apparmor.d/chatgpt-web-sdk-ci
           fi
-      - name: Build SDK, extensions, and pinned browser bundle
+      - name: Build SDK and extension packages
+        timeout-minutes: 10
         shell: pwsh
-        run: ./build.ps1 -SkipTests -BundleBrowser -BuildRoot artifacts/build
+        run: ./build.ps1 -SkipTests -BuildRoot artifacts/build
+      - name: Bundle and verify pinned Chromium
+        timeout-minutes: 10
+        shell: pwsh
+        run: ./tools/Bundle-Browser.ps1
       - name: Validate Firefox extension
         if: matrix.platform == 'linux-x64'
         run: npx --yes web-ext@10.7.0 lint --source-dir artifacts/extensions/firefox --warnings-as-errors
