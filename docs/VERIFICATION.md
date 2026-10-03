@@ -2,6 +2,27 @@
 
 Recorded on 2026-10-02 and 2026-10-03 on the development Windows machine. Live checks used the user's authorized ChatGPT account, fresh browser-obtained Sentinel answers, system curl, and new disposable SDK conversations. No platform API generation requests were made. Credentials, private captures and signed asset URLs are excluded from this record and from packages.
 
+## v1.1.0 additions and final package checks
+
+The update adds project context throughout chat, Responses, image generation/editing, runtime initialization and the proxy; persistent project bindings are validated before upload or generation. Temporary chat state remains in memory, including appended and streamed turns, while only a mode marker survives a restart. Linking a remote temporary chat into persistent storage is rejected before copying its messages.
+
+All **55 observed ChatGPT service operations** across **292 requests** have catalog mappings and request-routing/parameter-validation tests. Named methods expose additional conversation filters, settings, profiles, notifications, connectors, plugins, apps, subscriptions and Codex usage/tasks. The catalog also preserves binary and SSE response types. [HAR_COVERAGE.md](HAR_COVERAGE.md) records every operation and observed status. A valid JSON null recommendation was observed during live checks and is now accepted as an optional result.
+
+All **29 captured read-only JSON operations with static paths and an observed 200 response** passed live through the final package, including the optional null recommendation. Dynamic project, conversation and file reads were independently exercised by the conversation/image checks below. Connector logos only returned 404 in the original capture, and the home-beacon request was canceled; neither is labeled as a successful live feature. Remaining mutation/catalog routes have routing tests and the original captured request evidence; they were not all replayed against account settings or telemetry.
+
+The v1.1.0 test gate requires **798 passing .NET cases** (331 more than v1.0.0), plus **12 extension tests**. Builds treat warnings as errors. Three workflows run Tests, then Build, then Release; Build consumes the exact successful test SHA and publication checks that provenance. Tests cover Windows x64, Linux x64, Intel macOS and Apple Silicon macOS in CI.
+
+A fresh .NET 8 application restored the local v1.1.0 NuGet package into an isolated cache and compiled official client calls with zero warnings/errors. The API comparison again found **8,767 upstream signatures, zero missing**. The Windows complete bundle was extracted from its ZIP, and its Chromium was used with the global Playwright browser cache deliberately unavailable. All of the following real-account checks passed:
+
+- Four captured project read endpoints, two-turn project marker recall after a runtime restart, and independent confirmation of the remote project's gizmo ID.
+- Project message editing, regeneration, deletion, image generation, upload of the generated reference image, image editing and binary download through the official ImageClient.
+- Two-turn temporary marker recall, streamed continuation, absence of temporary messages/remote IDs on disk, and local binding cleanup when the backend's persistent-history delete endpoint already returns 404.
+- Nine fresh Sentinel handshakes, automatic packaged-browser discovery and removal of all browser profiles created by those checks. Only the newly created SDK test conversations were deleted.
+
+The actual SDK native launcher and bundled Chromium **153.0.8010.12** passed JavaScript and canvas rendering in invisible automatic and explicit software modes. Chromium reported hardware acceleration for the former and software rendering for the latter. A separate visible software-rendered Sentinel handshake also succeeded. Both live invisible Sentinel probes returned Cloudflare's interactive challenge; invisible mode therefore remains optional and the visible default is retained. Headless engine support does not establish unattended acceptance by ChatGPT. Every platform Build job exercises both launcher/rendering modes before uploading its browser bundle.
+
+Archive inspection found no HARs, session files, user profiles, private HAR paths or known authentication values in the nine locally built Windows/common archives. The Firefox package passed web-ext 10.7.0 with zero errors, notices or warnings. README's original Notice area and main heading retain their original SHA256. All 13 additional references were cloned/reviewed; revisions, licenses and findings are in [REFERENCES.md](REFERENCES.md).
+
 ## Released SDK compatibility
 
 The replacement vendors the runtime source of [OpenAI .NET 2.14.0](https://github.com/openai/openai-dotnet/tree/OpenAI_2.14.0), commit `2e77b08828145f658ec04e49aec87abb1543c553`. Its dependency on `System.ClientModel` matches the released package's `1.15.0` dependency.
