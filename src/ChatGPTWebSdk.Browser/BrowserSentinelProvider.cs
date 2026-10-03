@@ -6,12 +6,19 @@ using Microsoft.Playwright;
 
 namespace ChatGPTWebSdk.Browser;
 
+public enum BrowserAcceleration { Automatic, Hardware, Software }
+
 public sealed class BrowserSentinelOptions
 {
     public string? CdpEndpoint { get; init; }
     public string? Channel { get; init; }
     public string? ExecutablePath { get; init; }
+    public string? BundledBrowserDirectory { get; init; }
     public bool UseDesktopLauncher { get; init; } = true;
+    /// <summary>Runs Chromium without a visible window. Use false when an interactive challenge needs attention.</summary>
+    public bool Headless { get; init; }
+    /// <summary>Automatic prefers hardware rendering and restarts only the owned browser with software rendering when hardware is unavailable.</summary>
+    public BrowserAcceleration Acceleration { get; init; } = BrowserAcceleration.Automatic;
     public TimeSpan Timeout { get; init; } = TimeSpan.FromMinutes(2);
     public int MaxRetries { get; init; } = 3;
     public TimeSpan RetryDelay { get; init; } = TimeSpan.FromSeconds(5);
@@ -70,7 +77,7 @@ public sealed class BrowserSentinelProvider(BrowserSentinelOptions? options = nu
             else if (!ownsBrowser && browser.Contexts.FirstOrDefault(c => c != context) is { } signedIn)
                 await context.AddCookiesAsync((await signedIn.CookiesAsync(["https://chatgpt.com/"]).ConfigureAwait(false)).Select(c => new Cookie { Name = c.Name, Value = c.Value, Domain = c.Domain, Path = c.Path, Secure = c.Secure, HttpOnly = c.HttpOnly, SameSite = c.SameSite })).ConfigureAwait(false);
             var page = await context.NewPageAsync().ConfigureAwait(false);
-            await page.BringToFrontAsync().ConfigureAwait(false);
+            if (!_options.Headless) await page.BringToFrontAsync().ConfigureAwait(false);
             diagnosticPage = page;
             var captured = new TaskCompletionSource<IReadOnlyDictionary<string, string>>(TaskCreationOptions.RunContinuationsAsynchronously);
             page.Close += (_, _) => captured.TrySetException(new PlaywrightException("The temporary Sentinel page was closed before the handshake completed."));
@@ -84,7 +91,9 @@ public sealed class BrowserSentinelProvider(BrowserSentinelOptions? options = nu
                     if (new Uri(response.Url).Host == "chatgpt.com" && response.Request.IsNavigationRequest && response.Request.Frame == page.MainFrame
                         && response.Status == 403 && await response.HeaderValueAsync("cf-mitigated").ConfigureAwait(false) == "challenge")
                     {
-                        if (Interlocked.Increment(ref challengeResponses) == 1)
+                        if (_options.Headless)
+                            captured.TrySetException(new SdkException("Cloudflare requires an interactive check. Set Browser.Headless=false or use an existing signed-in CDP session, then retry.", "sentinel_browser_challenge", System.Net.HttpStatusCode.ServiceUnavailable));
+                        else if (Interlocked.Increment(ref challengeResponses) == 1)
                             _options.Progress?.Invoke("Cloudflare is requesting an interactive check in the temporary browser.");
                         else
                             captured.TrySetException(new SdkException("Cloudflare reloaded its challenge without accepting it. The Sentinel handshake did not reach ChatGPT.", "sentinel_browser_challenge", System.Net.HttpStatusCode.ServiceUnavailable));
@@ -108,7 +117,7 @@ public sealed class BrowserSentinelProvider(BrowserSentinelOptions? options = nu
                 { var headers = await route.Request.AllHeadersAsync().ConfigureAwait(false); await route.AbortAsync("aborted").ConfigureAwait(false); captured.TrySetResult(new Dictionary<string, string>(headers, StringComparer.OrdinalIgnoreCase)); }
                 else await route.ContinueAsync().ConfigureAwait(false);
             }).ConfigureAwait(false);
-            _options.Progress?.Invoke("Opening ChatGPT for Sentinel. Complete sign-in or an interactive challenge if the browser requests it.");
+            _options.Progress?.Invoke(_options.Headless ? "Opening invisible Chromium for Sentinel." : "Opening ChatGPT for Sentinel. Complete sign-in or an interactive challenge if the browser requests it.");
             await WaitForPageAsync(page.GotoAsync("https://chatgpt.com/", new() { WaitUntil = WaitUntilState.DOMContentLoaded, Timeout = (float)_options.Timeout.TotalMilliseconds }), captured.Task, timeout.Token).ConfigureAwait(false);
             _options.Progress?.Invoke("ChatGPT page loaded. Waiting for its message composer.");
             var input = page.Locator(_options.ComposerSelector);
