@@ -51,6 +51,9 @@ public sealed class ConversationState
     public List<WebInputMessage> PendingMessages { get; set; } = [];
     public List<StoredMessage> History { get; set; } = [];
     public List<WebResponseRecord> Responses { get; set; } = [];
+    // Remote history includes MCP control turns. This transcript contains application-visible turns only.
+    public List<StoredMessage>? VisibleHistory { get; set; }
+    public List<Mcp.McpToolExecution> McpExecutions { get; set; } = [];
 }
 
 public interface IConversationLease : IAsyncDisposable
