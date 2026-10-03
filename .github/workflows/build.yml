@@ -34,6 +34,22 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
+      - name: Prepare sandboxed Chromium on Linux
+        if: matrix.platform == 'linux-x64'
+        shell: bash
+        run: |
+          npx --yes playwright@1.63.0 install-deps chromium
+          if [ -f /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            browser_pattern="$GITHUB_WORKSPACE/artifacts/bundles/linux-x64-*/browsers/**/chrome"
+            sudo tee /etc/apparmor.d/chatgpt-web-sdk-ci >/dev/null <<EOF
+          abi <abi/4.0>,
+          include <tunables/global>
+          profile chatgpt-web-sdk-ci "$browser_pattern" flags=(unconfined) {
+            userns,
+          }
+          EOF
+            sudo apparmor_parser -r /etc/apparmor.d/chatgpt-web-sdk-ci
+          fi
       - name: Build SDK, extensions, and pinned browser bundle
         shell: pwsh
         run: ./build.ps1 -SkipTests -BundleBrowser -BuildRoot artifacts/build

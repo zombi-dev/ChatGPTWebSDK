@@ -88,6 +88,8 @@ using var runtime = ChatGPTWeb.Initialize(authenticationString, browser: new()
 
 Headless Chromium and both rendering modes passed actual JavaScript and canvas checks. The live headless Sentinel probe encountered Cloudflare's interactive challenge, so `Headless` defaults to `false`. On servers, select `Headless = true` and install Chromium's system libraries; the remote service can still demand interactive sign-in or reject the headless session. An invisible session cannot display a checkbox. The SDK returns `sentinel_browser_challenge` with instructions to use a visible browser or existing signed-in CDP session. No browser stays running between turns.
 
+Linux must also permit Chromium's normal sandbox. Ubuntu's AppArmor policy can prevent a downloaded Chromium binary from creating user namespaces; [Chromium documents a profile scoped to the browser path or an installed sandbox helper](https://chromium.googlesource.com/chromium/src/+/main/docs/security/apparmor-userns-restrictions.md). The Linux CI job installs system dependencies and grants namespace creation only to its staged Chromium path on the ephemeral runner. The SDK keeps Chromium's sandbox enabled.
+
 To check an extracted bundle without signing in, run `dotnet run --project example -- --verify-bundle`. It exercises the SDK's actual native launcher invisibly in automatic and software modes, verifies JavaScript and canvas rendering, then closes both browsers. Applications can run the same check through `BrowserDiagnostics.VerifyAsync`.
 
 ### Additional web operations
