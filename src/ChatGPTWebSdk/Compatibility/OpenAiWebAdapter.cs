@@ -4,6 +4,7 @@ using ChatGPTWebSdk.OpenAI;
 using ChatGPTWebSdk.Protocol;
 using ChatGPTWebSdk.Storage;
 using ChatGPTWebSdk.Web;
+using ChatGPTWebSdk.Mcp;
 
 namespace ChatGPTWebSdk.Compatibility;
 
@@ -27,7 +28,8 @@ public sealed class OpenAiWebAdapter(ChatGptWebClient client, IReadOnlyDictionar
     }
     public async Task<WebTurnRequest> PrepareResponseAsync(ConversationScope scope, JsonObject body, CancellationToken ct = default)
     {
-        CheckFields(body, ["model", "input", "stream", "conversation", "previous_response_id", "store", "reasoning"]);
+        CheckFields(body, ["model", "input", "stream", "conversation", "previous_response_id", "store", "reasoning", "tools"]);
+        var mcp = SelectMcpTools(scope, body);
         var context = Context(body);
         await client.ValidateContextAsync(scope, context, ct).ConfigureAwait(false);
         var conversationNode = body["conversation"];
@@ -46,7 +48,8 @@ public sealed class OpenAiWebAdapter(ChatGptWebClient client, IReadOnlyDictionar
             if (state.ConversationId is null) await client.LinkAsync(scope, conversationId, ct).ConfigureAwait(false);
             else if (state.ConversationId != conversationId) throw new SdkException("The requested conversation belongs to a different binding. Select another thread ID.", "conversation_binding_conflict", HttpStatusCode.Conflict);
         }
-        return new() { Model = model, Messages = messages, PreviousResponseId = previous, TemporaryChat = context.TemporaryChat, ProjectId = context.ProjectId, GizmoId = context.GizmoId, ThinkingEffort = thinking };
+        return new() { Model = model, Messages = messages, PreviousResponseId = previous, TemporaryChat = context.TemporaryChat, ProjectId = context.ProjectId, GizmoId = context.GizmoId, ThinkingEffort = thinking,
+            UseMcp = mcp?.Count != 0, McpSelections = mcp };
     }
 
     public WebTurnRequest PrepareChat(JsonObject body)
@@ -93,6 +96,56 @@ public sealed class OpenAiWebAdapter(ChatGptWebClient client, IReadOnlyDictionar
         bool append = messages.All(m => m.Role == "user");
         return new() { Model = model, Messages = append ? messages.Select(m => new WebInputMessage(m.Id, m.Role, m.Text) { Content = m.Content, Metadata = m.Metadata }).ToArray() : [], ExpectedHistory = append ? null : messages,
             ThinkingEffort = thinking, TemporaryChat = context.TemporaryChat, ProjectId = context.ProjectId, GizmoId = context.GizmoId };
+    }
+
+    private IReadOnlyList<McpServerSelection>? SelectMcpTools(ConversationScope scope, JsonObject body)
+    {
+        if (body["tools"] is null) return null;
+        if (body["tools"] is not JsonArray array) throw new ArgumentException("tools must be an array.");
+        var result = new List<McpServerSelection>();
+        foreach (var node in array)
+        {
+            if (node is not JsonObject tool || tool["type"]?.GetValue<string>() != "mcp") throw new UnsupportedWebFeatureException("non-MCP response tools");
+            CheckFields(tool, ["type", "server_label", "server_url", "server_description", "allowed_tools", "require_approval", "headers", "authorization"]);
+            var label = tool["server_label"]?.GetValue<string>() ?? throw new ArgumentException("MCP server_label is required.");
+            var configured = client.Mcp?.Servers.SingleOrDefault(s => s.Label == label)
+                ?? throw new SdkException("Register this MCP server in ChatGPTWebRuntimeOptions.Mcp before requesting its tools.", "mcp_server_not_registered", HttpStatusCode.Forbidden);
+            if (client.Mcp?.IsServerAllowed?.Invoke(scope, label) == false) throw new SdkException("This application user cannot access this MCP server.", "mcp_server_denied", HttpStatusCode.Forbidden);
+            if (result.Any(s => s.Server.Label == label)) throw new ArgumentException("Duplicate MCP server label.");
+            if (tool["server_url"] is { } url && (!Uri.TryCreate(url.GetValue<string>(), UriKind.Absolute, out var endpoint) || endpoint != configured.Endpoint))
+                throw new SdkException("The requested MCP endpoint does not match the registered server.", "mcp_server_denied", HttpStatusCode.Forbidden);
+            IReadOnlyList<string>? allowed = null; bool? readOnly = null;
+            if (tool["allowed_tools"] is JsonArray names) allowed = names.Select(n => n!.GetValue<string>()).ToArray();
+            else if (tool["allowed_tools"] is JsonObject filter)
+            {
+                CheckFields(filter, ["tool_names", "read_only"]);
+                if (filter["tool_names"] is JsonArray filtered) allowed = filtered.Select(n => n!.GetValue<string>()).ToArray();
+                readOnly = filter["read_only"]?.GetValue<bool>();
+            }
+            else if (tool["allowed_tools"] is not null) throw new ArgumentException("Invalid MCP allowed_tools filter.");
+            var approval = tool["require_approval"]?.DeepClone() ?? JsonValue.Create("always")!;
+            if (approval is JsonValue scalar && scalar.GetValue<string>() is not ("always" or "never")) throw new ArgumentException("Invalid MCP approval setting.");
+            if (approval is JsonObject approvalFilter)
+            {
+                CheckFields(approvalFilter, ["always", "never"]);
+                if (approvalFilter.Count != 1) throw new ArgumentException("Select one MCP approval filter.");
+                var value = approvalFilter.First().Value as JsonObject ?? throw new ArgumentException("Invalid MCP approval filter.");
+                CheckFields(value, ["tool_names", "read_only"]);
+                if (value["tool_names"] is { } list && list is not JsonArray) throw new ArgumentException("MCP tool_names must be an array.");
+                if (value["tool_names"] is JsonArray values) foreach (var name in values) _ = name!.GetValue<string>();
+                if (value["read_only"] is { } ro) _ = ro.GetValue<bool>();
+            }
+            else if (approval is not JsonValue) throw new ArgumentException("Invalid MCP approval setting.");
+            var headers = configured.Headers.ToDictionary(p => p.Key, p => p.Value, StringComparer.OrdinalIgnoreCase);
+            if (tool["headers"] is JsonObject supplied) foreach (var pair in supplied) headers[pair.Key] = pair.Value!.GetValue<string>();
+            else if (tool["headers"] is not null) throw new ArgumentException("MCP headers must be an object.");
+            if (tool["authorization"] is { } authorization) headers["Authorization"] = "Bearer " + authorization.GetValue<string>();
+            if ((tool["headers"] is not null || tool["authorization"] is not null) && configured.Endpoint is null) throw new ArgumentException("HTTP headers require a remote MCP server.");
+            var selected = configured with { Headers = headers };
+            selected.Validate();
+            result.Add(new(selected, allowed, readOnly, approval));
+        }
+        return result;
     }
 
     private static void ValidateStreamOptions(JsonNode? options)
