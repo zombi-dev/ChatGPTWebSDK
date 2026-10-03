@@ -43,4 +43,15 @@ internal static class HttpProtocol
         return await JsonNode.ParseAsync(stream, cancellationToken: ct).ConfigureAwait(false)
             ?? throw new SdkException("Endpoint returned empty JSON.", "empty_response");
     }
+
+    public static async Task<JsonNode?> ReadNullableJsonAsync(HttpResponseMessage response, CancellationToken ct)
+    {
+        await EnsureSuccessAsync(response, ct).ConfigureAwait(false);
+        if (response.StatusCode == HttpStatusCode.NoContent) return null;
+        if (response.Content.Headers.ContentType?.MediaType?.Contains("json", StringComparison.OrdinalIgnoreCase) != true)
+            throw new SdkException("Expected JSON. An HTML login or access challenge may have been returned.", "unexpected_content_type");
+        await using var stream = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+        // JSON null is a valid optional backend result, distinct from an empty or malformed response body.
+        return await JsonNode.ParseAsync(stream, cancellationToken: ct).ConfigureAwait(false);
+    }
 }
