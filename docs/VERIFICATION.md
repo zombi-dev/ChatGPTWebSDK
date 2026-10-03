@@ -2,6 +2,23 @@
 
 Recorded on 2026-10-02 and 2026-10-03 on the development Windows machine. Live checks used the user's authorized ChatGPT account, fresh browser-obtained Sentinel answers, system curl, and new disposable SDK conversations. No platform API generation requests were made. Credentials, private captures and signed asset URLs are excluded from this record and from packages.
 
+## v1.2.0 MCP integration
+
+The SDK now connects to explicitly registered local stdio, remote Streamable HTTP and legacy SSE MCP servers through ModelContextProtocol.Core 2.2.0. ChatClient, ResponsesClient and the proxy run the message-based tool loop within the linked conversation and filter control requests/results from application completion text. Scoped operation leases keep multi-round sends together. Allowlist, approval, size/count/timeout and per-user proxy permissions are tested. A tool whose outcome is unknown is recorded before execution, blocks subsequent sends and can be resolved without executing it again.
+
+The local release gate passes **945 .NET cases** (147 new MCP cases), plus **12 extension tests**, with no skipped tests. New cases cover fragmented control-prefix/final-text streaming, Unicode, projects/temporary chats, visible transcript resubmissions, public response lineage after tool failure, multiple servers, approval filters, authorization boundaries, concurrent sends, cancellation/timeouts and durable recovery. Real independent Node fixture processes exercise stdio, paginated discovery, JSON/SSE Streamable HTTP and legacy SSE. Real proxy HTTP/SSE requests and the upstream `ResponseTool.CreateMcpTool` types are exercised too. Builds produce zero warnings/errors. The upstream signature comparison remains **8,767 signatures, zero missing**.
+
+A fresh .NET 8 consumer restored the v1.2.0 NuGet packages into isolated caches and compiled the public API. Real-account checks passed with the packaged browser and fresh Sentinel handshakes:
+
+- A reusable local stdio server returned its actual process ID through `get_pid`. ChatGPT's final answer matched that result, with control markers excluded from SDK output.
+- A streamed follow-up recalled that exact result in the same conversation without another tool invocation. Independent conversation reads matched all nonhidden locally recorded message IDs. The backend omitted one hidden user result message from the returned message content; the audit explicitly accounts for that observed redaction.
+- A remote local HTTP server returned the actual server process ID through a Streamable HTTP response carried as SSE. The official Responses MCP declaration selected that registered server, and typed text-delta/completed processing returned the correct final answer in a temporary chat.
+- Temporary tool state and conversation IDs were absent from disk. Only the new disposable SDK test conversations were deleted, and owned server/browser processes were closed.
+
+The first live prompt wording produced an ordinary answer without a tool call. The final protocol explicitly explains that the external client executes plain-text request blocks; subsequent live tool/result loops passed. This remains a prompt-guided message adapter, not ChatGPT's native hosted MCP integration. Intermediate exchanges remain actual remote turns; the website's visibility behavior is not guaranteed. See [MCP.md](MCP.md) for supported surfaces and limits.
+
+The final packages include the MCP dependency and its repository license. The existing browser bundle checks pass in invisible automatic/hardware and explicit software modes. Archive inspection and the README Notice/main-heading hash check continue to exclude captures/authentication data and preserve the original top area. Publication uses the existing independent Tests, Build and Release workflow chain for the exact committed version.
+
 ## v1.1.0 additions and final package checks
 
 The update adds project context throughout chat, Responses, image generation/editing, runtime initialization and the proxy; persistent project bindings are validated before upload or generation. Temporary chat state remains in memory, including appended and streamed turns, while only a mode marker survives a restart. Linking a remote temporary chat into persistent storage is rejected before copying its messages.
