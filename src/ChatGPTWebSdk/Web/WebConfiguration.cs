@@ -7,8 +7,9 @@ public sealed class WebCredentials
 {
     public string? AccessToken { get; init; }
     public string? CookieHeader { get; init; }
+    public IReadOnlyList<WebCookie> Cookies { get; init; } = [];
     public DateTimeOffset? ExpiresAt { get; init; }
-    public string UserAgent { get; init; } = "ChatGPTWebSdk/0.1";
+    public string UserAgent { get; init; } = "ChatGPTWebSdk/1.0";
     public Dictionary<string, string> Headers { get; init; } = new(StringComparer.OrdinalIgnoreCase);
     public WebSentinelSession? SentinelSession { get; init; }
     public override string ToString() => "[WebCredentials redacted]";
