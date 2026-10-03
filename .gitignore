@@ -7,6 +7,8 @@ artifacts/
 *.cookies.json
 *.session.json
 *.profile.json
+*.auth.txt
+node_modules/
 .env
 .env.*
 .idea/
