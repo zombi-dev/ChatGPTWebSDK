@@ -1,10 +1,32 @@
+# Notice!
+This was designed by zombi.dev and made with GPT 6.1 Sol (max). This means it is made of a high standard by a smart AI model, so issues are not expected.
+*BrowserOnly is still currently TODO.*
+
 # ChatGPT Web SDK for C#
+
+**Current release: 1.0.0.** [Download SDK packages, DLLs and browser extensions](https://github.com/zombi-dev/ChatGPTWebSDK/releases/latest).
 
 A source-compatible replacement for **OpenAI .NET 2.14.0**, backed by ChatGPT's web HTTP endpoints. Initialize the web runtime once, then use the original `OpenAIClient`, `ChatClient`, `ResponsesClient`, `ImageClient`, `OpenAIFileClient`, conversation clients, and their original models and signatures.
 
 **Status: experimental, with live acceptance recorded on 2026-10-02 and 2026-10-03.** The replacement's official clients authenticated, continued text conversations across turns and runtime restarts, uploaded/downloaded an image with identical bytes, accepted binary image input, and generated/edited images. Typed Chat Completions and Responses streams, response retrieval, Conversations resources and temporary continuation also passed. Native message editing, regeneration, renaming, archiving and deletion passed live checks. Independent HTTP reads confirmed the real conversation graphs. Fresh Sentinel answers are obtained for every turn. Detailed results are recorded in [docs/VERIFICATION.md](docs/VERIFICATION.md).
 
 The released OpenAI SDK's **8,767 public/protected signatures** were compared against this assembly: **zero missing signatures**. This preserves the C# surface; it does not create ChatGPT equivalents for platform-only services. Unsupported web operations or controls return **501**. Generation is never silently sent to the paid platform API.
+
+## One-click browser authentication
+
+Install the Chromium or Firefox extension from the release, open your signed-in ChatGPT tab, and click **ChatGPT Web SDK Auth**. The tab displays **Copied to clipboard!** and the clipboard contains one authentication string.
+
+```csharp
+using OpenAI;
+
+using var runtime = ChatGPTWeb.Initialize(authenticationString);
+var client = runtime.CreateClient().GetChatClient("AVAILABLE_WEB_MODEL_SLUG");
+var completion = await client.CompleteChatAsync("Hello!");
+```
+
+You can also pass `sessionDirectory`, `userId`, `accountId`, `mode` and `browser` options. The default is Hybrid. The extension exports session/access credentials, selected browser context and scoped authentication/security cookies; it keeps no credential storage and does not read conversations. HAR and manual credentials remain available. Treat the copied string as a credential.
+
+See [authentication and extension installation](docs/AUTHENTICATION.md), including Chromium **Load unpacked** and Firefox **Load Temporary Add-on** instructions. The Firefox release XPI is unsigned; permanent installation in normal Firefox requires Mozilla signing.
 
 ## Initialization modes
 
@@ -139,7 +161,9 @@ See [the example configuration](examples/proxy-config.example.json). Config `mod
 .\build.ps1
 ```
 
-This builds the solution, runs its tests, packs `ChatGPTWebSdk`, `ChatGPTWebSdk.Browser` and `ChatGPTWebSdk.OpenAI` into `artifacts/packages`, and publishes a local proxy build into `artifacts/proxy`. It does not upload or publish externally. Tooling uses the .NET 10 SDK; libraries target .NET 8.
+This runs the SDK and extension tests, builds the extensions, packs `ChatGPTWebSdk`, `ChatGPTWebSdk.Browser` and `ChatGPTWebSdk.OpenAI`, and publishes SDK DLLs and the proxy with their dependencies. Versioned ZIPs, NuGet packages, the Firefox XPI and checksums are collected in `artifacts/release`. The local build does not publish externally. Tooling uses .NET 10 and Node 22 or later; libraries target .NET 8.
+
+GitHub Actions builds on every branch push and pull request. Successful pushes to `main` create a versioned release with all binary assets attached. Each update must bump the shared `VERSION` and mention it in the commit title or body. See [release instructions](docs/RELEASING.md).
 
 ```powershell
 # Read-only authentication/model check through the real official client types.

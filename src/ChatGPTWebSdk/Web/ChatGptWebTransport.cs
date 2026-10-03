@@ -13,15 +13,18 @@ public sealed partial class ChatGptWebTransport(HttpClient http, IWebCredentialP
     private readonly ConcurrentDictionary<string, (string Fingerprint, WebCredentials Credentials)> _refreshed = new();
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _authLocks = new();
     private readonly ConcurrentDictionary<string, (string Source, WebCredentials Credentials)> _browserCredentials = new();
-    private static string CredentialFingerprint(WebCredentials value) => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(value.CookieHeader + "\n" + value.AccessToken)));
+    private static string CookieFingerprint(WebCredentials value) => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+        System.Text.Encoding.UTF8.GetBytes(value.CookieHeader + "\n" + System.Text.Json.JsonSerializer.Serialize(value.Cookies))));
+    private static string CredentialFingerprint(WebCredentials value) => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+        System.Text.Encoding.UTF8.GetBytes(CookieFingerprint(value) + "\n" + value.AccessToken)));
 
     private async Task<WebCredentials> GetCredentialsAsync(string account, CancellationToken ct)
     {
         var value = await credentials.GetAsync(account, ct).ConfigureAwait(false);
         if (_browserCredentials.TryGetValue(account, out var browser) && browser.Source == CredentialFingerprint(value) && (browser.Credentials.ExpiresAt is null || browser.Credentials.ExpiresAt > DateTimeOffset.UtcNow.AddMinutes(1))) return browser.Credentials;
         if (!string.IsNullOrWhiteSpace(value.AccessToken) && (value.ExpiresAt is null || value.ExpiresAt > DateTimeOffset.UtcNow.AddMinutes(1))) return value;
-        if (string.IsNullOrWhiteSpace(value.CookieHeader)) throw new SdkException("A current access token or session cookies are required.", "authentication_required");
-        var fingerprint = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(value.CookieHeader)));
+        if (string.IsNullOrWhiteSpace(value.CookieHeader) && value.Cookies.Count == 0) throw new SdkException("A current access token or session cookies are required.", "authentication_required");
+        var fingerprint = CookieFingerprint(value);
         var gate = _authLocks.GetOrAdd(account, _ => new(1, 1));
         await gate.WaitAsync(ct).ConfigureAwait(false);
         try
@@ -32,8 +35,9 @@ public sealed partial class ChatGptWebTransport(HttpClient http, IWebCredentialP
             var session = await HttpProtocol.ReadJsonAsync(response, ct).ConfigureAwait(false);
             var token = session["accessToken"]?.GetValue<string>();
             if (string.IsNullOrWhiteSpace(token)) throw new SdkException("Session endpoint did not return an access token. Sign in and refresh the credentials.", "authentication_required");
-            DateTimeOffset? expiry = DateTimeOffset.TryParse(session["expires"]?.GetValue<string>(), out var parsed) ? parsed : DateTimeOffset.UtcNow.AddMinutes(5);
-            var refreshed = new WebCredentials { AccessToken = token, CookieHeader = value.CookieHeader, UserAgent = value.UserAgent, Headers = value.Headers, ExpiresAt = expiry, SentinelSession = value.SentinelSession };
+            DateTimeOffset? expiry = WebAuthentication.ReadAccessTokenExpiry(token) ??
+                (DateTimeOffset.TryParse(session["expires"]?.GetValue<string>(), out var parsed) ? parsed : DateTimeOffset.UtcNow.AddMinutes(5));
+            var refreshed = new WebCredentials { AccessToken = token, CookieHeader = value.CookieHeader, Cookies = value.Cookies, UserAgent = value.UserAgent, Headers = value.Headers, ExpiresAt = expiry, SentinelSession = value.SentinelSession };
             _refreshed[account] = (fingerprint, refreshed);
             return refreshed;
         }
@@ -48,7 +52,8 @@ public sealed partial class ChatGptWebTransport(HttpClient http, IWebCredentialP
         request.Headers.Add("Origin", _options.BaseUri.GetLeftPart(UriPartial.Authority));
         request.Headers.Referrer = _options.BaseUri;
         if (authorize && value.AccessToken is not null) request.Headers.Authorization = new("Bearer", value.AccessToken);
-        if (!string.IsNullOrWhiteSpace(value.CookieHeader)) request.Headers.Add("Cookie", value.CookieHeader);
+        var cookieHeader = value.Cookies.Count > 0 ? WebAuthentication.CookieHeader(value.Cookies, request.RequestUri!) : value.CookieHeader;
+        if (!string.IsNullOrWhiteSpace(cookieHeader)) request.Headers.Add("Cookie", cookieHeader);
         foreach (var header in value.Headers) AddContextHeader(request, header.Key, header.Value);
         if (body is not null) request.Content = JsonContent.Create(body);
         return request;
@@ -137,9 +142,9 @@ public sealed partial class ChatGptWebTransport(HttpClient http, IWebCredentialP
             var authorized = await _options.SentinelSessionProvider.GetSessionAsync(account, value, (JsonObject)body.DeepClone(), ct).ConfigureAwait(false);
             if (!authorized.Sentinel.IsCurrent) throw new SdkException("The browser returned expired Sentinel credentials.", "expired_sentinel_session");
             value = new WebCredentials { AccessToken = authorized.Credentials.AccessToken, CookieHeader = authorized.Credentials.CookieHeader, UserAgent = authorized.Credentials.UserAgent,
-                ExpiresAt = authorized.Credentials.ExpiresAt, Headers = authorized.Credentials.Headers, SentinelSession = authorized.Sentinel };
+                Cookies = authorized.Credentials.Cookies, ExpiresAt = authorized.Credentials.ExpiresAt, Headers = authorized.Credentials.Headers, SentinelSession = authorized.Sentinel };
             _browserCredentials[account] = (CredentialFingerprint(source), new WebCredentials { AccessToken = value.AccessToken, CookieHeader = value.CookieHeader,
-                UserAgent = value.UserAgent, ExpiresAt = value.ExpiresAt, Headers = value.Headers });
+                Cookies = value.Cookies, UserAgent = value.UserAgent, ExpiresAt = value.ExpiresAt, Headers = value.Headers });
         }
         if (_options.FetchRequirements && value.SentinelSession is { IsCurrent: true } session)
             foreach (var pair in session.Headers()) extra[pair.Key] = pair.Value;

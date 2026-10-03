@@ -4,7 +4,6 @@
     <AssemblyName>OpenAI</AssemblyName>
     <RootNamespace>OpenAI</RootNamespace>
     <PackageId>ChatGPTWebSdk.OpenAI</PackageId>
-    <Version>2.14.0-web.1</Version>
     <AssemblyVersion>2.14.0.0</AssemblyVersion>
     <Description>OpenAI .NET public clients with an in-process ChatGPT web HTTP transport.</Description>
     <Nullable>disable</Nullable>

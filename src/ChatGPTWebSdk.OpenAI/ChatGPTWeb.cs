@@ -130,6 +130,14 @@ public static class ChatGPTWeb
         Configure(runtime);
         return runtime;
     }
+    /// <summary>Initializes from the one string copied by the Chromium or Firefox authentication extension.</summary>
+    public static ChatGPTWebRuntime Initialize(string authenticationString, string sessionDirectory = ".sessions",
+        string userId = "default", ChatGPTWebMode mode = ChatGPTWebMode.Hybrid, BrowserSentinelOptions? browser = null, string accountId = "default") =>
+        Initialize(new ChatGPTWebRuntimeOptions
+        {
+            Credentials = new StaticWebCredentialProvider(accountId, WebAuthentication.Import(authenticationString)),
+            AccountId = accountId, UserId = userId, SessionDirectory = sessionDirectory, Mode = mode, Browser = browser ?? new()
+        });
     public static void Configure(ChatGPTWebRuntime runtime) => Interlocked.Exchange(ref _current, runtime ?? throw new ArgumentNullException(nameof(runtime)));
     internal static void Unconfigure(ChatGPTWebRuntime runtime) => Interlocked.CompareExchange(ref _current, null, runtime);
     public static async Task<ChatGPTWebRuntime> InitializeFromHarAsync(string harPath, string sessionDirectory,

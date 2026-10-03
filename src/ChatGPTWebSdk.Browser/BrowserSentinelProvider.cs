@@ -59,7 +59,9 @@ public sealed class BrowserSentinelProvider(BrowserSentinelOptions? options = nu
             }
             else { owned = await OwnedBrowser.LaunchAsync(playwright, _options, timeout.Token).ConfigureAwait(false); browser = owned.Browser; }
             context = await browser.NewContextAsync(new() { ServiceWorkers = ServiceWorkerPolicy.Block, ViewportSize = ViewportSize.NoViewport }).ConfigureAwait(false);
-            if (!string.IsNullOrWhiteSpace(credentials.CookieHeader))
+            if (credentials.Cookies.Count > 0)
+                await context.AddCookiesAsync(credentials.Cookies.Where(c => c.ExpiresAt is null || c.ExpiresAt > DateTimeOffset.UtcNow).Select(ToBrowserCookie)).ConfigureAwait(false);
+            else if (!string.IsNullOrWhiteSpace(credentials.CookieHeader))
             {
                 var cookies = credentials.CookieHeader.Split(';').Select(pair => pair.Trim().Split('=', 2)).Where(pair => pair.Length == 2)
                     .Select(pair => new Cookie { Name = pair[0], Value = pair[1], Url = "https://chatgpt.com/", Secure = true }).ToArray();
@@ -135,6 +137,13 @@ public sealed class BrowserSentinelProvider(BrowserSentinelOptions? options = nu
             var accessToken = headers.TryGetValue("authorization", out var authorization) && authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) ? authorization[7..] : credentials.AccessToken;
             if (Subject(credentials.AccessToken) is { } expected && Subject(accessToken) is { } actual && expected != actual)
                 throw new SdkException("The Sentinel browser signed in to a different ChatGPT account.", "authentication_account_mismatch");
+            var browserCookies = await context.CookiesAsync().ConfigureAwait(false);
+            var exportedCookies = browserCookies.Where(c => c.Domain is "chatgpt.com" or ".chatgpt.com").Select(c => new WebCookie
+            {
+                Name = c.Name, Value = c.Value, Domain = c.Domain, Path = c.Path, Secure = c.Secure, HttpOnly = c.HttpOnly,
+                HostOnly = !c.Domain.StartsWith('.'), ExpiresAt = c.Expires > 0 ? DateTimeOffset.FromUnixTimeSeconds((long)c.Expires) : null,
+                SameSite = c.SameSite switch { SameSiteAttribute.Strict => "strict", SameSiteAttribute.Lax => "lax", _ => "no_restriction" }
+            }).ToArray();
             var cookieHeader = string.Join("; ", (await context.CookiesAsync(["https://chatgpt.com/"]).ConfigureAwait(false)).Select(c => c.Name + "=" + c.Value));
             var stable = new Dictionary<string, string>(credentials.Headers, StringComparer.OrdinalIgnoreCase);
             foreach (var pair in headers)
@@ -142,7 +151,7 @@ public sealed class BrowserSentinelProvider(BrowserSentinelOptions? options = nu
             var sentinel = new WebSentinelSession { Token = token, IsPrepareToken = isPrepareToken, ExpiresAt = expires is { } unix ? DateTimeOffset.FromUnixTimeSeconds(unix) : DateTimeOffset.UtcNow.AddMinutes(2),
                 ProofToken = headers.GetValueOrDefault("openai-sentinel-proof-token"), TurnstileToken = headers.GetValueOrDefault("openai-sentinel-turnstile-token"), ObserverToken = headers.GetValueOrDefault("openai-sentinel-so-token"), EchoLogs = headers.GetValueOrDefault("oai-echo-logs") };
             var refreshed = new WebCredentials { AccessToken = accessToken, CookieHeader = cookieHeader, UserAgent = headers.GetValueOrDefault("user-agent") ?? credentials.UserAgent,
-                ExpiresAt = credentials.ExpiresAt, Headers = stable, SentinelSession = sentinel };
+                Cookies = exportedCookies, ExpiresAt = WebAuthentication.ReadAccessTokenExpiry(accessToken) ?? credentials.ExpiresAt, Headers = stable, SentinelSession = sentinel };
             _options.Progress?.Invoke("Sentinel credentials obtained. Closing the temporary browser page.");
             return new(refreshed, sentinel);
         }
@@ -168,6 +177,13 @@ public sealed class BrowserSentinelProvider(BrowserSentinelOptions? options = nu
             finally { if (owned is not null) await owned.DisposeAsync().ConfigureAwait(false); }
         }
     }
+
+    internal static Cookie ToBrowserCookie(WebCookie cookie) => new()
+    {
+        Name = cookie.Name, Value = cookie.Value, Domain = cookie.Domain, Path = cookie.Path,
+        Secure = cookie.Secure, HttpOnly = cookie.HttpOnly, Expires = cookie.ExpiresAt is { } expiry ? expiry.ToUnixTimeSeconds() : -1,
+        SameSite = cookie.SameSite switch { "strict" => SameSiteAttribute.Strict, "lax" => SameSiteAttribute.Lax, "no_restriction" => SameSiteAttribute.None, _ => null }
+    };
 
     private static async Task WaitForPageAsync(Task operation, Task handshake, CancellationToken ct)
     {

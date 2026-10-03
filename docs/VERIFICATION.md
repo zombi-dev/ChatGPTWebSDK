@@ -57,7 +57,17 @@ These links require the account owner's sign-in. They are not public shares.
 
 ## Protocol and local coverage
 
-The current solution tests passed **443 tests, zero failures and zero skips**. Builds completed with **zero warnings and zero errors**. Packages were inspected as ZIP archives: no HARs, session files, cookies or private capture paths were included. A local proxy build was published into `artifacts/proxy`; packages were not uploaded to a registry.
+The v1.0.0 solution tests passed **467 tests, zero failures and zero skips**, plus **12 extension tests**. Builds completed with **zero warnings and zero errors**. Packages were inspected as ZIP archives: no HARs, session files, cookies or private capture paths were included. Versioned packages, SDK DLLs, proxy bundles, browser extensions and checksums are built into `artifacts/release`. Packages are attached to GitHub Releases; no NuGet registry publication is configured.
+
+## v1.0.0 authentication and release verification
+
+- The actual Chromium and Firefox Manifest V3 extensions were loaded in owned desktop browser profiles. Their action handler read the active ChatGPT session and the browser cookies API, copied the export, and created the in-page notification. The resulting Windows clipboard strings were saved only in ignored private test files. This exercised the real extension handler; the toolbar click itself was invoked through the extension's debugging context.
+- Both actual exports included a current access token and scoped HttpOnly session cookies. The export excludes analytics and per-conversation cookies. The Firefox package passed Mozilla's web-ext 10.7.0 validator with zero errors, notices or warnings.
+- A separate .NET 8 application restored the v1.0.0 packages into a fresh isolated NuGet cache. `ChatGPTWeb.Initialize(authenticationString)` imported each browser's export, compiled original OpenAI client constructors, and authenticated the official model client.
+- The packaged initializer in Hybrid mode obtained two fresh Sentinel handshakes, generated two appended turns and recalled a random marker in the second turn. Both owned Sentinel browser instances closed after their handshakes.
+- The final replacement retains all 8,767 official public/protected signatures. The GitHub workflow passed actionlint 1.7.12 locally. Its hosted build/release result is available from the repository's [Actions page](https://github.com/zombi-dev/ChatGPTWebSDK/actions).
+
+The Firefox release XPI is unsigned. Temporary desktop installation was verified through Firefox's add-on debugging mechanism; permanent installation requires Mozilla signing. Other Chromium vendors, Firefox containers/incognito cookie stores, and Android support are covered by code/manifest checks where applicable, not separate live account tests.
 
 - Every one of the **353** operations in the pinned supplied OpenAPI snapshot has an HTTP routing test. This exercises the separate generic REST operation client, not 353 successful ChatGPT web equivalents.
 - The supplied HAR contained **688 entries and 11 generation streams**. Sanitized fixtures retain stream structure while removing account credentials and private text. Every captured stream decodes the expected primary message, text length and generated asset count.
