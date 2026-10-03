@@ -1,4 +1,4 @@
-param([string]$BuildRoot)
+param([string]$BuildRoot, [switch]$SkipTests, [switch]$BundleBrowser)
 
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -8,14 +8,11 @@ try {
     if ($BuildRoot) { $taskBuildArguments = @('-p:ChatGPTWebBuildRoot=' + [IO.Path]::GetFullPath($BuildRoot)) }
     $taskVersion = (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'VERSION') -Raw).Trim()
     if ($taskVersion -notmatch '^\d+\.\d+\.\d+$') { throw 'VERSION must contain a three-part release version.' }
-    node --test extensions/chatgpt-auth/tests/*.test.cjs
-    if ($LASTEXITCODE -ne 0) { throw 'Extension tests failed.' }
+    if (!$SkipTests) { & ./test.ps1 -BuildRoot $BuildRoot }
     node extensions/chatgpt-auth/build.mjs
     if ($LASTEXITCODE -ne 0) { throw 'Extension build failed.' }
     dotnet build ChatGPTWebSdk.sln -c Release --nologo @taskBuildArguments
     if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
-    dotnet test ChatGPTWebSdk.sln -c Release --no-build --nologo @taskBuildArguments
-    if ($LASTEXITCODE -ne 0) { throw 'Tests failed.' }
     dotnet pack src/ChatGPTWebSdk/ChatGPTWebSdk.csproj -c Release --no-build -o artifacts/packages --nologo @taskBuildArguments
     if ($LASTEXITCODE -ne 0) { throw 'Packaging failed.' }
     dotnet pack src/ChatGPTWebSdk.Browser/ChatGPTWebSdk.Browser.csproj -c Release --no-build -o artifacts/packages --nologo @taskBuildArguments
@@ -42,8 +39,9 @@ try {
         if (Test-Path -LiteralPath $taskZipPath) { Remove-Item -LiteralPath $taskZipPath }
         [IO.Compression.ZipFile]::CreateFromDirectory((Join-Path $PSScriptRoot ('artifacts/' + $taskArchive[0])), $taskZipPath)
     }
+    if ($BundleBrowser) { & ./tools/Bundle-Browser.ps1 }
     $taskChecksumLines = Get-ChildItem -LiteralPath artifacts/release -File |
-        Where-Object { $_.Extension -in @('.nupkg', '.zip', '.xpi') -and $_.Name.Contains($taskVersion) } |
+        Where-Object { $_.Extension -in @('.nupkg', '.zip', '.xpi', '.gz') -and $_.Name.Contains($taskVersion) } |
         Sort-Object Name | ForEach-Object { (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + $_.Name }
     [IO.File]::WriteAllLines((Join-Path $PSScriptRoot 'artifacts/release/SHA256SUMS.txt'), [string[]]$taskChecksumLines)
     Write-Host "Release $taskVersion built in artifacts/release."
