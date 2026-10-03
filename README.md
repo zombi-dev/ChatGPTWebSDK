@@ -1,44 +1,117 @@
 # Notice!
-This was designed by zombi.dev and made with GPT 6.1 Sol (max). This means it is made of a high standard by a smart AI model, so issues are not expected.
+This was designed by zombi.dev and made with GPT 6.1 Sol (max). This means it is made of a high standard by a smart AI model, and it is personally used, verified, and tested by me (a human), so issues are not expected.
+
 *BrowserOnly is still currently TODO.*
 
 # ChatGPT Web SDK for C#
 
-**Current release: 1.0.0.** [Download SDK packages, DLLs and browser extensions](https://github.com/zombi-dev/ChatGPTWebSDK/releases/latest).
+## 1. Download the authentication extension
 
-A source-compatible replacement for **OpenAI .NET 2.14.0**, backed by ChatGPT's web HTTP endpoints. Initialize the web runtime once, then use the original `OpenAIClient`, `ChatClient`, `ResponsesClient`, `ImageClient`, `OpenAIFileClient`, conversation clients, and their original models and signatures.
+- **Chrome, Edge, Brave, Opera and other Chromium browsers:** [Chromium extension ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.1.0/chatgpt-web-sdk-auth-chromium-1.1.0.zip). Extract it, enable Developer mode in your browser's extension page, and choose **Load unpacked**.
+- **Firefox:** [Firefox XPI](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.1.0/chatgpt-web-sdk-auth-firefox-1.1.0.xpi) or [Firefox extension ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.1.0/chatgpt-web-sdk-auth-firefox-1.1.0.zip). Open `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on**, and select the XPI. This unsigned build must be loaded again after Firefox restarts.
 
-**Status: experimental, with live acceptance recorded on 2026-10-02 and 2026-10-03.** The replacement's official clients authenticated, continued text conversations across turns and runtime restarts, uploaded/downloaded an image with identical bytes, accepted binary image input, and generated/edited images. Typed Chat Completions and Responses streams, response retrieval, Conversations resources and temporary continuation also passed. Native message editing, regeneration, renaming, archiving and deletion passed live checks. Independent HTTP reads confirmed the real conversation graphs. Fresh Sentinel answers are obtained for every turn. Detailed results are recorded in [docs/VERIFICATION.md](docs/VERIFICATION.md).
+## 2. Download the library
 
-The released OpenAI SDK's **8,767 public/protected signatures** were compared against this assembly: **zero missing signatures**. This preserves the C# surface; it does not create ChatGPT equivalents for platform-only services. Unsupported web operations or controls return **501**. Generation is never silently sent to the paid platform API.
+**v1.1.0 complete downloads include the SDK DLLs, dependencies, proxy, example app, and Chromium browser.**
 
-## One-click browser authentication
+| Your platform | Download |
+| --- | --- |
+| Windows x64 | [SDK + browser ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.1.0/ChatGPTWebSdk-Bundle-win-x64-1.1.0.zip) |
+| Linux x64 | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.1.0/ChatGPTWebSdk-Bundle-linux-x64-1.1.0.tar.gz) |
+| macOS Intel | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.1.0/ChatGPTWebSdk-Bundle-osx-x64-1.1.0.tar.gz) |
+| macOS Apple Silicon | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.1.0/ChatGPTWebSdk-Bundle-osx-arm64-1.1.0.tar.gz) |
 
-Install the Chromium or Firefox extension from the release, open your signed-in ChatGPT tab, and click **ChatGPT Web SDK Auth**. The tab displays **Copied to clipboard!** and the clipboard contains one authentication string.
+Extract the whole archive. On Linux/macOS use `tar -xzf` so executable permissions and symlinks survive. Libraries and the example need **.NET 8 or later**; the optional proxy needs **.NET 10**. Linux also needs Chromium's [system libraries](https://playwright.dev/dotnet/docs/browsers#install-system-dependencies).
+
+[All downloads, smaller DLL-only bundles, NuGet packages, and checksums](https://github.com/zombi-dev/ChatGPTWebSDK/releases/latest).
+
+## 3. Quick start
+
+1. Open `https://chatgpt.com` and sign in.
+2. Click **ChatGPT Web SDK Auth** in your browser toolbar. The ChatGPT tab says **Copied to clipboard!**
+3. In the extracted SDK directory, run `dotnet run --project example`. Paste that one string when prompted, then type your messages.
+
+Hybrid mode uses the bundled browser briefly for each required Sentinel handshake and closes it afterward. The conversation requests run through HTTP. Keep the copied string private.
+
+## 4. Example code
 
 ```csharp
 using OpenAI;
 
+string authenticationString = "PASTE_THE_COPIED_STRING_HERE";
 using var runtime = ChatGPTWeb.Initialize(authenticationString);
-var client = runtime.CreateClient().GetChatClient("AVAILABLE_WEB_MODEL_SLUG");
-var completion = await client.CompleteChatAsync("Hello!");
+
+var chat = runtime.CreateClient(threadId: "my-chat")
+    .GetChatClient("AVAILABLE_WEB_MODEL_SLUG");
+
+var first = await chat.CompleteChatAsync("Remember ABC-42.");
+var second = await chat.CompleteChatAsync("What did I ask you to remember?");
+Console.WriteLine(second.Value.Content[0].Text);
 ```
 
-You can also pass `sessionDirectory`, `userId`, `accountId`, `mode` and `browser` options. The default is Hybrid. The extension exports session/access credentials, selected browser context and scoped authentication/security cookies; it keeps no credential storage and does not read conversations. HAR and manual credentials remain available. Treat the copied string as a credential.
+For your own application, reference the replacement `ChatGPTWebSdk.OpenAI` package or supplied DLLs, and keep `browsers/` beside the application output. The included example demonstrates DLL references. Set `browser: new() { BundledBrowserDirectory = "/path/to/extracted-sdk/browsers" }` when the browser lives elsewhere.
 
-See [authentication and extension installation](docs/AUTHENTICATION.md), including Chromium **Load unpacked** and Firefox **Load Temporary Add-on** instructions. The Firefox release XPI is unsigned; permanent installation in normal Firefox requires Mozilla signing.
+## Details and compatibility
+
+A source-compatible replacement for **OpenAI .NET 2.14.0**, backed by ChatGPT's web HTTP endpoints. Initialize once, then use the original `OpenAIClient`, `ChatClient`, `ResponsesClient`, `ImageClient`, `OpenAIFileClient`, conversation clients, and their models.
+
+The official SDK's **8,767 public/protected signatures** were compared against this assembly: **zero missing signatures**. Web equivalents implement the operations described below; unsupported platform-only operations or controls return **501**. Generation uses the ChatGPT web backend.
+
+Live acceptance, independent remote conversation checks and test results are recorded in [docs/VERIFICATION.md](docs/VERIFICATION.md). See [authentication details](docs/AUTHENTICATION.md) for extension installation, session exports, HAR import and manual credentials.
 
 ## Initialization modes
 
 | `ChatGPTWebMode` | Behavior |
 | --- | --- |
 | `ApiOnly` | HTTP requests only. Never automatically opens a browser. Supply current authorized Sentinel answers with an external session/challenge provider when required. |
-| `Hybrid` **(default)** | Opens a visible temporary browser for each required Sentinel handshake, intercepts and aborts the draft generation request, obtains its authorized headers, closes the owned browser/context, then performs generation through HTTP. |
+| `Hybrid` **(default)** | Opens a temporary Chromium browser for each required Sentinel handshake, intercepts and aborts the draft generation request, obtains its authorized headers, closes the owned browser/context, then performs generation through HTTP. Visible by default; invisible operation is optional. |
 | `BrowserOnly` | Reserved for future implementation. Initialization currently throws `NotSupportedException`. |
 
-An optional loopback `Browser.CdpEndpoint` connects to an existing signed-in Chromium browser. The SDK creates and closes its own context/page and leaves the existing browser and original tabs open. Without CDP, it launches a temporary desktop Chromium process, connects through a nonzero loopback debugging port, and closes the owned process after the handshake. It prefers installed Chrome/Edge and falls back to explicitly installed Playwright Chromium. The page uses the actual window size and the executable's genuine user-agent and client hints. No persistent background browser is maintained. Fresh handshake answers are obtained per turn; HAR challenge tokens are never imported as reusable credentials. `Browser.UseDesktopLauncher = false` selects Playwright's standard launcher for environments that require it.
+An optional loopback `Browser.CdpEndpoint` connects to an existing signed-in Chromium browser. The SDK creates and closes its own context/page and leaves the existing browser and original tabs open. Without CDP, it launches a temporary desktop Chromium process, connects through a nonzero loopback debugging port, and closes the owned process after the handshake. It uses the bundled Chromium when present, otherwise installed Chrome/Edge or explicitly installed Playwright Chromium. Browser.BundledBrowserDirectory selects another extracted browser directory. The page uses the actual window size and the executable's genuine user-agent and client hints. No persistent background browser is maintained. Fresh handshake answers are obtained per turn; HAR challenge tokens are never imported as reusable credentials. `Browser.UseDesktopLauncher = false` selects Playwright's standard launcher for environments that require it.
 
 `Browser.MaxRetries` defaults to **3** and `Browser.RetryDelay` to **5 seconds**. Only failed browser startups or a repeating Cloudflare challenge are retried, after the owned resources close. A successful handshake stops retries. Account mismatches, missing protocol headers and actual generation requests are not retried. Set `MaxRetries = 0` to disable startup retries. Interactive challenges can still reject an automated browser; restarting is not a guarantee of acceptance.
+
+### Invisible browsers and servers
+
+```csharp
+using ChatGPTWebSdk.Browser;
+using OpenAI;
+
+using var runtime = ChatGPTWeb.Initialize(authenticationString, browser: new()
+{
+    Headless = true, // No window or desktop display is needed.
+    Acceleration = BrowserAcceleration.Automatic // Hardware first, software fallback.
+});
+```
+
+`Automatic` is the default acceleration mode. It asks Chromium to use its normal hardware path, checks Chromium's reported GPU compositing status, and restarts only its own browser with software rendering if hardware is unavailable. This happens before authentication or draft submission. `Software` selects CPU rendering immediately; `Hardware` rejects reported hardware unavailability. An unavailable GPU report is treated as unknown rather than assuming a working device. Attached CDP browsers keep their existing launch settings.
+
+Headless Chromium and both rendering modes passed actual JavaScript and canvas checks. The live headless Sentinel probe encountered Cloudflare's interactive challenge, so `Headless` defaults to `false`. On servers, select `Headless = true` and install Chromium's system libraries; the remote service can still demand interactive sign-in or reject the headless session. An invisible session cannot display a checkbox. The SDK returns `sentinel_browser_challenge` with instructions to use a visible browser or existing signed-in CDP session. No browser stays running between turns.
+
+To check an extracted bundle without signing in, run `dotnet run --project example -- --verify-bundle`. It exercises the SDK's actual native launcher invisibly in automatic and software modes, verifies JavaScript and canvas rendering, then closes both browsers. Applications can run the same check through `BrowserDiagnostics.VerifyAsync`.
+
+### Additional web operations
+
+The supplied HAR contains **55 distinct ChatGPT service operations across 292 requests**. Every operation has a mapping in `runtime.Web.Transport.CapturedOperations`, including settings/profile reads, notifications, connector permissions and links, installed plugins/apps, billing/subscriptions, Codex tasks/usage, conversation initialization/batch reads, comparison feedback, file processing and binary asset reads. Common operations also have named methods on `runtime.Web.Transport`.
+
+```csharp
+var transport = runtime.Web.Transport;
+var archived = await transport.ListConversationsAsync("default", new WebConversationQuery
+{
+    Archived = true, Limit = 20, Order = "updated"
+});
+var settings = await transport.GetUserSettingsAsync("default");
+var usage = await transport.GetCodexUsageAsync("default");
+
+// Inspect all recorded request templates and the status codes observed in the HAR.
+var catalog = WebCapturedOperationsClient.Operations;
+var result = await transport.CapturedOperations.SendJsonAsync("default", "ListPins",
+    query: new Dictionary<string, string?> { ["item_type"] = "conversation" });
+```
+
+Add `using ChatGPTWebSdk.Web;` for the web query types and catalog. Supply your own IDs, query values and bodies; the catalog contains field names and request counts, with no captured credentials or private payloads. JSON results can be null when the backend returns an optional result, such as no default-tab recommendation. Use `SendAsync` for a binary response and dispose it after reading, or `StreamAsync` for SSE. Generation through that client still obtains fresh Sentinel authorization; `ChatGptWebClient` additionally manages scoped conversation state. These methods expose the recorded backend calls and preserve actual permission errors. A recorded 404 or canceled request does not establish a working service feature. [The operation coverage table](docs/HAR_COVERAGE.md) lists every mapping and the limits of live verification.
+
+[Reference review](docs/REFERENCES.md) records the revisions and findings from all 13 additional repositories, alongside the original protocol and official SDK/spec sources.
 
 ## Use it in C#
 
@@ -94,13 +167,15 @@ var research = runtime.CreateClient(threadId: "research").GetResponsesClient();
 
 Initialization uses an in-process virtual OpenAI endpoint; a listening proxy is optional. The default HTTP driver is **system curl**. It succeeded in authenticated live requests on the test machine, whereas .NET `HttpClient` received a Cloudflare challenge. Curl credentials are supplied through stdin, and response bodies remain streaming. `HttpDriver = ChatGPTWebHttpDriver.DotNet` selects the managed transport. Neither driver guarantees that the web service will accept generation.
 
-## Browser installation
+## Bundled browser and optional installation
 
-Build the CLI, then install its Playwright Chromium runtime once:
+Complete downloads include Chromium matched to pinned Microsoft.Playwright 1.63.0 and its licenses. The SDK discovers `browsers/browser.json` beside the application or SDK assembly, or one directory above the proxy. `Browser.BundledBrowserDirectory` selects another bundle directory. Initialization does not download a browser.
+
+For a source build or smaller NuGet-only installation, install Chromium once:
 
 ```powershell
 dotnet build tools/ChatGPTWebSdk.Cli -c Release
-pwsh tools/ChatGPTWebSdk.Cli/bin/Release/net10.0/playwright.ps1 install chromium
+pwsh tools/ChatGPTWebSdk.Cli/bin/Release/net10.0/playwright.ps1 install chromium --no-shell
 ```
 
 A consuming application also receives a `playwright.ps1` script in its output directory through the Playwright dependency. Alternatively, configure an installed Chrome/Edge channel or executable. Browser installation is explicit; the library does not download browsers during initialization. `ApiOnly` needs no browser installation.
@@ -123,6 +198,7 @@ For API-only generation, supply `SentinelSessionProvider`, or `RequirementsBodyP
 | Native web operations | Link/read/list, models/accounts, rename/archive/delete, edit/regenerate, temporary chats, assets/downloads, reconciliation | Live models, edit/regenerate, rename/archive/delete and recovery; HAR fixtures and local tests |
 | Per-user state | Account/user/thread bindings, real remote IDs, atomic persistent files, exclusive locks, remote ownership, per-user response index | Isolation/concurrency/restart tests |
 | Temporary chats | Web history disabled, memory-only conversation content/IDs/responses; persistent mode marker prevents accidental mode changes | Live two-turn recall with matching remote ID and no text/ID on disk; state tests |
+| Project chats | New chats and continuation in an existing project, edits/regeneration, persistent binding; project sidebar/details/conversations/connector scopes/saves reads | Captured project protocol, binding tests and live evidence in the verification record |
 | Sentinel | Current prepare/finalize and conduit handshake; temporary visible browser or external authorized provider | Live fresh browser handshakes and accepted HTTP generation; owned-browser cleanup |
 
 The web adapter rejects system/developer messages, arbitrary function tools, forced structured output, temperature/top-p/token controls, background Responses, embeddings, moderation, batch jobs, fine-tuning, vector stores, platform administration, audio/video and Realtime. Exact image size/quality controls, masks, image variations, multiple requested images, file deletion and conversation item insertion/deletion also have no verified web mapping. Those official method signatures remain callable and fail explicitly through the virtual endpoint.
@@ -141,6 +217,24 @@ Use `runtime.Web.LinkAsync(scope, conversationId)` on a fresh thread to import a
 
 Interrupted or ambiguous sends leave a durable `RequiresReconciliation` marker and are not automatically retried. `ReconcileAsync` independently reads the remote graph and checks pending IDs and a finished assistant branch. If the first send loses its remote ID, `ResolveUnknownConversationAsync` requires the actual ID found in ChatGPT. Definite pre-stream HTTP rejections leave the thread safe to retry after the underlying issue is resolved.
 
+## Projects and temporary chats
+
+```csharp
+var projectChat = runtime.CreateClient(threadId: "project-work",
+    projectId: "g-p-YOUR_PROJECT_ID").GetChatClient("AVAILABLE_WEB_MODEL_SLUG");
+await projectChat.CompleteChatAsync("Use this project's context.");
+
+var temporaryChat = runtime.CreateClient(threadId: "temporary",
+    temporaryChat: true).GetChatClient("AVAILABLE_WEB_MODEL_SLUG");
+await temporaryChat.CompleteChatAsync("This is a temporary chat.");
+```
+
+You can also set `projectId` or `temporaryChat` on `ChatGPTWeb.Initialize`, set `ProjectId`/`TemporaryChat` in runtime options, or supply `ProjectId` on a native `WebTurnRequest`. `store=false` selects temporary mode in compatible Responses and Chat Completions requests.
+
+Project IDs begin with `g-p-` and appear in the project's ChatGPT URL. `runtime.Web.Transport.ListProjectsAsync(accountId)` and `GetProjectAsync` expose the captured project reads. Project bindings survive process restarts and stay attached during edits, regeneration and reconciliation. Use a new thread ID to change project. Temporary content and remote IDs remain in memory and start afresh after a runtime restart.
+
+ChatGPT does not support temporary chats inside projects; the SDK rejects that combination. The HAR observes chats in an existing project and project reads. Creating, deleting or changing a project's settings has no captured mapping.
+
 ## Optional HTTP proxy
 
 ```powershell
@@ -149,7 +243,7 @@ $env:CHATGPT_WEB_CONFIG = (Resolve-Path .\local.session.json).Path
 dotnet run --project src/ChatGPTWebSdk.Proxy --no-launch-profile
 ```
 
-The endpoint defaults to `http://127.0.0.1:5088/v1/`. Use the generated `clients[0].apiKey` from the local configuration. Each proxy key is bound to one account/application user. `X-ChatGPT-Thread-Id` selects a thread; `X-ChatGPT-User-Id` cannot change identity. The proxy uses the same adapter as the drop-in package.
+The endpoint defaults to `http://127.0.0.1:5088/v1/`. Use the generated `clients[0].apiKey` from the local configuration. Each proxy key is bound to one account/application user. `X-ChatGPT-Thread-Id` selects a thread; `X-ChatGPT-User-Id` cannot change identity. The proxy uses the same adapter as the drop-in package. Compatible generation accepts `X-ChatGPT-Project-Id` and `X-ChatGPT-Temporary-Chat: true`.
 
 The `/v1/` routes cover the mapped Responses, Chat Completions, models, files, images and Conversations operations above. Native routes are `GET /web/binding`, `POST /web/link`, `POST /web/reconcile`, `PATCH /web/conversation`, `POST /web/edit`, `POST /web/regenerate`, and `GET /capabilities`. External linking requires `allowConversationLinking=true`; account-wide transport methods are not exposed to untrusted proxy clients.
 
@@ -158,12 +252,12 @@ See [the example configuration](examples/proxy-config.example.json). Config `mod
 ## Build, package and verification
 
 ```powershell
-.\build.ps1
+.\build.ps1 -BundleBrowser
 ```
 
 This runs the SDK and extension tests, builds the extensions, packs `ChatGPTWebSdk`, `ChatGPTWebSdk.Browser` and `ChatGPTWebSdk.OpenAI`, and publishes SDK DLLs and the proxy with their dependencies. Versioned ZIPs, NuGet packages, the Firefox XPI and checksums are collected in `artifacts/release`. The local build does not publish externally. Tooling uses .NET 10 and Node 22 or later; libraries target .NET 8.
 
-GitHub Actions builds on every branch push and pull request. Successful pushes to `main` create a versioned release with all binary assets attached. Each update must bump the shared `VERSION` and mention it in the commit title or body. See [release instructions](docs/RELEASING.md).
+Three separate workflows run in order: **Tests → Build → Release**. Branch pushes run SDK and extension tests on four platforms, then build the exact tested commit and its browser bundles. Pull requests run tests. Successful builds from `main` publish the versioned release with every asset attached. Each update must bump the shared `VERSION` and mention it in the commit title or body. See [release instructions](docs/RELEASING.md).
 
 ```powershell
 # Read-only authentication/model check through the real official client types.
