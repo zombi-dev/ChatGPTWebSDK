@@ -1,0 +1,855 @@
+[
+  {
+    "id": "DeleteConversation",
+    "method": "DELETE",
+    "path": "backend-api/conversation/id/{conversation_id}",
+    "queryParameters": [],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetAuthSession",
+    "method": "GET",
+    "path": "api/auth/session",
+    "queryParameters": [],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetAccounts",
+    "method": "GET",
+    "path": "backend-api/accounts/check/v4-2023-04-27",
+    "queryParameters": [],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 4,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetOptimizedAccounts",
+    "method": "GET",
+    "path": "backend-api/accounts/optimized/check",
+    "queryParameters": [],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetConnectorLogo",
+    "method": "GET",
+    "path": "backend-api/aip/connectors/{connector_id}/logo",
+    "queryParameters": [
+      "theme"
+    ],
+    "bodyFields": [],
+    "responseKind": "Binary",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      404
+    ]
+  },
+  {
+    "id": "GetConnectorEligibility",
+    "method": "GET",
+    "path": "backend-api/aip/first-party/eligibility",
+    "queryParameters": [],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "ListNotifications",
+    "method": "GET",
+    "path": "backend-api/amphora/notifications",
+    "queryParameters": [
+      "limit"
+    ],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 4,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetHomeBeacons",
+    "method": "GET",
+    "path": "backend-api/beacons/home",
+    "queryParameters": [
+      "codex_window_type",
+      "home_sms_backup_supported",
+      "pepper_home_banner_supported",
+      "product",
+      "space_tooltip_ready",
+      "web_frontend"
+    ],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 5,
+    "capturedStatuses": [
+      0
+    ]
+  },
+  {
+    "id": "GetNotificationConnection",
+    "method": "GET",
+    "path": "backend-api/celsius/ws/user",
+    "queryParameters": [],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 7,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "ListComposerItems",
+    "method": "GET",
+    "path": "backend-api/composer/items",
+    "queryParameters": [
+      "entrypoint",
+      "limit"
+    ],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetConversation",
+    "method": "GET",
+    "path": "backend-api/conversation/{conversation_id}",
+    "queryParameters": [],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 22,
+    "capturedStatuses": [
+      200,
+      404
+    ]
+  },
+  {
+    "id": "ListConversations",
+    "method": "GET",
+    "path": "backend-api/conversations",
+    "queryParameters": [
+      "conversation_origin",
+      "exclude_conversation_origin",
+      "expand",
+      "is_archived",
+      "is_starred",
+      "limit",
+      "offset",
+      "order"
+    ],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 38,
+    "capturedStatuses": [
+      0,
+      200
+    ]
+  },
+  {
+    "id": "GetConversationTurns",
+    "method": "GET",
+    "path": "backend-api/conversations/{conversation_id}",
+    "queryParameters": [
+      "include_has_versions",
+      "num_turns"
+    ],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 3,
+    "capturedStatuses": [
+      200,
+      404
+    ]
+  },
+  {
+    "id": "DownloadEstuaryContent",
+    "method": "GET",
+    "path": "backend-api/estuary/content",
+    "queryParameters": [
+      "cid",
+      "id",
+      "p",
+      "sig",
+      "ts",
+      "v"
+    ],
+    "bodyFields": [],
+    "responseKind": "Binary",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200,
+      304
+    ]
+  },
+  {
+    "id": "GetFile",
+    "method": "GET",
+    "path": "backend-api/files/{file_id}/simple",
+    "queryParameters": [
+      "conversation_id"
+    ],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetFileDownloadInfo",
+    "method": "GET",
+    "path": "backend-api/files/download/{file_id}",
+    "queryParameters": [
+      "conversation_id",
+      "download_intent",
+      "include_library_file_state",
+      "inline"
+    ],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetProject",
+    "method": "GET",
+    "path": "backend-api/gizmos/{project_id}",
+    "queryParameters": [
+      "include_file_limits"
+    ],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 3,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "ListProjectConversations",
+    "method": "GET",
+    "path": "backend-api/gizmos/{project_id}/conversations",
+    "queryParameters": [
+      "limit",
+      "owned_only"
+    ],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 14,
+    "capturedStatuses": [
+      0,
+      200
+    ]
+  },
+  {
+    "id": "ListProjects",
+    "method": "GET",
+    "path": "backend-api/gizmos/snorlax/sidebar",
+    "queryParameters": [
+      "conversations_per_gizmo",
+      "limit",
+      "owned_only"
+    ],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetConnectorPermissions",
+    "method": "GET",
+    "path": "backend-api/hazelnuts",
+    "queryParameters": [
+      "include_permissions",
+      "scope"
+    ],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetUser",
+    "method": "GET",
+    "path": "backend-api/me",
+    "queryParameters": [],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 3,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetModels",
+    "method": "GET",
+    "path": "backend-api/models",
+    "queryParameters": [
+      "iim",
+      "include_icons",
+      "is_gizmo"
+    ],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetBillingPage",
+    "method": "GET",
+    "path": "backend-api/pageConfigs/billing",
+    "queryParameters": [],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "ListPins",
+    "method": "GET",
+    "path": "backend-api/pins",
+    "queryParameters": [
+      "item_type"
+    ],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 10,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetProfile",
+    "method": "GET",
+    "path": "backend-api/profiles/me",
+    "queryParameters": [],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "ListProjectConnectorScopes",
+    "method": "GET",
+    "path": "backend-api/projects/{project_id}/connector_scopes",
+    "queryParameters": [
+      "limit"
+    ],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 1,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "ListProjectSaves",
+    "method": "GET",
+    "path": "backend-api/projects/{project_id}/saves",
+    "queryParameters": [
+      "limit"
+    ],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 3,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetPromptLibrary",
+    "method": "GET",
+    "path": "backend-api/prompt_library/",
+    "queryParameters": [
+      "limit",
+      "model_slug",
+      "use_v2"
+    ],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetPluginsHome",
+    "method": "GET",
+    "path": "backend-api/ps/plugins/home",
+    "queryParameters": [],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "ListInstalledPlugins",
+    "method": "GET",
+    "path": "backend-api/ps/plugins/installed",
+    "queryParameters": [
+      "includeExtensions",
+      "limit"
+    ],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetAdultStatus",
+    "method": "GET",
+    "path": "backend-api/settings/is_adult",
+    "queryParameters": [],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 3,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetUserSettings",
+    "method": "GET",
+    "path": "backend-api/settings/user",
+    "queryParameters": [],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 4,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetSubscriptions",
+    "method": "GET",
+    "path": "backend-api/subscriptions",
+    "queryParameters": [
+      "account_id"
+    ],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetSystemHints",
+    "method": "GET",
+    "path": "backend-api/system_hints",
+    "queryParameters": [
+      "exclude_logo",
+      "gizmo_id",
+      "mode",
+      "suggestions"
+    ],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 11,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetDefaultTabRecommendation",
+    "method": "GET",
+    "path": "backend-api/tpp/default-tab-recommendation",
+    "queryParameters": [],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetAlternateModels",
+    "method": "GET",
+    "path": "backend-api/tpp/models/",
+    "queryParameters": [
+      "iim",
+      "include_icons"
+    ],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetGranularConsent",
+    "method": "GET",
+    "path": "backend-api/user_granular_consent",
+    "queryParameters": [],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetCodexAccounts",
+    "method": "GET",
+    "path": "backend-api/wham/accounts/check",
+    "queryParameters": [],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 3,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetCodexSitesAccess",
+    "method": "GET",
+    "path": "backend-api/wham/sites/access",
+    "queryParameters": [],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "ListCodexTasks",
+    "method": "GET",
+    "path": "backend-api/wham/tasks/list",
+    "queryParameters": [
+      "limit",
+      "task_filter"
+    ],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 18,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetCodexUsage",
+    "method": "GET",
+    "path": "backend-api/wham/usage",
+    "queryParameters": [],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 5,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "ListAccessibleConnectorLinks",
+    "method": "POST",
+    "path": "backend-api/aip/connectors/links/list_accessible",
+    "queryParameters": [],
+    "bodyFields": [
+      "link_refresh_strategy",
+      "principals"
+    ],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "ClearSettingsCache",
+    "method": "POST",
+    "path": "backend-api/amphora/clear_settings_cache",
+    "queryParameters": [],
+    "bodyFields": [],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "InitializeConversation",
+    "method": "POST",
+    "path": "backend-api/conversation/init",
+    "queryParameters": [],
+    "bodyFields": [
+      "conversation_id",
+      "conversation_origin",
+      "gizmo_id",
+      "requested_default_model",
+      "system_hints",
+      "timezone",
+      "timezone_offset_min"
+    ],
+    "responseKind": "Json",
+    "capturedRequests": 14,
+    "capturedStatuses": [
+      0,
+      200
+    ]
+  },
+  {
+    "id": "GetConversationsBatch",
+    "method": "POST",
+    "path": "backend-api/conversations/batch",
+    "queryParameters": [],
+    "bodyFields": [
+      "conversation_ids"
+    ],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GenerateConversation",
+    "method": "POST",
+    "path": "backend-api/f/conversation",
+    "queryParameters": [],
+    "bodyFields": [
+      "action",
+      "client_contextual_info",
+      "client_prepare_state",
+      "conversation_id",
+      "conversation_mode",
+      "enable_message_followups",
+      "gizmo_id",
+      "history_and_training_disabled",
+      "is_do_not_remember",
+      "local_function_names",
+      "messages",
+      "model",
+      "parent_message_id",
+      "regeneration_source",
+      "supported_encodings",
+      "temporary_chat_requests_personalization",
+      "thinking_effort",
+      "timezone",
+      "timezone_offset_min",
+      "turn_attribution",
+      "variant_purpose"
+    ],
+    "responseKind": "EventStream",
+    "capturedRequests": 11,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "PrepareConversation",
+    "method": "POST",
+    "path": "backend-api/f/conversation/prepare",
+    "queryParameters": [],
+    "bodyFields": [
+      "action",
+      "attachment_mime_types",
+      "client_prepare_dispatch",
+      "client_prepare_source",
+      "client_prepare_state",
+      "conversation_id",
+      "conversation_mode",
+      "gizmo_id",
+      "history_and_training_disabled",
+      "is_do_not_remember",
+      "local_function_names",
+      "model",
+      "parent_message_id",
+      "partial_query",
+      "temporary_chat_requests_personalization",
+      "thinking_effort",
+      "timezone",
+      "timezone_offset_min"
+    ],
+    "responseKind": "Json",
+    "capturedRequests": 20,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "CreateFile",
+    "method": "POST",
+    "path": "backend-api/files",
+    "queryParameters": [],
+    "bodyFields": [
+      "client_resolved_mime_type",
+      "entry_surface",
+      "file_name",
+      "file_size",
+      "library_persistence_mode",
+      "mime_resolution_source",
+      "mime_type",
+      "reset_rate_limits",
+      "store_in_library",
+      "supports_direct_azure_multipart",
+      "timezone_offset_min",
+      "use_case"
+    ],
+    "responseKind": "Json",
+    "capturedRequests": 1,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "ProcessUpload",
+    "method": "POST",
+    "path": "backend-api/files/process_upload_stream",
+    "queryParameters": [],
+    "bodyFields": [
+      "entry_surface",
+      "file_id",
+      "file_name",
+      "index_for_retrieval",
+      "library_persistence_mode",
+      "metadata",
+      "mime_type",
+      "use_case"
+    ],
+    "responseKind": "EventStream",
+    "capturedRequests": 1,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "SubmitComparisonFeedback",
+    "method": "POST",
+    "path": "backend-api/paragen_submission",
+    "queryParameters": [],
+    "bodyFields": [
+      "conversation_id",
+      "displayed_message_ids",
+      "first_visible_message_id",
+      "is_persisted_paragen",
+      "message_metadatas",
+      "paragen_ui_treatment",
+      "rating",
+      "selected_message_id",
+      "source_timestamp",
+      "ui_variant",
+      "user_prompt_message_id"
+    ],
+    "responseKind": "Json",
+    "capturedRequests": 1,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "GetAppsBatch",
+    "method": "POST",
+    "path": "backend-api/ps/apps/batch",
+    "queryParameters": [],
+    "bodyFields": [
+      "app_ids",
+      "include_tools"
+    ],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "FinalizeSentinel",
+    "method": "POST",
+    "path": "backend-api/sentinel/chat-requirements/finalize",
+    "queryParameters": [],
+    "bodyFields": [
+      "prepare_token",
+      "proofofwork",
+      "turnstile"
+    ],
+    "responseKind": "Json",
+    "capturedRequests": 13,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "PrepareSentinel",
+    "method": "POST",
+    "path": "backend-api/sentinel/chat-requirements/prepare",
+    "queryParameters": [],
+    "bodyFields": [
+      "p"
+    ],
+    "responseKind": "Json",
+    "capturedRequests": 13,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "SubmitUserSignal",
+    "method": "POST",
+    "path": "backend-api/unified_user_signals",
+    "queryParameters": [],
+    "bodyFields": [
+      "product_surface",
+      "signal_detail",
+      "signal_metadata",
+      "signal_type",
+      "user_metadata"
+    ],
+    "responseKind": "Json",
+    "capturedRequests": 2,
+    "capturedStatuses": [
+      200
+    ]
+  },
+  {
+    "id": "SubmitCodexAnalytics",
+    "method": "POST",
+    "path": "backend-api/wham/analytics-events/events",
+    "queryParameters": [],
+    "bodyFields": [
+      "events"
+    ],
+    "responseKind": "Json",
+    "capturedRequests": 3,
+    "capturedStatuses": [
+      200
+    ]
+  }
+]
