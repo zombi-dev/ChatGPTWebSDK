@@ -13,6 +13,7 @@ public sealed record CaptureReport(IReadOnlyList<CaptureEntry> Entries, bool Has
     public bool HasConversationPrepare { get; init; }
     public bool HasFiles { get; init; }
     public bool HasTemporaryChats { get; init; }
+    public bool HasProjectChats { get; init; }
     public bool HasRegeneration { get; init; }
 }
 public sealed class HarImport
@@ -39,7 +40,7 @@ public static class HarCapture
         string sessionPath = profile.Session, turnPath = profile.Conversation, requirementsPath = profile.Requirements, modelsPath = profile.Models, accountsPath = profile.Accounts;
         string? requirementsPrepare = null, requirementsFinalize = null, conversationPrepare = null;
         var challenges = new HashSet<string>();
-        bool files = false, temporary = false, regeneration = false;
+        bool files = false, temporary = false, regeneration = false, projects = false;
         bool first = false, continuation = false, requirements = false, session = false;
         JsonObject defaults = new(), requirementsBody = new();
         foreach (var entry in entries)
@@ -120,6 +121,7 @@ public static class HarCapture
                 turnPath = path.TrimStart('/');
                 if (body["conversation_id"] is null) first = true; else continuation = true;
                 temporary |= body["history_and_training_disabled"]?.GetValue<bool>() == true;
+                projects |= body["gizmo_id"]?.GetValue<string>()?.StartsWith("g-p-", StringComparison.Ordinal) == true;
                 regeneration |= body["action"]?.GetValue<string>() == "variant";
                 // Copy only protocol defaults, never prompts, IDs, attachments, tools or proof material.
                 foreach (var name in new[] { "timezone_offset_min", "timezone", "supports_buffering", "supported_encodings" })
@@ -131,7 +133,7 @@ public static class HarCapture
             Credentials = new() { AccessToken = accessToken, CookieHeader = cookie, ExpiresAt = expiresAt, UserAgent = userAgent, Headers = contextHeaders },
             Endpoints = new() { Session = sessionPath, Conversation = turnPath, Requirements = requirementsPath, Models = modelsPath, Accounts = accountsPath, ConversationDefaults = defaults, RequirementsBody = requirementsBody,
                 RequirementsPrepare = requirementsPrepare, RequirementsFinalize = requirementsFinalize, ConversationPrepare = conversationPrepare },
-            Report = new(summaries, first, continuation, requirements, session) { RequiredChallenges = challenges.Order().ToArray(), HasConversationPrepare = conversationPrepare is not null, HasFiles = files, HasTemporaryChats = temporary, HasRegeneration = regeneration }
+            Report = new(summaries, first, continuation, requirements, session) { RequiredChallenges = challenges.Order().ToArray(), HasConversationPrepare = conversationPrepare is not null, HasFiles = files, HasTemporaryChats = temporary, HasProjectChats = projects, HasRegeneration = regeneration }
         };
     }
 
