@@ -24,7 +24,7 @@ public sealed record McpServerConfiguration
 
     internal void Validate()
     {
-        if (string.IsNullOrWhiteSpace(Label) || Label.Length > 128 || Label.Any(c => !char.IsAsciiLetterOrDigit(c) && c is not ('_' or '-' or '.')))
+        if (!IsValidLabel(Label))
             throw new ArgumentException("MCP labels must contain 1..128 ASCII letters, digits, dots, dashes or underscores.");
         if (!Enum.IsDefined(Transport)) throw new ArgumentException("Unknown MCP transport.");
         var sources = (Endpoint is null ? 0 : 1) + (Command is null ? 0 : 1) + (Client is null ? 0 : 1);
@@ -39,6 +39,9 @@ public sealed record McpServerConfiguration
         if (Headers.Any(h => string.IsNullOrWhiteSpace(h.Key) || h.Key.Any(c => !char.IsAsciiLetterOrDigit(c) && c != '-') || h.Value.Any(c => c is '\r' or '\n')))
             throw new ArgumentException("Invalid MCP headers.");
     }
+
+    internal static bool IsValidLabel(string? label) => !string.IsNullOrWhiteSpace(label) && label.Length <= 128 &&
+        label.All(c => char.IsAsciiLetterOrDigit(c) || c is '_' or '-' or '.');
 }
 
 public sealed class McpConversationOptions
@@ -65,7 +68,11 @@ public sealed class McpConversationOptions
 }
 
 public sealed record McpWebTool(string Name, string? Description, JsonObject InputSchema, bool ReadOnly = false);
-public sealed record McpToolCallContext(ConversationScope Scope, string CallId, string ServerLabel, string ToolName, JsonObject Arguments);
+public sealed record McpToolCallContext(ConversationScope Scope, string CallId, string ServerLabel, string ToolName, JsonObject Arguments)
+{
+    /// <summary>The selected configuration, including scoped connection settings, for application approval and progress callbacks.</summary>
+    [JsonIgnore] public McpServerConfiguration? Server { get; init; }
+}
 public sealed record McpToolProgress(McpToolCallContext Call, string Status, JsonObject? Result = null);
 
 /// <summary>Optional adapter for an existing MCP client. The SDK does not dispose application-supplied clients.</summary>
