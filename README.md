@@ -7,19 +7,19 @@ This was designed by zombi.dev and made with GPT 6.1 Sol (max). This means it is
 
 ## 1. Download the authentication extension
 
-- **Chrome, Edge, Brave, Opera and other Chromium browsers:** [Chromium extension ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.2.0/chatgpt-web-sdk-auth-chromium-1.2.0.zip). Extract it, enable Developer mode in your browser's extension page, and choose **Load unpacked**.
-- **Firefox:** [Firefox XPI](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.2.0/chatgpt-web-sdk-auth-firefox-1.2.0.xpi) or [Firefox extension ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.2.0/chatgpt-web-sdk-auth-firefox-1.2.0.zip). Open `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on**, and select the XPI. This unsigned build must be loaded again after Firefox restarts.
+- **Chrome, Edge, Brave, Opera and other Chromium browsers:** [Chromium extension ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.3.0/chatgpt-web-sdk-auth-chromium-1.3.0.zip). Extract it, enable Developer mode in your browser's extension page, and choose **Load unpacked**.
+- **Firefox:** [Firefox XPI](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.3.0/chatgpt-web-sdk-auth-firefox-1.3.0.xpi) or [Firefox extension ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.3.0/chatgpt-web-sdk-auth-firefox-1.3.0.zip). Open `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on**, and select the XPI. This unsigned build must be loaded again after Firefox restarts.
 
 ## 2. Download the library
 
-**v1.2.0 complete downloads include the SDK DLLs, dependencies, proxy, example app, and Chromium browser.**
+**v1.3.0 complete downloads include the SDK DLLs, dependencies, proxy, example app, and Chromium browser.**
 
 | Your platform | Download |
 | --- | --- |
-| Windows x64 | [SDK + browser ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.2.0/ChatGPTWebSdk-Bundle-win-x64-1.2.0.zip) |
-| Linux x64 | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.2.0/ChatGPTWebSdk-Bundle-linux-x64-1.2.0.tar.gz) |
-| macOS Intel | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.2.0/ChatGPTWebSdk-Bundle-osx-x64-1.2.0.tar.gz) |
-| macOS Apple Silicon | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.2.0/ChatGPTWebSdk-Bundle-osx-arm64-1.2.0.tar.gz) |
+| Windows x64 | [SDK + browser ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.3.0/ChatGPTWebSdk-Bundle-win-x64-1.3.0.zip) |
+| Linux x64 | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.3.0/ChatGPTWebSdk-Bundle-linux-x64-1.3.0.tar.gz) |
+| macOS Intel | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.3.0/ChatGPTWebSdk-Bundle-osx-x64-1.3.0.tar.gz) |
+| macOS Apple Silicon | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.3.0/ChatGPTWebSdk-Bundle-osx-arm64-1.3.0.tar.gz) |
 
 Extract the whole archive. On Linux/macOS use `tar -xzf` so executable permissions and symlinks survive. Libraries and the example need **.NET 8 or later**; the optional proxy needs **.NET 10**. Linux also needs Chromium's [system libraries](https://playwright.dev/dotnet/docs/browsers#install-system-dependencies).
 
@@ -51,7 +51,7 @@ Console.WriteLine(second.Value.Content[0].Text);
 
 For your own application, reference the replacement `ChatGPTWebSdk.OpenAI` package or supplied DLLs, and keep `browsers/` beside the application output. The included example demonstrates DLL references. Set `browser: new() { BundledBrowserDirectory = "/path/to/extracted-sdk/browsers" }` when the browser lives elsewhere.
 
-## MCP servers (v1.2.0)
+## MCP servers (v1.3.0)
 
 Register remote HTTP/SSE or local stdio MCP servers, then use the same ChatClient/ResponsesClient calls and streaming methods. The SDK discovers tools, translates assistant tool requests into real MCP calls, appends the results to the linked ChatGPT thread, and returns only the final answer to your application.
 
@@ -69,6 +69,26 @@ var chat = runtime.CreateClient(threadId: "with-tools")
 var answer = await chat.CompleteChatAsync("Use the tools to answer my question.");
 Console.WriteLine(answer.Value.Content[0].Text);
 ```
+
+Chat and message scopes can each use independent servers, URLs and credentials, even without initialization servers:
+
+```csharp
+runtime.SetChatMcp(new()
+{
+    Servers = [new() { Label = "my-tools", Endpoint = new Uri("https://CHAT_MCP_SERVER/mcp") }]
+}, threadId: "with-tools");
+
+using (runtime.UseMessageMcp(new()
+{
+    Servers = [new() { Label = "my-tools", Endpoint = new Uri("https://MESSAGE_MCP_SERVER/mcp") }]
+}))
+{
+    await chat.CompleteChatAsync("Use the message-specific server this time.");
+}
+// Later messages use the chat's server again.
+```
+
+Initialization, chat and message servers combine by label; matching labels override only within the narrower scope. Set `InheritServers = false` to replace inherited servers or use `ExcludedServers` to remove selected labels. `runtime.SetChatMcp(null, threadId: "with-tools")` clears the chat override. Native requests can set `WebTurnRequest.Mcp`. SSE and all internal tool rounds keep the selected scope.
 
 Intermediate exchanges are hidden from SDK completion text and SSE text deltas. They remain actual turns in the remote ChatGPT thread and may be visible on the ChatGPT website. Project/temporary context and per-user bindings are retained. [MCP setup, local servers, official tool declarations, approvals and recovery](docs/MCP.md).
 
