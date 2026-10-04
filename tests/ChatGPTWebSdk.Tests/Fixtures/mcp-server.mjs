@@ -2,6 +2,7 @@
 import readline from 'node:readline';
 import http from 'node:http';
 const mode = process.argv[2] ?? 'stdio';
+const expectedAuthorization = process.argv[3];
 const tools = [
   {name:'add',description:'Adds two integers',inputSchema:{type:'object',properties:{a:{type:'integer'},b:{type:'integer'}},required:['a','b'],additionalProperties:false},annotations:{readOnlyHint:true}},
   {name:'echo',description:'Echoes structured input',inputSchema:{type:'object',properties:{value:{}},required:['value']},annotations:{readOnlyHint:true}},
@@ -33,6 +34,9 @@ if(mode === 'stdio') {
 } else {
   let legacy;
   const server=http.createServer(async(req,res)=> {
+    if(expectedAuthorization && req.headers.authorization !== expectedAuthorization) {
+      res.writeHead(401, {'Content-Type':'application/json'}); res.end('{"error":"Fixture authorization mismatch"}'); return;
+    }
     if(req.method === 'GET' && req.url === '/sse') {
       res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache'});
       res.write('event: endpoint\ndata: /messages\n\n'); legacy=res; return;
