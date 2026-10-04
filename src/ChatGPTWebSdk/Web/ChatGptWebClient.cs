@@ -1,4 +1,5 @@
 using System.Net;
+using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -24,7 +25,10 @@ public sealed class WebTurnRequest
     public string? GizmoId { get; init; }
     public string? ProjectId { get; init; }
     public bool UseMcp { get; init; } = true;
+    /// <summary>Servers for this logical message only. They remain selected through all of its tool rounds.</summary>
+    public McpScopeOptions? Mcp { get; init; }
     internal IReadOnlyList<McpServerSelection>? McpSelections { get; init; }
+    internal IReadOnlyList<McpServerConfiguration>? McpServersSnapshot { get; init; }
     internal bool InternalMcpTurn { get; init; }
 }
 
@@ -42,12 +46,37 @@ public sealed record WebChatEvent(WebStreamUpdate Update, WebResponseRecord? Res
 public sealed class ChatGptWebClient(ChatGptWebTransport transport, IConversationStore store)
 {
     private readonly McpConversationBridge? _mcp;
+    private readonly ConcurrentDictionary<ConversationScope, McpScopeOptions> _chatMcp = new();
+    private readonly McpConversationOptions _defaultMcp = new();
+    private readonly IReadOnlyList<McpServerConfiguration> _initialServers = [];
     public McpConversationOptions? Mcp => _mcp?.Options;
     public ChatGptWebClient(ChatGptWebTransport transport, IConversationStore store, McpConversationOptions mcp) : this(transport, store)
     {
         ArgumentNullException.ThrowIfNull(mcp);
         mcp.Validate();
-        if (mcp.Servers.Count > 0) _mcp = new(this, mcp);
+        _initialServers = McpScopeOptions.SnapshotServers(mcp.Servers);
+        _defaultMcp = mcp;
+        _mcp = new(this, mcp);
+    }
+    /// <summary>Configures MCP servers for this account/user/thread. Null restores initialization defaults.</summary>
+    public void SetChatMcp(ConversationScope scope, McpScopeOptions? mcp)
+    {
+        ArgumentNullException.ThrowIfNull(scope);
+        if (mcp is null) _chatMcp.TryRemove(scope, out _);
+        else _chatMcp[scope] = mcp.Snapshot();
+    }
+    /// <summary>Returns this chat's configuration, or null if it inherits initialization defaults.</summary>
+    public McpScopeOptions? GetChatMcp(ConversationScope scope)
+    {
+        ArgumentNullException.ThrowIfNull(scope);
+        return _chatMcp.TryGetValue(scope, out var configured) ? configured.Snapshot() : null;
+    }
+    internal IReadOnlyList<McpServerConfiguration> GetMcpServers(ConversationScope scope, McpScopeOptions? message = null)
+    {
+        var servers = _initialServers.ToDictionary(s => s.Label, StringComparer.Ordinal);
+        if (_chatMcp.TryGetValue(scope, out var chat)) chat.Apply(servers);
+        message?.Snapshot().Apply(servers);
+        return servers.Values.ToArray();
     }
     public ChatGptWebTransport Transport => transport;
     public IConversationStore Store => store;
@@ -96,7 +125,7 @@ public sealed class ChatGptWebClient(ChatGptWebTransport transport, IConversatio
     {
         // One lease spans the entire tool loop, including the time between remote generation turns.
         await using var operation = await store.AcquireAsync(new(scope.AccountId, scope.UserId, "__sdk_operation_" + scope.StorageKey), ct).ConfigureAwait(false);
-        var events = _mcp is not null && request.UseMcp ? _mcp.StreamAsync(scope, request, ct) : StreamCoreAsync(scope, request, ct);
+        var events = request.UseMcp ? (_mcp ?? new McpConversationBridge(this, _defaultMcp)).StreamAsync(scope, request, ct) : StreamCoreAsync(scope, request, ct);
         await foreach (var item in events.ConfigureAwait(false)) yield return item;
     }
 
@@ -311,6 +340,7 @@ public sealed class ChatGptWebClient(ChatGptWebTransport transport, IConversatio
         state.History.Clear(); state.Responses.Clear(); state.PendingMessages.Clear(); state.PreviousAssistantBeforePendingTurn = null;
         state.VisibleHistory = null; state.McpExecutions.Clear();
         await lease.SaveAsync(CancellationToken.None).ConfigureAwait(false);
+        SetChatMcp(scope, null);
     }
 
     public async Task LinkAsync(ConversationScope scope, string conversationId, CancellationToken ct = default)
@@ -416,4 +446,3 @@ public sealed class ChatGptWebClient(ChatGptWebTransport transport, IConversatio
         state.LastResponseId = state.Responses.LastOrDefault(r => r.MessageId == state.ParentMessageId)?.Id;
     }
 }
-
