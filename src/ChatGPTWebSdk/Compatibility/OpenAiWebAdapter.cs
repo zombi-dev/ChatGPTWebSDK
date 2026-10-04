@@ -11,9 +11,12 @@ namespace ChatGPTWebSdk.Compatibility;
 /// <summary>Maps observed web operations and rejects controls with no equivalent web behavior.</summary>
 public sealed class OpenAiWebAdapter(ChatGptWebClient client, IReadOnlyDictionary<string, string>? modelAliases = null, WebChatContext? defaultContext = null)
 {
+    private McpScopeOptions? _messageMcp;
     public ChatGptWebClient Client => client;
     public OpenAiWebAdapter WithContext(string? projectId = null, bool? temporaryChat = null) =>
-        new(client, modelAliases, (defaultContext ?? new()) with { ProjectId = projectId ?? defaultContext?.ProjectId, TemporaryChat = temporaryChat ?? defaultContext?.TemporaryChat ?? false });
+        new(client, modelAliases, (defaultContext ?? new()) with { ProjectId = projectId ?? defaultContext?.ProjectId, TemporaryChat = temporaryChat ?? defaultContext?.TemporaryChat ?? false }) { _messageMcp = _messageMcp };
+    /// <summary>Creates a request adapter with independently registered servers for one message.</summary>
+    public OpenAiWebAdapter WithMcp(McpScopeOptions? mcp) => new(client, modelAliases, defaultContext) { _messageMcp = mcp?.Snapshot() };
     private WebChatContext Context(JsonObject body)
     {
         var context = defaultContext ?? new();
@@ -29,7 +32,8 @@ public sealed class OpenAiWebAdapter(ChatGptWebClient client, IReadOnlyDictionar
     public async Task<WebTurnRequest> PrepareResponseAsync(ConversationScope scope, JsonObject body, CancellationToken ct = default)
     {
         CheckFields(body, ["model", "input", "stream", "conversation", "previous_response_id", "store", "reasoning", "tools"]);
-        var mcp = SelectMcpTools(scope, body);
+        var servers = client.GetMcpServers(scope, _messageMcp);
+        var mcp = SelectMcpTools(scope, body, servers);
         var context = Context(body);
         await client.ValidateContextAsync(scope, context, ct).ConfigureAwait(false);
         var conversationNode = body["conversation"];
@@ -49,7 +53,7 @@ public sealed class OpenAiWebAdapter(ChatGptWebClient client, IReadOnlyDictionar
             else if (state.ConversationId != conversationId) throw new SdkException("The requested conversation belongs to a different binding. Select another thread ID.", "conversation_binding_conflict", HttpStatusCode.Conflict);
         }
         return new() { Model = model, Messages = messages, PreviousResponseId = previous, TemporaryChat = context.TemporaryChat, ProjectId = context.ProjectId, GizmoId = context.GizmoId, ThinkingEffort = thinking,
-            UseMcp = mcp?.Count != 0, McpSelections = mcp };
+            UseMcp = mcp?.Count != 0, McpSelections = mcp, McpServersSnapshot = servers };
     }
 
     public WebTurnRequest PrepareChat(JsonObject body)
@@ -70,7 +74,7 @@ public sealed class OpenAiWebAdapter(ChatGptWebClient client, IReadOnlyDictionar
         }).ToArray();
         var appended = history.All(m => m.Role == "user");
         return new() { Model = Model(body), Messages = appended ? history.Select(m => WebInputMessage.User(m.Text)).ToArray() : [], ExpectedHistory = appended ? null : history,
-            ThinkingEffort = ReasoningEffort(body["reasoning_effort"]?.GetValue<string>()), TemporaryChat = context.TemporaryChat, ProjectId = context.ProjectId, GizmoId = context.GizmoId };
+            ThinkingEffort = ReasoningEffort(body["reasoning_effort"]?.GetValue<string>()), TemporaryChat = context.TemporaryChat, ProjectId = context.ProjectId, GizmoId = context.GizmoId, Mcp = _messageMcp };
     }
 
     public async Task<WebTurnRequest> PrepareChatAsync(ConversationScope scope, JsonObject body, CancellationToken ct = default)
@@ -95,10 +99,11 @@ public sealed class OpenAiWebAdapter(ChatGptWebClient client, IReadOnlyDictionar
         }
         bool append = messages.All(m => m.Role == "user");
         return new() { Model = model, Messages = append ? messages.Select(m => new WebInputMessage(m.Id, m.Role, m.Text) { Content = m.Content, Metadata = m.Metadata }).ToArray() : [], ExpectedHistory = append ? null : messages,
-            ThinkingEffort = thinking, TemporaryChat = context.TemporaryChat, ProjectId = context.ProjectId, GizmoId = context.GizmoId };
+            ThinkingEffort = thinking, TemporaryChat = context.TemporaryChat, ProjectId = context.ProjectId, GizmoId = context.GizmoId,
+            McpServersSnapshot = client.GetMcpServers(scope, _messageMcp) };
     }
 
-    private IReadOnlyList<McpServerSelection>? SelectMcpTools(ConversationScope scope, JsonObject body)
+    private IReadOnlyList<McpServerSelection>? SelectMcpTools(ConversationScope scope, JsonObject body, IReadOnlyList<McpServerConfiguration> servers)
     {
         if (body["tools"] is null) return null;
         if (body["tools"] is not JsonArray array) throw new ArgumentException("tools must be an array.");
@@ -108,8 +113,8 @@ public sealed class OpenAiWebAdapter(ChatGptWebClient client, IReadOnlyDictionar
             if (node is not JsonObject tool || tool["type"]?.GetValue<string>() != "mcp") throw new UnsupportedWebFeatureException("non-MCP response tools");
             CheckFields(tool, ["type", "server_label", "server_url", "server_description", "allowed_tools", "require_approval", "headers", "authorization"]);
             var label = tool["server_label"]?.GetValue<string>() ?? throw new ArgumentException("MCP server_label is required.");
-            var configured = client.Mcp?.Servers.SingleOrDefault(s => s.Label == label)
-                ?? throw new SdkException("Register this MCP server in ChatGPTWebRuntimeOptions.Mcp before requesting its tools.", "mcp_server_not_registered", HttpStatusCode.Forbidden);
+            var configured = servers.SingleOrDefault(s => s.Label == label)
+                ?? throw new SdkException("Register this MCP server at initialization, for this chat, or for this message before requesting its tools.", "mcp_server_not_registered", HttpStatusCode.Forbidden);
             if (client.Mcp?.IsServerAllowed?.Invoke(scope, label) == false) throw new SdkException("This application user cannot access this MCP server.", "mcp_server_denied", HttpStatusCode.Forbidden);
             if (result.Any(s => s.Server.Label == label)) throw new ArgumentException("Duplicate MCP server label.");
             if (tool["server_url"] is { } url && (!Uri.TryCreate(url.GetValue<string>(), UriKind.Absolute, out var endpoint) || endpoint != configured.Endpoint))
@@ -303,4 +308,3 @@ public sealed class OpenAiWebAdapter(ChatGptWebClient client, IReadOnlyDictionar
         }).ToArray()) };
     }
 }
-

@@ -55,6 +55,7 @@ public sealed class ChatGPTWebRuntime : IDisposable
     private readonly IReadOnlyDictionary<string, ConversationScope> _clients;
     private readonly HttpClientPipelineTransport _transport;
     private readonly HttpClient _compatibilityHttp;
+    private readonly AsyncLocal<MessageMcpScope?> _messageMcp = new();
     private bool _disposed;
     public string ClientKey { get; }
     public ChatGptWebClient Web { get; }
@@ -78,7 +79,7 @@ public sealed class ChatGPTWebRuntime : IDisposable
             SentinelChallengeProvider = options.SentinelChallengeProvider, RequirementsBodyProvider = options.RequirementsBodyProvider });
         var store = options.ConversationStore ?? new FileConversationStore(options.SessionDirectory);
         Web = options.Mcp is null ? new(transport, store) : new(transport, store, options.Mcp);
-        _compatibilityHttp = new(new OpenAiWebHttpHandler(new(Web, options.ModelAliases, new() { ProjectId = options.ProjectId, TemporaryChat = options.TemporaryChat }), ResolveScope)) { Timeout = options.RequestTimeout };
+        _compatibilityHttp = new(new OpenAiWebHttpHandler(new(Web, options.ModelAliases, new() { ProjectId = options.ProjectId, TemporaryChat = options.TemporaryChat }), ResolveScope, TakeMessageMcp)) { Timeout = options.RequestTimeout };
         _transport = new(_compatibilityHttp);
         ChatGPTWeb.RegisterTransport(_transport);
     }
@@ -97,6 +98,21 @@ public sealed class ChatGPTWebRuntime : IDisposable
         return options;
     }
     public OpenAIClient CreateClient(string? clientKey = null, string? threadId = null, string? projectId = null, bool? temporaryChat = null) => new(new System.ClientModel.ApiKeyCredential(clientKey ?? ClientKey), CreateClientOptions(threadId, projectId, temporaryChat));
+    /// <summary>Configures MCP servers for one application user's thread. Null restores initialization defaults.</summary>
+    public void SetChatMcp(McpScopeOptions? mcp, string? threadId = null, string? clientKey = null) =>
+        Web.SetChatMcp(ResolveScope(clientKey ?? ClientKey, threadId), mcp);
+    public McpScopeOptions? GetChatMcp(string? threadId = null, string? clientKey = null) =>
+        Web.GetChatMcp(ResolveScope(clientKey ?? ClientKey, threadId));
+    /// <summary>Applies servers to the next Chat/Responses generation attempt in this async context only.</summary>
+    public IDisposable UseMessageMcp(McpScopeOptions mcp)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        ArgumentNullException.ThrowIfNull(mcp);
+        var scope = new MessageMcpScope(this, mcp.Snapshot(), _messageMcp.Value);
+        _messageMcp.Value = scope;
+        return scope;
+    }
+    private McpScopeOptions? TakeMessageMcp() => _messageMcp.Value?.Take();
     internal void Apply(ClientPipelineOptions options)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -109,6 +125,19 @@ public sealed class ChatGPTWebRuntime : IDisposable
         if (_disposed) return;
         _disposed = true; _compatibilityHttp.Dispose(); if (_options.HttpClient is null) _http.Dispose();
         ChatGPTWeb.Unconfigure(this);
+    }
+    private sealed class MessageMcpScope(ChatGPTWebRuntime owner, McpScopeOptions options, MessageMcpScope? parent) : IDisposable
+    {
+        private int _used;
+        private int _disposed;
+        public McpScopeOptions? Take() => Volatile.Read(ref _disposed) == 0 && Interlocked.CompareExchange(ref _used, 1, 0) == 0 ? options : null;
+        public void Dispose()
+        {
+            if (Volatile.Read(ref _disposed) != 0) return;
+            if (!ReferenceEquals(owner._messageMcp.Value, this)) throw new InvalidOperationException("Dispose message MCP scopes in reverse creation order in their originating async context.");
+            Interlocked.Exchange(ref _disposed, 1);
+            owner._messageMcp.Value = parent;
+        }
     }
     private sealed class ThreadPolicy(string thread) : PipelinePolicy
     {

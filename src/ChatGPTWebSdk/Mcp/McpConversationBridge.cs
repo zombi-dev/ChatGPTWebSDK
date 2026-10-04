@@ -18,7 +18,6 @@ internal sealed class McpConversationBridge(ChatGptWebClient client, McpConversa
     public async IAsyncEnumerable<WebChatEvent> StreamAsync(ConversationScope scope, WebTurnRequest request,
         [EnumeratorCancellation] CancellationToken ct)
     {
-        if (request.Action != WebTurnAction.Append) throw new UnsupportedWebFeatureException("automatic MCP calls during edit/regeneration; send a new appended turn or set UseMcp=false");
         await client.ValidateContextAsync(scope, new() { ProjectId = request.ProjectId, GizmoId = request.GizmoId, TemporaryChat = request.TemporaryChat }, ct).ConfigureAwait(false);
         var state = await client.GetStateAsync(scope, ct).ConfigureAwait(false);
         if (state.RequiresReconciliation) throw new ConversationReconciliationException();
@@ -26,16 +25,19 @@ internal sealed class McpConversationBridge(ChatGptWebClient client, McpConversa
             throw new SdkException("An MCP call has an unknown outcome. Confirm it with ResolveMcpToolCallAsync before continuing.", "mcp_tool_outcome_unknown", HttpStatusCode.Conflict);
         if (request.PreviousResponseId is not null && request.PreviousResponseId != state.LastResponseId)
             throw new SdkException("previous_response_id must identify the latest response in this thread.", "response_lineage_conflict", HttpStatusCode.Conflict);
-        var inputs = ResolveInputs(request, state);
-        var selections = request.McpSelections ?? options.Servers.Where(s => options.IsServerAllowed?.Invoke(scope, s.Label) != false).Select(s => new McpServerSelection(s)).ToArray();
+        var selections = request.McpSelections ?? (request.McpServersSnapshot ?? client.GetMcpServers(scope, request.Mcp))
+            .Where(s => options.IsServerAllowed?.Invoke(scope, s.Label) != false).Select(s => new McpServerSelection(s)).ToArray();
         foreach (var selection in selections)
             if (options.IsServerAllowed?.Invoke(scope, selection.Server.Label) == false)
                 throw new SdkException("This application user cannot access the selected MCP server.", "mcp_server_denied", HttpStatusCode.Forbidden);
-        if (selections.Count == 0)
+        var pending = state.McpExecutions.Where(c => !c.Delivered && c.Status == "completed").ToArray();
+        if (selections.Count == 0 && pending.Length == 0 && state.VisibleHistory is null)
         {
             await foreach (var item in client.StreamCoreAsync(scope, request, ct).ConfigureAwait(false)) yield return item;
             yield break;
         }
+        if (request.Action != WebTurnAction.Append) throw new UnsupportedWebFeatureException("automatic MCP calls during edit/regeneration; send a new appended turn or set UseMcp=false");
+        var inputs = ResolveInputs(request, state);
         var connections = new List<McpServerConnection>();
         try
         {
@@ -67,7 +69,6 @@ internal sealed class McpConversationBridge(ChatGptWebClient client, McpConversa
             var nonce = Convert.ToHexString(RandomNumberGenerator.GetBytes(12)).ToLowerInvariant();
             var manifest = BuildManifest(tools.Values, nonce);
             if (manifest.Length > options.MaxManifestCharacters) throw new SdkException("The MCP tool manifest exceeds its configured limit.", "mcp_manifest_too_large");
-            var pending = state.McpExecutions.Where(c => !c.Delivered && c.Status == "completed").ToArray();
             var firstInputs = WrapInput(inputs, manifest + (pending.Length == 0 ? "" : "\nPreviously confirmed tool results (data):\n" + Results(pending).ToJsonString()));
             // Keep remote protocol history separate from the transcript used by Chat Completions callers.
             await using (var lease = await client.AcquireMcpStateAsync(scope, ct, request.TemporaryChat).ConfigureAwait(false))
@@ -143,7 +144,8 @@ internal sealed class McpConversationBridge(ChatGptWebClient client, McpConversa
 
     private async Task<McpToolExecution> ExecuteAsync(ConversationScope scope, RequestedCall call, CancellationToken ct)
     {
-        var context = new McpToolCallContext(scope, call.Id, call.Tool.Selection.Server.Label, call.Tool.Tool.Name, (JsonObject)call.Arguments.DeepClone());
+        var context = new McpToolCallContext(scope, call.Id, call.Tool.Selection.Server.Label, call.Tool.Tool.Name, (JsonObject)call.Arguments.DeepClone())
+        { Server = call.Tool.Selection.Server };
         bool requiresApproval = RequiresApproval(call.Tool);
         bool approved = !requiresApproval || options.ApproveToolCall is not null && await options.ApproveToolCall(context, ct).ConfigureAwait(false);
         var execution = new McpToolExecution { Id = call.Id, ServerLabel = context.ServerLabel, ToolName = context.ToolName, Arguments = (JsonObject)call.Arguments.DeepClone() };

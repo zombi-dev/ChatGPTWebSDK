@@ -12,6 +12,9 @@ namespace ChatGPTWebSdk.Compatibility;
 /// <summary>In-process OpenAI HTTP compatibility layer. It never forwards a request to the platform API.</summary>
 public sealed class OpenAiWebHttpHandler(OpenAiWebAdapter adapter, Func<string, string?, ConversationScope> resolveScope) : HttpMessageHandler
 {
+    private readonly Func<Mcp.McpScopeOptions?>? _takeMessageMcp;
+    public OpenAiWebHttpHandler(OpenAiWebAdapter adapter, Func<string, string?, ConversationScope> resolveScope,
+        Func<Mcp.McpScopeOptions?> takeMessageMcp) : this(adapter, resolveScope) => _takeMessageMcp = takeMessageMcp ?? throw new ArgumentNullException(nameof(takeMessageMcp));
     protected override HttpResponseMessage Send(HttpRequestMessage request, CancellationToken ct) => SendAsync(request, ct).ConfigureAwait(false).GetAwaiter().GetResult();
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {
@@ -66,6 +69,7 @@ public sealed class OpenAiWebHttpHandler(OpenAiWebAdapter adapter, Func<string, 
         if (verb == "POST" && path is "/chat/completions" or "/responses")
         {
             var generation = GenerationAdapter(request);
+            if (_takeMessageMcp is not null) generation = generation.WithMcp(_takeMessageMcp());
             var body = await Body(request, ct).ConfigureAwait(false);
             if (body["conversation"] is not null && body["previous_response_id"] is not null) throw new ArgumentException("conversation and previous_response_id cannot be combined.");
             if (thread is null && path == "/responses" && body["previous_response_id"]?.GetValue<string>() is { } previous)
@@ -144,7 +148,9 @@ public sealed class OpenAiWebHttpHandler(OpenAiWebAdapter adapter, Func<string, 
             if (state.RequiresReconciliation) throw new ConversationReconciliationException();
             if (state.ConversationId is { } remote) await adapter.Client.Transport.DeleteConversationAsync(scope.AccountId, remote, ct).ConfigureAwait(false);
             state.ConversationId = null; state.ConversationAlias = null; state.History.Clear(); state.Responses.Clear(); state.LastResponseId = null;
+            state.VisibleHistory = null; state.McpExecutions.Clear();
             await stateLease.SaveAsync(CancellationToken.None).ConfigureAwait(false);
+            adapter.Client.SetChatMcp(scope, null);
             return Json(new JsonObject { ["id"] = path[1], ["object"] = "conversation.deleted", ["deleted"] = true });
         }
         if (verb == "GET" && path.Length == 3 && path[2] == "items") return Json(MessageList(state.History, request.RequestUri!.Query));

@@ -39,6 +39,66 @@ The SDK uses ModelContextProtocol.Core **2.2.0** for MCP initialization, JSON-RP
 
 HTTP headers are sent only to the registered MCP origin. Redirects and legacy SSE endpoints pointing to another origin are blocked. MCP headers, endpoint URLs, local commands, environment values, and ChatGPT session credentials do not enter the tool manifest. Tool arguments and results do enter the ChatGPT conversation, as required for the model to use them.
 
+## Servers for one chat or one message (v1.3.0)
+
+Initialization servers remain available by default. A chat scope belongs to the exact `(account, user, thread)` binding, and a message scope covers one logical request, including every internal tool/result round. Both scopes accept the same complete `McpServerConfiguration`: their own endpoint URL, HTTP headers, transport, stdio command/arguments/environment, or application-supplied client. They do not require any servers at initialization.
+
+```csharp
+using ChatGPTWebSdk.Mcp;
+using OpenAI;
+
+using var runtime = ChatGPTWeb.Initialize(authenticationString);
+var chat = runtime.CreateClient(threadId: "research")
+    .GetChatClient("AVAILABLE_WEB_MODEL_SLUG");
+
+// Every message in this chat can use this server.
+runtime.SetChatMcp(new()
+{
+    Servers = [new() { Label = "search", Endpoint = new Uri("https://CHAT_MCP_SERVER/mcp") }]
+}, threadId: "research");
+
+// This server is available for the next generation attempt only.
+using (runtime.UseMessageMcp(new()
+{
+    Servers = [new() { Label = "search", Endpoint = new Uri("https://MESSAGE_MCP_SERVER/mcp") }]
+}))
+{
+    var result = await chat.CompleteChatAsync("Use search for this request.");
+    Console.WriteLine(result.Value.Content[0].Text);
+}
+
+// Uses CHAT_MCP_SERVER again, in the same linked ChatGPT conversation.
+await chat.CompleteChatAsync("Search for the next document.");
+
+// Removes the chat override and restores initialization defaults.
+runtime.SetChatMcp(null, threadId: "research");
+```
+
+Selection proceeds from **initialization → chat → message**. Different labels combine. A matching label replaces the entire broader server definition within that scope; connection credentials are not merged across endpoints. Reusing the same URL in any scope is supported. Set `InheritServers = false` to replace the entire inherited set, or `ExcludedServers = ["label"]` to remove individual inherited servers. An empty replacement (`new McpScopeOptions { InheritServers = false }`) disables inherited servers for the chosen chat/message. Do not both exclude and register the same label in one scope. Duplicate labels within a scope are rejected before changing its binding.
+
+`runtime.GetChatMcp(threadId, clientKey)` returns the chat registration; `SetChatMcp(..., clientKey: ...)` selects an application user. Native applications use `runtime.Web.SetChatMcp(conversationScope, options)` and `GetChatMcp(conversationScope)`. For a native message, pass options directly:
+
+```csharp
+var result = await runtime.Web.SendAsync(
+    runtime.ResolveScope(runtime.ClientKey, "research"),
+    new ChatGPTWebSdk.Web.WebTurnRequest
+    {
+        Model = "AVAILABLE_WEB_MODEL_SLUG",
+        Messages = [ChatGPTWebSdk.Web.WebInputMessage.User("Use the local tool.")],
+        Mcp = new()
+        {
+            InheritServers = false,
+            Servers = [new() { Label = "local", Command = "node", Arguments = ["/path/to/server.mjs"] }]
+        }
+    });
+```
+
+`UseMessageMcp` works with unchanged ChatClient/ResponsesClient constructors and synchronous/asynchronous streaming methods. It is local to that runtime and async execution context, and **single use**: only the next Chat/Responses generation attempt consumes it, even if the `using` block contains more calls. Reads and image operations do not consume it. Await the call or enumerate the stream inside the block; disposing an unused scope cancels it. An invalid or failed generation attempt consumes the scope too, so create a new scope for a deliberate retry. Nested scopes must be disposed in reverse order; an inner scope does not consume a pending outer scope. Concurrent calls with their own scopes remain separate. Sharing one pending scope across concurrent tasks grants it to whichever generation starts first.
+
+Chat configurations are copied when registered; message configurations are copied when selected. The selected connections remain fixed for a whole logical turn, even if the chat registration changes during tool execution. Chat registrations live in this SDK instance and are cleared on conversation deletion. They are not written to the conversation store: register them again after a restart. Connection secrets remain out of model messages and stored execution records. Application-supplied clients remain owned by the application. Temporary and project chats use the same scoping rules.
+
+Tool limits, approval callbacks and `IsServerAllowed` remain runtime-wide policy. Each scoped server retains its own `AllowedTools` and `RequireApproval`. Approval/progress callbacks can inspect `McpToolCallContext.Server` to distinguish scoped connection configurations; this property is excluded from JSON serialization. Responses `ResponseTool.CreateMcpTool` declarations select from the effective scope and must match its current URL. They cannot create an unregistered endpoint. If a message-only tool has an uncertain outcome, explicit result recovery works after that scope expires without reconnecting or repeating the tool.
+
 ## Local stdio servers
 
 ```csharp
