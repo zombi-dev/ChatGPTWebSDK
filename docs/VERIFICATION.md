@@ -1,6 +1,18 @@
 # Verification record
 
-Recorded on 2026-10-02 and 2026-10-03 on the development Windows machine. Live checks used the user's authorized ChatGPT account, fresh browser-obtained Sentinel answers, system curl, and new disposable SDK conversations. No platform API generation requests were made. Credentials, private captures and signed asset URLs are excluded from this record and from packages.
+Earlier releases were verified on 2026-10-02 and 2026-10-03 on Windows; the v1.3.0 scope checks below were recorded on 2026-10-04 on Linux. The earlier live checks used the user's authorized ChatGPT account, fresh browser-obtained Sentinel answers, system curl, and new disposable SDK conversations. No platform API generation requests were made. Credentials, private captures and signed asset URLs are excluded from this record and from packages.
+
+## v1.3.0 scoped MCP integration
+
+Recorded on 2026-10-04 on Linux. MCP servers can be registered at initialization, for one `(account, user, thread)` chat, or for one logical message. Scope inheritance, full replacements, label overrides, individual exclusions and empty replacements are tested in normal, project and temporary chats. No initialization servers are required. Every scope uses complete independent connection settings. A selection remains fixed through the tool loop; the next turn receives a fresh manifest after a scoped server expires.
+
+The release gate passes **1060 .NET cases**, including **115 new scope cases**, plus **12 extension tests**, with zero skips. The new tests exercise unchanged synchronous/asynchronous ChatClient and ResponsesClient calls, typed SSE streaming, single-use and nested message lifetimes, concurrent contexts, account/user/thread isolation, caller collection mutations, approvals, permissions, deleted bindings, connection-secret exclusion and recovery of an uncertain message-only call after its registration expires.
+
+Independent Node MCP servers authenticate separate synthetic credentials and return their actual process IDs. Official Responses tool declarations select distinct Streamable HTTP JSON/SSE and legacy SSE endpoints with the same label, return to chat defaults after a message override, and restore initialization defaults after clearing the chat. Reusing a single endpoint across scopes is tested too. Message-only stdio processes exit after the final answer. ChatGPT generation is simulated deterministically for these scope tests; this update does not claim a new real-account Sentinel/generation acceptance run. The v1.2.0 live MCP exchange evidence below remains the prior real-account verification.
+
+The source and tests run from a matching local-disk build copy because this external drive does not support the memory-mapped reads required by .NET. Pre-existing checkout line-ending changes are preserved separately from this update. The README Notice and main-heading bytes remain unchanged in the working checkout. The shared SDK/extension version is 1.3.0; the replacement OpenAI assembly version remains 2.14.0.0. The existing Tests → Build → Release workflows retain their test-before-build gates.
+
+Local v1.3.0 packaging completed with zero warnings/errors. The upstream comparison found **8,767 official signatures, zero missing** (8,840 replacement signatures). A fresh .NET 8 consumer restored the three new NuGet packages into an isolated cache and exercised initialization, chat, single-use message and native request scopes through real reusable stdio MCP clients and typed Responses SSE. The actual bundled Linux Chromium passed invisible JavaScript/canvas checks in automatic mode with a software fallback, and in explicit software mode. The local release directory contains the eight common assets, the Linux browser bundle and their checksums; Windows/macOS bundles remain builds for their respective CI runners.
 
 ## v1.2.0 MCP integration
 
