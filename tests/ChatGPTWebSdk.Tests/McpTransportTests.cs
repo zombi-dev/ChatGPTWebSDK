@@ -15,10 +15,11 @@ public sealed class McpTransportTests
     {
         public required Process Process { get; init; }
         public required Uri Endpoint { get; init; }
-        public static async Task<HttpFixture> StartAsync(string mode)
+        public static async Task<HttpFixture> StartAsync(string mode, string? expectedAuthorization = null)
         {
             var start = new ProcessStartInfo("node") { RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true };
             start.ArgumentList.Add(Fixture); start.ArgumentList.Add(mode);
+            if (expectedAuthorization is not null) start.ArgumentList.Add(expectedAuthorization);
             var process = Process.Start(start)!;
             try
             {
