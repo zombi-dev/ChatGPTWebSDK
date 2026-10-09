@@ -138,7 +138,7 @@ jobs:
               if (!release) {
                 const { data: notes } = await github.rest.repos.getContent({ ...repo, path: 'docs/RELEASE_NOTES.md', ref: commit });
                 if (notes.type !== 'file' || notes.encoding !== 'base64' || notes.size > 32768) throw new Error('Invalid release notes.');
-                release = (await github.rest.repos.createRelease({ ...repo, tag_name: tag, target_commitish: commit, name: `ChatGPT Web SDK ${version}`,
+                release = (await github.rest.repos.createRelease({ ...repo, tag_name: tag, target_commitish: commit, name: tag,
                   body: Buffer.from(notes.content, 'base64').toString('utf8'), draft: true })).data;
               }
               if (!release.draft) throw new Error('Existing published release is mutable. Inspect it before modifying it.');
