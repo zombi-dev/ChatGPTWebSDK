@@ -63,16 +63,19 @@ export function summarize(publicUi, rawSmoke, baseline) {
       publicUi.fingerprint !== null && !/^[a-f0-9]{64}$/.test(publicUi.fingerprint)) throw new Error('Invalid UI report.');
   if (!baseline || baseline.schema !== 1 || !Array.isArray(baseline.catalog) || baseline.catalog.some(s => !identifier(s)) ||
       ['apiShape', 'ui'].some(k => baseline[k] !== null && !/^[a-f0-9]{64}$/.test(baseline[k]))) throw new Error('Invalid monitor baseline.');
-  const changes = [];
+  const changes = [], warnings = [];
   if (publicUi.fingerprint && baseline.ui && publicUi.fingerprint !== baseline.ui) changes.push('ui_assets_changed');
   if (smoke.apiShape && baseline.apiShape && smoke.apiShape !== baseline.apiShape) changes.push('api_schema_changed');
   if (smoke.apiShape && JSON.stringify(smoke.catalog) !== JSON.stringify([...new Set(baseline.catalog)].sort())) changes.push('model_catalog_changed');
-  if (!baseline.ui || !baseline.apiShape) changes.push('baseline_incomplete');
+  if (!baseline.ui || !baseline.apiShape) warnings.push('baseline_incomplete');
   if (publicUi.status === 'failed') changes.push('ui_probe_failed');
-  if (smoke.status !== 'passed') changes.push(`example_${smoke.status}`);
-  const severity = smoke.status === 'failed' ? 'CRITICAL' : changes.length ? 'CHANGE' : 'HEALTHY';
+  if (publicUi.status === 'blocked') warnings.push('ui_blocked');
+  if (smoke.status === 'failed') changes.push('example_failed');
+  else if (smoke.models.some(m => m.status === 'failed')) changes.push('example_partially_failed');
+  if (smoke.status === 'blocked' || smoke.status === 'degraded') warnings.push('example_incomplete');
+  const severity = smoke.status === 'failed' ? 'CRITICAL' : changes.length ? 'CHANGE' : warnings.length ? 'UNAVAILABLE' : 'HEALTHY';
   return {
-    schema: 1, severity, changes, ui: { status: publicUi.status, code: publicUi.code },
+    schema: 1, severity, changes, warnings, ui: { status: publicUi.status, code: publicUi.code },
     example: { status: smoke.status, code: smoke.code, models: smoke.models },
     fingerprints: { ui: publicUi.fingerprint, apiShape: smoke.apiShape, catalog: smoke.catalog }
   };
