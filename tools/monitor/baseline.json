@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "ui": "05c6d7cf57341742207f9835ff77f645136c8d9eee4e9f64d464933dabe3776b",
+  "uiSource": "browser",
+  "apiShape": "7afde4f239ea8282b24e470341a365ea657dfe23bbbdedeae52546761232111e",
+  "catalog": [
+    "gpt-5-3-mini",
+    "gpt-5-5",
+    "gpt-5-5-instant",
+    "gpt-5-5-mini",
+    "gpt-5-5-thinking",
+    "gpt-5-6",
+    "gpt-5-6-instant",
+    "gpt-5-6-mini",
+    "gpt-5-6-t-mini",
+    "gpt-5-6-thinking",
+    "gpt-5.5-wm",
+    "gpt-5.6-luna-wm",
+    "gpt-5.6-sol-wm",
+    "gpt-5.6-terra-wm",
+    "gpt-6",
+    "gpt-6-astra-wm",
+    "gpt-6-instant",
+    "gpt-6-luna-wm",
+    "gpt-6-mini",
+    "gpt-6-sol-wm",
+    "gpt-6-t-mini",
+    "gpt-6-thinking",
+    "gpt-6.1-sol-wm",
+    "research"
+  ]
+}
