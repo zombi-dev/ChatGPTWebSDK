@@ -32,6 +32,8 @@ jobs:
           $taskVersion = (Get-Content -LiteralPath VERSION -Raw).Trim()
           if ($taskVersion -notmatch '^\d+\.\d+\.\d+$') { throw 'Invalid VERSION.' }
           if ($env:CHECK_COMMIT_VERSION -eq 'true') {
+            node tools/ci/check-commit.cjs $env:RELEASE_COMMIT
+            if ($LASTEXITCODE -ne 0) { throw 'Commit title validation failed.' }
             $taskMessage = (git show -s --format=%B $env:RELEASE_COMMIT) -join [Environment]::NewLine
             if ($taskMessage -notmatch ('(?<![\d.])v?' + [regex]::Escape($taskVersion) + '(?![\d.])')) { throw "Mention version $taskVersion in the commit title or body." }
           }
