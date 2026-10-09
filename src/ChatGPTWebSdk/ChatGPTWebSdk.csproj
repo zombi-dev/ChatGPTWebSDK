@@ -8,6 +8,8 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="ModelContextProtocol.Core" Version="2.2.0" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="10.0.12" />
+    <PackageReference Include="System.Net.ServerSentEvents" Version="10.0.12" />
     <EmbeddedResource Include="Generated/openapi-operations.json" />
     <EmbeddedResource Include="Generated/web-operations.json" />
     <None Include="../../README.md" Pack="true" PackagePath="/" />
