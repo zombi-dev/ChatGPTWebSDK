@@ -8,7 +8,8 @@ updates:
       actions:
         patterns: ["*"]
     commit-message:
-      prefix: deps
+      prefix: build
+      include: scope
   - package-ecosystem: nuget
     directory: /
     schedule:
@@ -17,4 +18,5 @@ updates:
       dotnet:
         patterns: ["*"]
     commit-message:
-      prefix: deps
+      prefix: build
+      include: scope
