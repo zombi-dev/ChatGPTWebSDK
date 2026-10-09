@@ -124,6 +124,7 @@ public sealed class ChatGptWebClient(ChatGptWebTransport transport, IConversatio
         [EnumeratorCancellation] CancellationToken ct = default)
     {
         // One lease spans the entire tool loop, including the time between remote generation turns.
+        transport.ModelPolicy.Resolve(request.Model);
         await using var operation = await store.AcquireAsync(new(scope.AccountId, scope.UserId, "__sdk_operation_" + scope.StorageKey), ct).ConfigureAwait(false);
         var events = request.UseMcp ? (_mcp ?? new McpConversationBridge(this, _defaultMcp)).StreamAsync(scope, request, ct) : StreamCoreAsync(scope, request, ct);
         await foreach (var item in events.ConfigureAwait(false)) yield return item;
@@ -151,6 +152,7 @@ public sealed class ChatGptWebClient(ChatGptWebTransport transport, IConversatio
     internal async IAsyncEnumerable<WebChatEvent> StreamCoreAsync(ConversationScope scope, WebTurnRequest request,
         [EnumeratorCancellation] CancellationToken ct = default)
     {
+        transport.ModelPolicy.Resolve(request.Model);
         var requestedGizmo = new WebChatContext { ProjectId = request.ProjectId, GizmoId = request.GizmoId, TemporaryChat = request.TemporaryChat }.ResolveGizmoId();
         await using var lease = await LeaseAsync(scope, request.TemporaryChat, ct).ConfigureAwait(false);
         var state = lease.State;
