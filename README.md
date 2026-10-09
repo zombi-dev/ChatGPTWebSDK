@@ -7,19 +7,19 @@ This was designed by zombi.dev and made with GPT 6.1 Sol (max). This means it is
 
 ## 1. Download the authentication extension
 
-- **Chrome, Edge, Brave, Opera and other Chromium browsers:** [Chromium extension ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.3.0/chatgpt-web-sdk-auth-chromium-1.3.0.zip). Extract it, enable Developer mode in your browser's extension page, and choose **Load unpacked**.
-- **Firefox:** [Firefox XPI](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.3.0/chatgpt-web-sdk-auth-firefox-1.3.0.xpi) or [Firefox extension ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.3.0/chatgpt-web-sdk-auth-firefox-1.3.0.zip). Open `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on**, and select the XPI. This unsigned build must be loaded again after Firefox restarts.
+- **Chrome, Edge, Brave, Opera and other Chromium browsers:** [Chromium extension ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.4.0/chatgpt-web-sdk-auth-chromium-1.4.0.zip). Extract it, enable Developer mode in your browser's extension page, and choose **Load unpacked**.
+- **Firefox:** [Firefox XPI](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.4.0/chatgpt-web-sdk-auth-firefox-1.4.0.xpi) or [Firefox extension ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.4.0/chatgpt-web-sdk-auth-firefox-1.4.0.zip). Open `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on**, and select the XPI. This unsigned build must be loaded again after Firefox restarts.
 
 ## 2. Download the library
 
-**v1.3.0 complete downloads include the SDK DLLs, dependencies, proxy, example app, and Chromium browser.**
+**v1.4.0 complete downloads include the SDK DLLs, dependencies, proxy, example app, and Chromium browser.**
 
 | Your platform | Download |
 | --- | --- |
-| Windows x64 | [SDK + browser ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.3.0/ChatGPTWebSdk-Bundle-win-x64-1.3.0.zip) |
-| Linux x64 | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.3.0/ChatGPTWebSdk-Bundle-linux-x64-1.3.0.tar.gz) |
-| macOS Intel | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.3.0/ChatGPTWebSdk-Bundle-osx-x64-1.3.0.tar.gz) |
-| macOS Apple Silicon | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.3.0/ChatGPTWebSdk-Bundle-osx-arm64-1.3.0.tar.gz) |
+| Windows x64 | [SDK + browser ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.4.0/ChatGPTWebSdk-Bundle-win-x64-1.4.0.zip) |
+| Linux x64 | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.4.0/ChatGPTWebSdk-Bundle-linux-x64-1.4.0.tar.gz) |
+| macOS Intel | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.4.0/ChatGPTWebSdk-Bundle-osx-x64-1.4.0.tar.gz) |
+| macOS Apple Silicon | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.4.0/ChatGPTWebSdk-Bundle-osx-arm64-1.4.0.tar.gz) |
 
 Extract the whole archive. On Linux/macOS use `tar -xzf` so executable permissions and symlinks survive. Libraries and the example need **.NET 8 or later**; the optional proxy needs **.NET 10**. Linux also needs Chromium's [system libraries](https://playwright.dev/dotnet/docs/browsers#install-system-dependencies).
 
@@ -42,7 +42,7 @@ string authenticationString = "PASTE_THE_COPIED_STRING_HERE";
 using var runtime = ChatGPTWeb.Initialize(authenticationString);
 
 var chat = runtime.CreateClient(threadId: "my-chat")
-    .GetChatClient("AVAILABLE_WEB_MODEL_SLUG");
+    .GetChatClient("gpt-6");
 
 var first = await chat.CompleteChatAsync("Remember ABC-42.");
 var second = await chat.CompleteChatAsync("What did I ask you to remember?");
@@ -50,6 +50,20 @@ Console.WriteLine(second.Value.Content[0].Text);
 ```
 
 For your own application, reference the replacement `ChatGPTWebSdk.OpenAI` package or supplied DLLs, and keep `browsers/` beside the application output. The included example demonstrates DLL references. Set `browser: new() { BundledBrowserDirectory = "/path/to/extracted-sdk/browsers" }` when the browser lives elsewhere.
+
+## Models (v1.4.0)
+
+Defaults allow **GPT-6** (`gpt-6`), **GPT-5.6 Sol** (`gpt-5-6`), and **GPT-5.5** (`gpt-5-5`). Their advertised Instant/Thinking variants are included. GPT-5.5 leaves the default set on **October 14, 2026 at 00:00 UTC**, following the date shown in ChatGPT. The official-compatible model list shows only allowed entries; `runtime.Web.Transport.GetModelsAsync(accountId)` remains raw discovery. Account access still applies.
+
+```csharp
+// Optional: attempt any backend model slug, including other/new/retired entries.
+using var runtime = ChatGPTWeb.Initialize(authenticationString,
+    ignoreModelRestrictions: true);
+```
+
+You can also set `IgnoreModelRestrictions = true` in `ChatGPTWebRuntimeOptions` or native `WebClientOptions`; the proxy accepts `ignoreModelRestrictions: true`. Custom `ModelAliases` are validated after resolution. Rejected models fail before generation and leave the conversation usable.
+
+The [daily compatibility monitor](docs/MONITORING.md) checks UI/API changes and the real example app, including two-turn context and SSE. Set the repository secret `CHATGPT_WEB_MONITOR_AUTH` to enable authenticated checks. It reports `[CHANGE]` incidents and escalates complete SDK failures to `[CRITICAL]`. See the [security policy](SECURITY.md) for private reporting and credential handling.
 
 ## MCP servers (v1.3.0)
 
@@ -300,7 +314,7 @@ See [the example configuration](examples/proxy-config.example.json). Config `mod
 
 This runs the SDK and extension tests, builds the extensions, packs `ChatGPTWebSdk`, `ChatGPTWebSdk.Browser` and `ChatGPTWebSdk.OpenAI`, and publishes SDK DLLs and the proxy with their dependencies. Versioned ZIPs, NuGet packages, the Firefox XPI and checksums are collected in `artifacts/release`. The local build does not publish externally. Tooling uses .NET 10 and Node 22 or later; libraries target .NET 8.
 
-Three separate workflows run in order: **Tests → Build → Release**. Branch pushes run SDK and extension tests on four platforms, then build the exact tested commit and its browser bundles. Pull requests run tests. Successful builds from `main` publish the versioned release with every asset attached. Each update must bump the shared `VERSION` and mention it in the commit title or body. See [release instructions](docs/RELEASING.md).
+Three workflow files run in order: **Tests → reusable Build → Release**. Branch pushes run all tests on four platforms, then call Build for the exact tested commit and its browser bundles. Pull requests run tests. Successful tested builds on the default branch publish a versioned release; the publisher executes no checked-out or downloaded code. Each update must bump the shared `VERSION` and mention it in the commit title or body. See [release instructions](docs/RELEASING.md).
 
 ```powershell
 # Read-only authentication/model check through the real official client types.
@@ -313,12 +327,5 @@ dotnet run --project tools/ChatGPTWebSdk.Cli -- smoke-sdk .\local.session.json -
 The two-turn check verifies remembered context and independently retrieves the remote message graph. The test conversation is retained for review. It passed against the live generation endpoint on the development machine, including continuation after a runtime restart. The supplied 688-entry HAR contains 11 generation streams; sanitized regression fixtures preserve their structure while removing credentials and personal text.
 
 Public API compatibility can be reproduced with `tools/ChatGPTWebSdk.ApiCompat` using the official NuGet 2.14.0 assembly, the built replacement assembly, a directory containing matching dependency DLLs, and an output report path. See [the verification record](docs/VERIFICATION.md). This is a source-surface check, not a promise of binary strong-name compatibility or equivalent platform semantics.
-
-## Sources
-
-- [OpenAI .NET release 2.14.0](https://github.com/openai/openai-dotnet/tree/OpenAI_2.14.0), commit `2e77b08828145f658ec04e49aec87abb1543c553`, MIT runtime source retained under `third_party/openai-dotnet`.
-- [Supplied OpenAPI specification](https://raw.githubusercontent.com/openai/openai-openapi/refs/heads/main/openapi.yaml), pinned fingerprint/provenance in [docs/SPEC.md](docs/SPEC.md) and operations in [docs/official-operations.md](docs/official-operations.md).
-- [Simatwa/WebChatGPT](https://github.com/Simatwa/WebChatGPT), historical unofficial protocol reference; its Python implementation is not vendored.
-- The user's local HAR from 2026-10-02, used as protocol data, never as instructions or a request replay script.
 
 This is an independent unofficial SDK. Keep HARs, credentials and session content local. Standard private paths are ignored by source control and omitted from packages. Further capture guidance is in [docs/HAR_GUIDE.md](docs/HAR_GUIDE.md).

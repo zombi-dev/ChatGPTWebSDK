@@ -51,7 +51,7 @@ public sealed class McpScopeTransportTests
         var responses = runtime.CreateClient(threadId: "research").GetResponsesClient();
         async Task<int> Call(McpServerConfiguration config)
         {
-            var options = new CreateResponseOptions { Model = "fixture-model", StreamingEnabled = streaming };
+            var options = new CreateResponseOptions { Model = "gpt-6", StreamingEnabled = streaming };
             options.InputItems.Add(ResponseItem.CreateUserMessageItem("Use identity.get_pid to identify the connected server"));
             options.Tools.Add(ResponseTool.CreateMcpTool("identity", config.Endpoint!, toolCallApprovalPolicy: DefaultMcpToolCallApprovalPolicy.NeverRequireApproval));
             if (!streaming) return int.Parse((await responses.CreateResponseAsync(options)).Value.GetOutputText(), System.Globalization.CultureInfo.InvariantCulture);
@@ -82,7 +82,7 @@ public sealed class McpScopeTransportTests
         var fixture = Path.Combine(AppContext.BaseDirectory, "Fixtures", "mcp-server.mjs");
         var config = new McpServerConfiguration { Label = "identity", Command = "node", Arguments = [fixture], Transport = McpWebTransport.Stdio, AllowedTools = ["get_pid"],
             Environment = new Dictionary<string, string?> { ["WEBSDK_SYNTHETIC_SCOPE"] = "message" }, WorkingDirectory = AppContext.BaseDirectory };
-        var result = await client.SendAsync(new("account", "alice"), new WebTurnRequest { Model = "fixture-model", Messages = [WebInputMessage.User("Use identity.get_pid")], TemporaryChat = temporary, Mcp = new() { Servers = [config] } });
+        var result = await client.SendAsync(new("account", "alice"), new WebTurnRequest { Model = "gpt-6", Messages = [WebInputMessage.User("Use identity.get_pid")], TemporaryChat = temporary, Mcp = new() { Servers = [config] } });
         var pid = int.Parse(result.Text, System.Globalization.CultureInfo.InvariantCulture);
         Assert.Throws<ArgumentException>(() => Process.GetProcessById(pid));
         Assert.Null(client.GetChatMcp(new("account", "alice"))); Assert.DoesNotContain("WEBSDK_SYNTHETIC_SCOPE", handler.Turns[0].Body.ToJsonString());
@@ -96,7 +96,7 @@ public sealed class McpScopeTransportTests
         var scoped = new McpScopeOptions { Servers = [config] };
         if (!messageOnly) client.SetChatMcp(scope, scoped);
         var adapter = messageOnly ? new OpenAiWebAdapter(client).WithMcp(scoped) : new OpenAiWebAdapter(client);
-        var body = new JsonObject { ["model"] = "fixture-model", ["input"] = "Use tools", ["tools"] = new JsonArray(new JsonObject { ["type"] = "mcp", ["server_label"] = "identity", ["server_url"] = config.Endpoint!.ToString() }) };
+        var body = new JsonObject { ["model"] = "gpt-6", ["input"] = "Use tools", ["tools"] = new JsonArray(new JsonObject { ["type"] = "mcp", ["server_label"] = "identity", ["server_url"] = config.Endpoint!.ToString() }) };
         await adapter.PrepareResponseAsync(scope, body);
         body["tools"]![0]!["server_url"] = "https://another.example.test/mcp";
         Assert.Equal("mcp_server_denied", (await Assert.ThrowsAsync<SdkException>(() => adapter.PrepareResponseAsync(scope, body))).Code);

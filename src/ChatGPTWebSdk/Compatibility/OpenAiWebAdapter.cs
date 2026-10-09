@@ -171,7 +171,7 @@ public sealed class OpenAiWebAdapter(ChatGptWebClient client, IReadOnlyDictionar
     {
         var model = body["model"]?.GetValue<string>();
         if (string.IsNullOrWhiteSpace(model)) throw new ArgumentException("model is required; select an available ChatGPT web model slug.");
-        return modelAliases?.TryGetValue(model, out var slug) == true ? slug : model;
+        return client.Transport.ModelPolicy.Resolve(modelAliases?.TryGetValue(model, out var slug) == true ? slug : model);
     }
     private async Task<IReadOnlyList<WebInputMessage>> ParseResponseInputAsync(ConversationScope scope, JsonNode? input, CancellationToken ct)
     {
@@ -301,6 +301,10 @@ public sealed class OpenAiWebAdapter(ChatGptWebClient client, IReadOnlyDictionar
     {
         var raw = await client.Transport.GetModelsAsync(scope.AccountId, ct).ConfigureAwait(false);
         if (raw["models"] is not JsonArray models) throw new SdkException("Unknown web models response. Provide a current capture.", "unsupported_models_format");
+        foreach (var model in models)
+            if (model?["slug"] is not JsonValue value || !value.TryGetValue<string>(out var slug) || string.IsNullOrWhiteSpace(slug))
+                throw new SdkException("Web model has no slug.", "unsupported_models_format");
+        models = new JsonArray(models.Where(m => client.Transport.ModelPolicy.IsAllowed(m!["slug"]!.GetValue<string>())).Select(m => m!.DeepClone()).ToArray());
         return new() { ["object"] = "list", ["data"] = new JsonArray(models.Select(m => (JsonNode)new JsonObject
         {
             ["id"] = m!["slug"]?.GetValue<string>() ?? throw new SdkException("Web model has no slug.", "unsupported_models_format"),

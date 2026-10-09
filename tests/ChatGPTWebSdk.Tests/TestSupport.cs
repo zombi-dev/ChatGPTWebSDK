@@ -34,6 +34,8 @@ public sealed class FakeWebHandler : HttpMessageHandler
     public Func<JsonObject, int, string>? StreamFactory { get; set; }
     public JsonNode? Remote { get; set; }
     public HttpStatusCode? TurnFailure { get; set; }
+    public Func<JsonObject, HttpStatusCode?>? TurnFailureSelector { get; set; }
+    public JsonArray ModelCatalog { get; set; } = new(new JsonObject { ["slug"] = "gpt-6" });
     public int DelayMilliseconds { get; set; }
     public List<string> DeletedConversations { get; } = [];
     public static HttpResponseMessage Json(JsonNode node) => new(HttpStatusCode.OK) { Content = JsonContent.Create(node) };
@@ -55,7 +57,7 @@ public sealed class FakeWebHandler : HttpMessageHandler
     {
         var path = request.RequestUri!.AbsolutePath;
         if (path.EndsWith("chat-requirements")) return Json(Requirements.DeepClone());
-        if (path.EndsWith("/models")) return Json(new JsonObject { ["models"] = new JsonArray(new JsonObject { ["slug"] = "fixture-model" }) });
+        if (path.EndsWith("/models")) return Json(new JsonObject { ["models"] = ModelCatalog.DeepClone() });
         if (path == "/api/auth/session") return Json(new JsonObject { ["accessToken"] = "refreshed-fixture-token", ["expires"] = DateTimeOffset.UtcNow.AddHours(1).ToString("O") });
         if (request.Method == HttpMethod.Post && path.EndsWith("/conversation"))
         {
@@ -67,7 +69,7 @@ public sealed class FakeWebHandler : HttpMessageHandler
                 Turns.Add(new((JsonObject)body.DeepClone(), request.Headers.Authorization?.Parameter));
             }
             if (DelayMilliseconds > 0) await Task.Delay(DelayMilliseconds, ct);
-            if (TurnFailure is { } status) return new(status) { Content = new StringContent("fixture upstream error") };
+            if ((TurnFailureSelector?.Invoke(body) ?? TurnFailure) is { } status) return new(status) { Content = new StringContent("fixture upstream error") };
             return new(HttpStatusCode.OK) { Content = new StringContent((StreamFactory ?? NormalStream)(body, index), Encoding.UTF8, "text/event-stream") };
         }
         if (request.Method == HttpMethod.Get && path.Contains("/conversation/")) return Json(Remote?.DeepClone() ?? throw new InvalidOperationException("Missing remote fixture."));
@@ -104,4 +106,3 @@ public sealed class FakeWebHandler : HttpMessageHandler
         };
     }
 }
-

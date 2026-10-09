@@ -10,7 +10,7 @@ namespace ChatGPTWebSdk.Tests;
 public sealed class McpPolicyTests
 {
     private static ConversationScope Scope => new("account", "alice");
-    private static WebTurnRequest Request => new() { Model = "fixture-model", Messages = [WebInputMessage.User("Use the calculator")] };
+    private static WebTurnRequest Request => new() { Model = "gpt-6", Messages = [WebInputMessage.User("Use the calculator")] };
     private static ChatGptWebClient Client(FakeWebHandler handler, McpConversationOptions options, IConversationStore? store = null) => new(handler.Client().Transport, store ?? new InMemoryConversationStore(), options);
 
     [Theory, InlineData("timeout"), InlineData("cancellation"), InlineData("oversize")]
@@ -61,7 +61,7 @@ public sealed class McpPolicyTests
             case "approval": tool["require_approval"] = "unknown"; break;
             case "headers": tool["headers"] = new JsonObject { ["Authorization"] = "private" }; break;
         }
-        var body = new JsonObject { ["model"] = "fixture-model", ["input"] = "Use calculator", ["tools"] = new JsonArray(tool) };
+        var body = new JsonObject { ["model"] = "gpt-6", ["input"] = "Use calculator", ["tools"] = new JsonArray(tool) };
         await Assert.ThrowsAnyAsync<Exception>(() => new OpenAiWebAdapter(client).PrepareResponseAsync(Scope, body));
         Assert.Empty(handler.Turns); Assert.Equal(0, server.Lists); Assert.Empty(server.Calls);
     }
@@ -77,7 +77,7 @@ public sealed class McpPolicyTests
             "filter-always" => JsonNode.Parse("{\"always\":{\"tool_names\":[\"add\"]}}")!, "filter-never" => JsonNode.Parse("{\"never\":{\"tool_names\":[\"add\"]}}")!,
             "read-only" => JsonNode.Parse("{\"always\":{\"read_only\":true}}")!, _ => JsonValue.Create(policy)!
         };
-        var body = new JsonObject { ["model"] = "fixture-model", ["input"] = "Use calculator", ["tools"] = new JsonArray(new JsonObject
+        var body = new JsonObject { ["model"] = "gpt-6", ["input"] = "Use calculator", ["tools"] = new JsonArray(new JsonObject
         { ["type"] = "mcp", ["server_label"] = "calculator", ["require_approval"] = approval }) };
         Assert.Equal("5", (await client.SendAsync(Scope, await new OpenAiWebAdapter(client).PrepareResponseAsync(Scope, body))).Text);
         Assert.Equal(expectedApproval ? 1 : 0, approvals); Assert.Single(server.Calls);
@@ -115,7 +115,7 @@ public sealed class McpPolicyTests
             using var handler = new FakeWebHandler(); var server = new McpBridgeTests.Server();
             handler.StreamFactory = (body, index) => McpBridgeTests.Stream(body, index, index == 1 ? McpBridgeTests.ToolReply(McpBridgeTests.Nonce(body)) : "[[final:" + McpBridgeTests.Nonce(body) + "]]private-marker-2026");
             var client = Client(handler, new() { Servers = [new() { Label = "calculator", Client = server }] }, new FileConversationStore(directory));
-            await client.SendAsync(Scope, new() { Model = "fixture-model", Messages = [WebInputMessage.User("private-marker-2026")], TemporaryChat = true });
+            await client.SendAsync(Scope, new() { Model = "gpt-6", Messages = [WebInputMessage.User("private-marker-2026")], TemporaryChat = true });
             var disk = string.Join("", Directory.GetFiles(directory).Select(File.ReadAllText));
             Assert.DoesNotContain("private-marker-2026", disk); Assert.DoesNotContain("conversation-1", disk); Assert.DoesNotContain("calculator", disk);
             await client.UpdateConversationAsync(Scope, delete: true);

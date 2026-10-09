@@ -1,0 +1,142 @@
+name: Daily ChatGPT compatibility monitor
+on:
+  schedule:
+    - cron: "15 7 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: daily-chatgpt-monitor
+  cancel-in-progress: false
+jobs:
+  probe:
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+      - name: Run all tests before building the example dependencies
+        shell: pwsh
+        run: ./test.ps1 -BuildRoot artifacts/build
+      - name: Build the SDK DLLs and the actual example app
+        shell: pwsh
+        run: |
+          dotnet publish src/ChatGPTWebSdk.OpenAI -c Release --no-build -p:ChatGPTWebBuildRoot=$PWD/artifacts/build -o artifacts/monitor-sdk --nologo
+          if ($LASTEXITCODE -ne 0) { throw 'SDK publication failed.' }
+          dotnet build examples/QuickStart -c Release -p:ChatGPTWebBundleDirectory=$PWD/artifacts/monitor-sdk --nologo
+          if ($LASTEXITCODE -ne 0) { throw 'Example build failed.' }
+      - name: Prepare Chromium for a virtual-display Sentinel handshake
+        shell: bash
+        run: |
+          node artifacts/monitor-sdk/.playwright/package/cli.js install --with-deps chromium --no-shell
+          if [ -f /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            browser_pattern="$HOME/.cache/ms-playwright/**/chrome"
+            sudo tee /etc/apparmor.d/chatgpt-web-sdk-monitor >/dev/null <<EOF
+          abi <abi/4.0>,
+          include <tunables/global>
+          profile chatgpt-web-sdk-monitor "$browser_pattern" flags=(unconfined) {
+            userns,
+          }
+          EOF
+            sudo apparmor_parser -r /etc/apparmor.d/chatgpt-web-sdk-monitor
+          fi
+      - name: Run two-turn and SSE checks through the example
+        env:
+          CHATGPT_WEB_AUTH: ${{ secrets.CHATGPT_WEB_MONITOR_AUTH }}
+        shell: bash
+        run: |
+          mkdir -p artifacts/monitor
+          set +e
+          xvfb-run -a -s "-screen 0 1280x800x24 -nolisten tcp" dotnet examples/QuickStart/bin/Release/net8.0/QuickStart.dll --smoke-test --visible --report artifacts/monitor/smoke.json
+          probe_status=$?
+          set -e
+          if [ "$probe_status" -ne 0 ]; then
+            echo '::warning::Example check could not fully pass. See the sanitized monitor report.'
+          fi
+      - name: Compare public UI, model catalog and API schema
+        if: always()
+        run: node tools/monitor/check.mjs
+      - name: Upload sanitized monitor report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: monitor-report
+          path: artifacts/monitor/report.json
+          if-no-files-found: error
+          retention-days: 14
+  report:
+    needs: probe
+    if: always() && needs.probe.result != 'skipped'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      issues: write
+      contents: none
+    steps:
+      # No checkout or ChatGPT credentials in the issue-writing job.
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: monitor-report
+          path: artifacts/monitor
+      - name: Create, escalate or resolve the monitor issue
+        uses: actions/github-script@d746ffe35508b1917358783b479e04febd2b8f71 # v9.0.0
+        with:
+          # Keep in sync with tools/ci/monitor-issue.cjs. Tests check the embedded implementation.
+          script: |
+            // Embedded in the issue-writing job. Its only input is bounded, sanitized report data.
+            async function publishMonitorIssue({ github, context, core }, io = {}) {
+              const fs = io.fs ?? require('node:fs/promises');
+              const filename = io.filename ?? 'artifacts/monitor/report.json';
+              const stat = await fs.lstat(filename);
+              if (!stat.isFile() || stat.isSymbolicLink() || stat.size > 32768) throw new Error('Invalid monitor report file.');
+              const report = JSON.parse(await fs.readFile(filename, 'utf8'));
+              const identifier = s => typeof s === 'string' && /^[a-zA-Z0-9_.-]{1,80}$/.test(s);
+              const statuses = ['passed', 'failed', 'blocked', 'degraded'];
+              if (report.schema !== 1 || !['HEALTHY', 'CHANGE', 'CRITICAL'].includes(report.severity) ||
+                  !Array.isArray(report.changes) || report.changes.length > 8 || report.changes.some(c => !identifier(c)) ||
+                  !statuses.includes(report.example?.status) || !identifier(report.example?.code) ||
+                  !['passed', 'failed', 'blocked'].includes(report.ui?.status) || !identifier(report.ui?.code) ||
+                  !Array.isArray(report.example.models) || report.example.models.length > 3 ||
+                  report.example.models.some(m => !identifier(m.model) || !statuses.includes(m.status) || !identifier(m.code))) throw new Error('Invalid monitor report data.');
+              if (report.severity === 'CRITICAL' && report.example.status !== 'failed') throw new Error('Critical status lacks confirmed SDK failure.');
+              const marker = '<!-- chatgptwebsdk-daily-monitor:v1 -->';
+              const repo = context.repo;
+              const issues = await github.paginate(github.rest.issues.listForRepo, { ...repo, state: 'open', creator: 'github-actions[bot]', per_page: 100 });
+              const existing = issues.find(i => !i.pull_request && i.body?.startsWith(marker));
+              if (report.severity === 'HEALTHY') {
+                // Never close an incident while either probe is blocked or before all model checks pass.
+                if (existing && report.example.status === 'passed' && report.ui.status === 'passed') {
+                  await github.rest.issues.update({ ...repo, issue_number: existing.number, state: 'closed', state_reason: 'completed' });
+                  core.info('Daily checks recovered; monitor issue closed.');
+                }
+                return;
+              }
+              const title = `[${report.severity}] ChatGPT web changes and SDK example health`;
+              const lines = [marker, '', 'The daily monitor detected a change or incomplete check.', '',
+                `- Changes: ${report.changes.join(', ') || 'example_failure'}`, `- Public UI: ${report.ui.status} (${report.ui.code})`,
+                `- SDK example: ${report.example.status} (${report.example.code})`,
+                ...report.example.models.map(m => `- ${m.model}: ${m.status} (${m.code}); streaming=${m.streaming === true}, continuation=${m.continuation === true}`), '',
+                'Authentication, Cloudflare challenges, timeouts and quota limits are reported as blocked checks. [CRITICAL] means all attempted supported models failed, or the SDK could not parse/use the available API.', '',
+                `Workflow: https://github.com/${repo.owner}/${repo.repo}/actions/workflows/monitor.yml`,
+                'Download the sanitized monitor-report artifact for fingerprints. Refresh CHATGPT_WEB_MONITOR_AUTH when sign-in expires.'];
+              const body = lines.join('\n');
+              if (existing) {
+                if (existing.title !== title || existing.body !== body) await github.rest.issues.update({ ...repo, issue_number: existing.number, title, body });
+                core.info('Existing monitor issue retained.');
+              } else {
+                await github.rest.issues.create({ ...repo, title, body }); core.info('Monitor issue created.');
+              }
+            }
+            await publishMonitorIssue({ github, context, core });

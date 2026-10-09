@@ -10,6 +10,7 @@ namespace ChatGPTWebSdk.Web;
 public sealed partial class ChatGptWebTransport(HttpClient http, IWebCredentialProvider credentials, WebClientOptions? options = null)
 {
     private readonly WebClientOptions _options = options ?? new();
+    public WebModelPolicy ModelPolicy { get; } = new(options?.IgnoreModelRestrictions ?? false);
     private readonly ConcurrentDictionary<string, (string Fingerprint, WebCredentials Credentials)> _refreshed = new();
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _authLocks = new();
     private readonly ConcurrentDictionary<string, (string Source, WebCredentials Credentials)> _browserCredentials = new();
@@ -113,7 +114,7 @@ public sealed partial class ChatGptWebTransport(HttpClient http, IWebCredentialP
 
     public JsonObject CreateTurnBody(string model, string parentMessageId, string? conversationId, IReadOnlyList<WebInputMessage> messages)
     {
-        if (string.IsNullOrWhiteSpace(model)) throw new ArgumentException("Specify a model slug returned by the web models endpoint.");
+        model = ModelPolicy.Resolve(model);
         if (messages.Count == 0 || messages.Any(m => m.Role != "user")) throw new UnsupportedWebFeatureException("non-user or empty web input");
         var body = (JsonObject)_options.Endpoints.ConversationDefaults.DeepClone();
         body["action"] = "next";
@@ -133,6 +134,7 @@ public sealed partial class ChatGptWebTransport(HttpClient http, IWebCredentialP
 
     public async Task<WebTurnStream> OpenTurnAsync(string account, JsonObject body, CancellationToken ct = default)
     {
+        body["model"] = ModelPolicy.Resolve(body["model"]?.GetValue<string>() ?? "");
         var value = await GetCredentialsAsync(account, ct).ConfigureAwait(false);
         JsonNode? requirements = null;
         var extra = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -228,4 +230,3 @@ public sealed record WebInputMessage(string Id, string Role, string Text)
     public JsonObject? Metadata { get; init; }
     public static WebInputMessage User(string text) => new(Guid.NewGuid().ToString(), "user", text);
 }
-

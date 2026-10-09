@@ -41,7 +41,7 @@ public sealed class McpBridgeTests
     private static ChatGptWebClient Client(FakeWebHandler handler, Server server, IConversationStore? store = null, McpConversationOptions? options = null) =>
         new(handler.Client().Transport, store ?? new InMemoryConversationStore(), options ?? new() { Servers = [new() { Label = "calculator", Client = server }] });
     private static WebTurnRequest Request(string text = "Add 2 and 3", bool temporary = false, string? project = null) => new()
-    { Model = "fixture-model", Messages = [WebInputMessage.User(text)], TemporaryChat = temporary, ProjectId = project };
+    { Model = "gpt-6", Messages = [WebInputMessage.User(text)], TemporaryChat = temporary, ProjectId = project };
 
     public static IEnumerable<object[]> Streams()
     {
@@ -77,18 +77,18 @@ public sealed class McpBridgeTests
         using var runtime = new ChatGPTWebRuntime(new() { Mode = ChatGPTWebMode.ApiOnly, Credentials = new StaticWebCredentialProvider("account", new() { AccessToken = "synthetic" }),
             AccountId = "account", UserId = "alice", HttpClient = new(handler, false), ConversationStore = new InMemoryConversationStore(), Endpoints = new(),
             Mcp = new() { Servers = [new() { Label = "calculator", Client = server }] } });
-        var chat = runtime.CreateClient(threadId: "chat").GetChatClient("fixture-model");
+        var chat = runtime.CreateClient(threadId: "chat").GetChatClient("gpt-6");
         var responses = runtime.CreateClient(threadId: "responses").GetResponsesClient();
         var chatText = ""; var responseText = "";
         if (streaming)
         {
             await foreach (var item in chat.CompleteChatStreamingAsync("Add 2 and 3")) foreach (var part in item.ContentUpdate) chatText += part.Text;
-            await foreach (var item in responses.CreateResponseStreamingAsync("fixture-model", "Add 2 and 3")) if (item is StreamingResponseOutputTextDeltaUpdate delta) responseText += delta.Delta;
+            await foreach (var item in responses.CreateResponseStreamingAsync("gpt-6", "Add 2 and 3")) if (item is StreamingResponseOutputTextDeltaUpdate delta) responseText += delta.Delta;
         }
         else
         {
             chatText = (await chat.CompleteChatAsync("Add 2 and 3")).Value.Content[0].Text;
-            responseText = (await responses.CreateResponseAsync("fixture-model", "Add 2 and 3")).Value.GetOutputText();
+            responseText = (await responses.CreateResponseAsync("gpt-6", "Add 2 and 3")).Value.GetOutputText();
         }
         Assert.Equal("5", chatText); Assert.Equal("5", responseText); Assert.Equal(2, server.Calls.Count);
     }
@@ -100,7 +100,7 @@ public sealed class McpBridgeTests
         handler.StreamFactory = (body, index) => Stream(body, index, index == 1 ? ToolReply(Nonce(body)) : "[[final:" + Nonce(body) + "]]5");
         var client = Client(handler, server); var first = await client.SendAsync(Scope(), Request());
         var adapter = new OpenAiWebAdapter(client);
-        var body = JsonNode.Parse("{\"model\":\"fixture-model\",\"messages\":[{\"role\":\"user\",\"content\":\"Add 2 and 3\"},{\"role\":\"assistant\",\"content\":\"5\"},{\"role\":\"user\",\"content\":\"Remember it\"}]}")!.AsObject();
+        var body = JsonNode.Parse("{\"model\":\"gpt-6\",\"messages\":[{\"role\":\"user\",\"content\":\"Add 2 and 3\"},{\"role\":\"assistant\",\"content\":\"5\"},{\"role\":\"user\",\"content\":\"Remember it\"}]}")!.AsObject();
         var next = await client.SendAsync(Scope(), await adapter.PrepareChatAsync(Scope(), body));
         Assert.Equal(first.Response.Id, next.Response.PreviousResponseId); Assert.Single(handler.Turns[2].Body["messages"]!.AsArray());
         Assert.Equal("assistant-2", handler.Turns[2].Body["parent_message_id"]!.GetValue<string>());

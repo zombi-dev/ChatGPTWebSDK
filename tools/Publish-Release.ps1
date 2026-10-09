@@ -36,22 +36,6 @@ if ($LASTEXITCODE -eq 0) {
     exit 0
 }
 $taskNotes = Join-Path $taskRoot "artifacts/release-notes-$taskVersion.md"
-[IO.File]::WriteAllText($taskNotes, @"
-Source-compatible OpenAI .NET 2.14.0 clients backed by ChatGPT web HTTP endpoints.
-
-Download the Chromium or Firefox authentication extension, then the complete SDK bundle for Windows x64, Linux x64, Intel macOS, or Apple Silicon macOS. Each complete bundle includes the SDK, proxy, dependencies, and pinned Chromium. Extract it completely; Hybrid mode locates browsers/ automatically. Unix bundles use tar.gz to preserve executable permissions and symlinks. Linux needs Chromium's normal system libraries.
-
-Click the authentication extension on a signed-in ChatGPT tab, then call OpenAI.ChatGPTWeb.Initialize(authenticationString). Project chat bindings survive SDK restarts; temporary chats retain context only for the running SDK and never persist their messages or remote IDs to disk.
-
-v1.3.0 adds MCP servers scoped to one chat or one message, while keeping initialization defaults. Every scope accepts independent endpoint URLs, HTTP headers, transport, stdio configuration or an existing client; endpoints may also be shared. SetChatMcp registers a chat's servers, UseMessageMcp grants the next ChatClient/ResponsesClient generation attempt its own servers, and native requests accept WebTurnRequest.Mcp. Initialization, chat and message scopes merge by label, with narrower overrides, optional exclusions and full replacement. Scopes retain the same linked conversation, project/temporary context and SSE streaming through all tool rounds. Registrations are runtime-local and connection secrets remain outside model messages and conversation storage.
-
-MCP supports remote Streamable HTTP, legacy SSE, local stdio and application-supplied clients. The message bridge returns ordinary final-answer items rather than hosted platform MCP output items. Existing allowlists, approval callbacks, limits, per-user proxy permissions and durable uncertain-outcome recovery remain. A confirmed message-only result can be recovered after its scope expires without reconnecting or repeating the tool. Intermediate exchanges remain in the remote ChatGPT thread and may be visible on its website. Proxy request bodies continue to select registered servers and cannot create arbitrary new endpoints.
-
-The release includes 1060 SDK tests (115 new scoped MCP cases) plus 12 extension tests. Real independent MCP processes verify distinct and shared URLs, credentials, transports and owned stdio cleanup. All 55 service operations from the supplied HAR remain mapped. Hybrid browser acceleration defaults to hardware with an owned software-rendering fallback. Headless=true provides invisible server operation; interactive Cloudflare challenges can still require the visible default or a signed-in CDP session. See MCP.md in the SDK/proxy bundles for setup and limits.
-
-The Firefox XPI is unsigned: use a temporary installation in about:debugging. Permanent installation in normal Firefox requires Mozilla signing. BrowserOnly remains reserved.
-
-All SDK and extension tests passed on four platforms before the Build workflow ran. Release publication followed the successful Build run for the exact tested commit. SHA256SUMS.txt covers all 12 binary assets.
-"@)
+Copy-Item -LiteralPath (Join-Path $taskRoot 'docs/RELEASE_NOTES.md') -Destination $taskNotes
 gh release create $taskTag @taskFiles $taskChecksumFile --repo $env:GH_REPO --target $env:RELEASE_COMMIT --title "ChatGPT Web SDK $taskVersion" --notes-file $taskNotes
 if ($LASTEXITCODE -ne 0) { throw 'Release creation failed.' }

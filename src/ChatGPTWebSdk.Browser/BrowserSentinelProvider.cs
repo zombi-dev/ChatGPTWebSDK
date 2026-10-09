@@ -23,6 +23,8 @@ public sealed class BrowserSentinelOptions
     public int MaxRetries { get; init; } = 3;
     public TimeSpan RetryDelay { get; init; } = TimeSpan.FromSeconds(5);
     public Action<string>? Progress { get; init; }
+    /// <summary>Optional SHA-256 observation of UI selectors and public asset URLs; never receives page content or credentials.</summary>
+    public Action<string>? UiFingerprintObserved { get; init; }
     public string? DiagnosticScreenshotPath { get; init; }
     public string? DiagnosticComposerPath { get; init; }
     public string? DiagnosticHandshakePath { get; init; }
@@ -122,6 +124,22 @@ public sealed class BrowserSentinelProvider(BrowserSentinelOptions? options = nu
             _options.Progress?.Invoke("ChatGPT page loaded. Waiting for its message composer.");
             var input = page.Locator(_options.ComposerSelector);
             await WaitForPageAsync(input.WaitForAsync(new() { Timeout = (float)_options.Timeout.TotalMilliseconds }), captured.Task, timeout.Token).ConfigureAwait(false);
+            if (_options.UiFingerprintObserved is { } observe)
+            {
+                var structure = await page.EvaluateAsync<string>("""
+                    () => {
+                      const markers = [...document.querySelectorAll('[data-testid],[data-test-id],[role]')]
+                        .flatMap(e => ['data-testid','data-test-id','role'].map(a => e.getAttribute(a)))
+                        .filter(v => v && /^[a-zA-Z0-9_-]{1,80}$/.test(v));
+                      const assets = [...document.querySelectorAll('script[src],link[href]')].flatMap(e => {
+                        try { const u = new URL(e.src || e.href); return u.protocol === 'https:' && ['chatgpt.com','cdn.oaistatic.com'].includes(u.hostname) && /\.(js|css)$/.test(u.pathname) ? [u.origin + u.pathname] : []; }
+                        catch { return []; }
+                      });
+                      return JSON.stringify({markers:[...new Set(markers)].sort(),assets:[...new Set(assets)].sort()});
+                    }
+                    """).ConfigureAwait(false);
+                observe(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(structure))).ToLowerInvariant());
+            }
             _options.Progress?.Invoke("Message composer ready. Obtaining a fresh Sentinel handshake.");
             // This unsent draft triggers the normal frontend handshake. Its generation request is intercepted and aborted.
             await input.FillAsync("Prepare SDK connection.").ConfigureAwait(false);
