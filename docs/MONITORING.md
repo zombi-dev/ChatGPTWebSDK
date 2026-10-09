@@ -10,7 +10,7 @@
 
 The secret is available only to the default-branch probe job. Pull requests and the issue publisher do not receive it. The example creates fresh temporary conversations and sends two short marker prompts for each available supported model family. It therefore consumes normal account usage. Temporary content and remote identifiers are not persisted by the SDK.
 
-The Linux probe runs normal Chromium on a private Xvfb virtual display, so no physical desktop window is needed. This follows [Playwright's Linux CI guidance](https://playwright.dev/dotnet/docs/ci#running-headed). Hardware acceleration uses the existing automatic software fallback. A hosted runner may still encounter an interactive Cloudflare challenge that an unattended job cannot complete. Session cookies/access tokens also expire. These conditions produce **blocked** checks with a `[CHANGE]` incident asking for attention; they do not establish a complete SDK failure. Refresh the secret from the extension when needed. A self-hosted runner with supported browser dependencies may be more suitable for an account that consistently needs interactive sign-in.
+The Linux probe runs normal Chromium on a private Xvfb virtual display, so no physical desktop window is needed. This follows [Playwright's Linux CI guidance](https://playwright.dev/dotnet/docs/ci#running-headed). Hardware acceleration uses the existing automatic software fallback. A hosted runner may still encounter an interactive Cloudflare challenge that an unattended job cannot complete. Session cookies/access tokens also expire. These conditions produce **blocked** checks and an **UNAVAILABLE** workflow warning. They do not open or update an issue on their own and do not establish a complete SDK failure. Refresh the secret from the extension when needed. A self-hosted runner with supported browser dependencies may be more suitable for an account that consistently needs interactive sign-in.
 
 ## What changes are detected
 
@@ -18,7 +18,7 @@ The Linux probe runs normal Chromium on a private Xvfb virtual display, so no ph
 - The temporary Sentinel page can report a hash of public JS/CSS asset URLs and DOM role/test identifiers. It never reports HTML, page text, prompts or authentication. This works when the signed-in page loads but a public HTTP fetch is challenged. An anonymous HTTP page is not compared to a signed-in browser baseline.
 - The actual QuickStart app checks official-compatible model discovery, ordinary completion, SSE streaming and continuation in the same linked temporary conversation. It attempts one advertised variant per allowed model family and never resends a possibly accepted failed turn.
 
-An API/UI change or partial/blocked example produces `[CHANGE]`. If every attempted family fails, or the model contract is unusable, the same incident becomes `[CRITICAL]`. A failure mixed with a blocked model remains unconfirmed, so it is `[CHANGE]`. Existing incidents are deduplicated; identical reports do not generate comments. The monitor closes its own issue only after the example and UI checks both pass without a baseline difference. It never closes unrelated issues.
+A confirmed API/UI/catalog change or a partial example failure produces `[CHANGE]`. Blocked or incomplete checks alone produce **UNAVAILABLE**, with details in the workflow summary and report. If every attempted family fails, or the model contract is unusable, the same incident becomes `[CRITICAL]`. A failed model mixed with a blocked model produces `[CHANGE]`, since only part of the example is known to have failed. A blocked-only run leaves any existing incident untouched. Existing incidents are deduplicated; identical reports do not generate comments. The monitor closes its own issue only after the example and UI checks both pass without a baseline difference. It never closes unrelated issues.
 
 ## Maintain the baseline
 
@@ -27,7 +27,7 @@ An API/UI change or partial/blocked example produces `[CHANGE]`. If every attemp
 ```powershell
 # Build and verify first; keep your export in a private file or environment variable.
 ./build.ps1 -BuildRoot artifacts/build -BundleBrowser
-dotnet run --project examples/QuickStart -p:ChatGPTWebBundleDirectory=artifacts/bundles/linux-x64-1.4.0 -- --smoke-test --visible --auth-file /private/authentication.txt --report artifacts/monitor/smoke.json
+dotnet run --project examples/QuickStart -p:ChatGPTWebBundleDirectory=artifacts/bundles/linux-x64-1.5.0 -- --smoke-test --visible --auth-file /private/authentication.txt --report artifacts/monitor/smoke.json
 node tools/monitor/check.mjs --accept-baseline
 ```
 
