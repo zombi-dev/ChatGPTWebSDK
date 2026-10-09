@@ -16,7 +16,8 @@ Get-ChildItem -LiteralPath $taskSdk -Force | Where-Object Name -ne '.playwright'
 Copy-Item -LiteralPath (Join-Path $taskSdk '.playwright') -Destination (Join-Path $taskBundle '.playwright') -Recurse -Force
 Copy-Item -LiteralPath ([IO.Path]::GetFullPath((Join-Path $taskRoot $ProxyDirectory))) -Destination (Join-Path $taskBundle 'proxy') -Recurse
 New-Item -ItemType Directory -Path (Join-Path $taskBundle 'example') -Force | Out-Null
-Copy-Item -Path (Join-Path $taskRoot 'examples/QuickStart/*') -Destination (Join-Path $taskBundle 'example')
+Get-ChildItem -LiteralPath (Join-Path $taskRoot 'examples/QuickStart') -File | Where-Object Extension -in @('.cs', '.csproj') |
+    Copy-Item -Destination (Join-Path $taskBundle 'example')
 $taskNodePlatform = switch ($taskPlatform) { 'win-x64' { 'win32_x64' } 'osx-x64' { 'darwin-x64' } 'osx-arm64' { 'darwin-arm64' } 'linux-x64' { 'linux-x64' } }
 foreach ($taskDriverDirectory in @((Join-Path $taskBundle '.playwright/node'), (Join-Path $taskBundle 'proxy/.playwright/node'))) {
     Get-ChildItem -LiteralPath $taskDriverDirectory -Directory | Where-Object Name -ne $taskNodePlatform | ForEach-Object {
