@@ -59,10 +59,17 @@ async function publishRelease({ github, context, core }, io = {}) {
   assets.push({ name: 'SHA256SUMS.txt', data: checksum, size: checksum.length, digest: crypto.createHash('sha256').update(checksum).digest('hex') });
   const notFound = e => e.status === 404;
   // Check a pre-existing tag even when the release was deleted. Versions never move between commits.
+  let tagExists = false;
   try {
-    const { data: tagged } = await github.rest.repos.getCommit({ ...repo, ref: tag });
-    if (tagged.sha !== commit) throw new Error('Version is tagged at another commit. Bump VERSION.');
+    // Missing commit lookups return 422; exact reference lookups return 404.
+    await github.rest.git.getRef({ ...repo, ref: `tags/${tag}` });
+    tagExists = true;
   } catch (e) { if (!notFound(e)) throw e; }
+  if (tagExists) {
+    // Resolve annotated tags to their commit before comparing targets.
+    const { data: tagged } = await github.rest.repos.getCommit({ ...repo, ref: `refs/tags/${tag}` });
+    if (tagged.sha !== commit) throw new Error('Version is tagged at another commit. Bump VERSION.');
+  }
   let release;
   try { release = (await github.rest.repos.getReleaseByTag({ ...repo, tag })).data; }
   catch (e) { if (!notFound(e)) throw e; }
