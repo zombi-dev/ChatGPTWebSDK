@@ -2,9 +2,29 @@ using System.Reflection;
 using ChatGPTWebSdk.Browser;
 using OpenAI;
 using ChatGPTWebSdk.Mcp;
+using QuickStart;
 
 var bundle = Assembly.GetExecutingAssembly().GetCustomAttributes<AssemblyMetadataAttribute>().Single(a => a.Key == "ChatGPTWebBundleDirectory").Value!;
 var browserDirectory = Path.Combine(bundle, "browsers");
+if (args.Contains("--smoke-test"))
+{
+    string? Argument(string name) { var index = Array.IndexOf(args, name); return index >= 0 && index + 1 < args.Length ? args[index + 1] : null; }
+    var authenticationPath = Argument("--auth-file");
+    var auth = authenticationPath is null ? Environment.GetEnvironmentVariable("CHATGPT_WEB_AUTH") : (await File.ReadAllTextAsync(authenticationPath)).Trim();
+    using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(12));
+    string? uiFingerprint = null;
+    var report = await SmokeCheck.RunAsync(auth, new()
+    {
+        BundledBrowserDirectory = Directory.Exists(browserDirectory) ? browserDirectory : null, Headless = !args.Contains("--visible"),
+        Timeout = TimeSpan.FromSeconds(90), MaxRetries = 1, UiFingerprintObserved = fingerprint => uiFingerprint = fingerprint
+    }, apiOnly: args.Contains("--api-only"), ct: timeout.Token);
+    report["uiFingerprint"] = uiFingerprint;
+    var output = Argument("--report") ?? "smoke-report.json";
+    await File.WriteAllTextAsync(output, report.ToJsonString(new() { WriteIndented = true }));
+    Console.WriteLine("Example check: " + report["status"] + " (" + report["code"] + "). Sanitized report: " + output);
+    Environment.ExitCode = report["status"]!.GetValue<string>() switch { "passed" => 0, "blocked" => 2, _ => 1 };
+    return;
+}
 if (args.Contains("--verify-bundle"))
 {
     foreach (var acceleration in new[] { BrowserAcceleration.Automatic, BrowserAcceleration.Software })
