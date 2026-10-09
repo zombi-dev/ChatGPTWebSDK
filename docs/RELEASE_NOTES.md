@@ -5,6 +5,7 @@ CI fixes, dependency updates and quieter compatibility monitoring.
 ## Fixes
 
 - Handle Windows line endings in workflow checks and synchronization.
+- Check missing release tags through the Git references endpoint.
 - Warn on blocked monitor checks without opening false change issues.
 
 ## Dependencies
