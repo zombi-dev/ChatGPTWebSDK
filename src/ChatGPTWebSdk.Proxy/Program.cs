@@ -17,7 +17,7 @@ if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ASPNETCORE_URL
 var config = ProxyConfiguration.Load();
 using var http = config.HttpDriver == "systemCurl" ? WebHttpClient.CreateCurl() : WebHttpClient.Create();
 builder.Services.AddSingleton<IConversationStore>(new FileConversationStore(config.SessionDirectory));
-builder.Services.AddSingleton(new ChatGptWebTransport(http, new StaticWebCredentialProvider(config.Accounts.ToDictionary(a => a.Id, a => a.Credentials)), new() { BaseUri = config.BaseUri, Endpoints = config.Profile, SentinelSessionProvider = config.Mode == "hybrid" ? new BrowserSentinelProvider(config.Browser) : null }));
+builder.Services.AddSingleton(new ChatGptWebTransport(http, new StaticWebCredentialProvider(config.Accounts.ToDictionary(a => a.Id, a => a.Credentials)), new() { BaseUri = config.BaseUri, Endpoints = config.Profile, IgnoreModelRestrictions = config.IgnoreModelRestrictions, SentinelSessionProvider = config.Mode == "hybrid" ? new BrowserSentinelProvider(config.Browser) : null }));
 builder.Services.AddSingleton(sp => new ChatGptWebClient(sp.GetRequiredService<ChatGptWebTransport>(), sp.GetRequiredService<IConversationStore>(), new McpConversationOptions
 {
     Servers = config.Mcp.Servers, MaxToolRounds = config.Mcp.MaxToolRounds, MaxToolCalls = config.Mcp.MaxToolCalls,
