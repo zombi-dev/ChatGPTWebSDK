@@ -2,15 +2,15 @@ using System.Reflection;
 using System.Runtime.Loader;
 using System.Text.Json;
 
-if (args.Length != 4)
+if (args.Length is not (4 or 5))
 {
-    Console.Error.WriteLine("Usage: <official OpenAI.dll> <replacement OpenAI.dll> <dependency directory> <report.json>");
+    Console.Error.WriteLine("Usage: <official OpenAI.dll> <replacement OpenAI.dll> <replacement dependency directory> <report.json> [official dependency directory]");
     return 2;
 }
 
-var dependencies = Path.GetFullPath(args[2]);
-HashSet<string> Scan(string path)
+HashSet<string> Scan(string path, string dependencyDirectory)
 {
+    var dependencies = Path.GetFullPath(dependencyDirectory);
     var context = new AssemblyLoadContext(Guid.NewGuid().ToString(), isCollectible: true);
     context.Resolving += (_, name) =>
     {
@@ -41,8 +41,8 @@ HashSet<string> Scan(string path)
     return result;
 }
 
-var released = Scan(args[0]);
-var replacement = Scan(args[1]);
+var released = Scan(args[0], args.Length == 5 ? args[4] : args[2]);
+var replacement = Scan(args[1], args[2]);
 var missing = released.Except(replacement).Order().ToArray();
 File.WriteAllText(args[3], JsonSerializer.Serialize(new
 {
