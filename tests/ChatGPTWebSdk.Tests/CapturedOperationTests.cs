@@ -53,6 +53,7 @@ public sealed class CapturedOperationTests
         var transport = new ChatGptWebTransport(http, new StaticWebCredentialProvider("account", new() { AccessToken = "fixture-auth" }), new()
         { BaseUri = new("https://fixture.invalid/"), Endpoints = new() { Conversation = "backend-api/f/conversation" }, SentinelSessionProvider = sentinel });
         JsonObject? body = operation.Method == "POST" ? new() { ["payload"] = "fixture" } : null;
+        if (id == "GenerateConversation") body!["model"] = "gpt-6";
         if (operation.ResponseKind == WebResponseKind.EventStream)
         {
             var events = new List<ServerSentEvent>();
