@@ -77,6 +77,7 @@ async function assets(t) {
 test('Release uploads twelve validated binary assets and checksums, then publishes its draft', async t => {
   const f = fixture(), files = await assets(t); await publishRelease(f, files);
   assert.equal(f.writes[0][0], 'create'); assert.equal(f.writes[0][1].draft, true); assert.equal(f.writes[0][1].target_commitish, f.sha);
+  assert.equal(f.writes[0][1].name, 'v1.4.0');
   const uploads = f.writes.filter(w => w[0] === 'upload'); assert.equal(uploads.length, 13);
   const sums = uploads.find(w => w[1].name === 'SHA256SUMS.txt')[1].data.toString();
   for (const [, a] of uploads.filter(w => w[1].name !== 'SHA256SUMS.txt')) {
