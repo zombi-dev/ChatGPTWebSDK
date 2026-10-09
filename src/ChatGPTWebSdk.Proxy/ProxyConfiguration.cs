@@ -16,6 +16,7 @@ public sealed class ProxyConfiguration
     public List<ProxyClient> Clients { get; init; } = [];
     public string SessionDirectory { get; init; } = ".sessions";
     public Dictionary<string, string> ModelAliases { get; init; } = [];
+    public bool IgnoreModelRestrictions { get; init; }
     public McpConversationOptions Mcp { get; init; } = new();
     public static ProxyConfiguration Load()
     {
@@ -61,4 +62,3 @@ public sealed class ProxyClient
     public bool AllowConversationLinking { get; init; }
     public List<string> McpServers { get; init; } = [];
 }
-
