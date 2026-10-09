@@ -41,6 +41,7 @@ public sealed class ChatGPTWebRuntimeOptions
     public IWebSentinelChallengeProvider? SentinelChallengeProvider { get; init; }
     public IWebRequirementsBodyProvider? RequirementsBodyProvider { get; init; }
     public IReadOnlyDictionary<string, string>? ModelAliases { get; init; }
+    public bool IgnoreModelRestrictions { get; init; }
     public string? ProjectId { get; init; }
     public bool TemporaryChat { get; init; }
     public McpConversationOptions? Mcp { get; init; }
@@ -75,7 +76,7 @@ public sealed class ChatGPTWebRuntime : IDisposable
         if (!_clients.ContainsKey(ClientKey)) throw new ArgumentException("ClientKey must identify a configured application user.");
         _http = options.HttpClient ?? (options.HttpDriver == ChatGPTWebHttpDriver.SystemCurl ? WebHttpClient.CreateCurl(options.CurlExecutable) : WebHttpClient.Create());
         var browser = options.SentinelSessionProvider ?? (options.Mode == ChatGPTWebMode.Hybrid ? new BrowserSentinelProvider(options.Browser) : null);
-        var transport = new ChatGptWebTransport(_http, options.Credentials, new() { BaseUri = options.BaseUri, Endpoints = options.Endpoints, SentinelSessionProvider = browser,
+        var transport = new ChatGptWebTransport(_http, options.Credentials, new() { BaseUri = options.BaseUri, Endpoints = options.Endpoints, SentinelSessionProvider = browser, IgnoreModelRestrictions = options.IgnoreModelRestrictions,
             SentinelChallengeProvider = options.SentinelChallengeProvider, RequirementsBodyProvider = options.RequirementsBodyProvider });
         var store = options.ConversationStore ?? new FileConversationStore(options.SessionDirectory);
         Web = options.Mcp is null ? new(transport, store) : new(transport, store, options.Mcp);
@@ -186,6 +187,14 @@ public static class ChatGPTWeb
             AccountId = accountId, UserId = userId, SessionDirectory = sessionDirectory, Mode = mode, Browser = browser ?? new(), ProjectId = projectId, TemporaryChat = temporaryChat
         });
     public static void Configure(ChatGPTWebRuntime runtime) => Interlocked.Exchange(ref _current, runtime ?? throw new ArgumentNullException(nameof(runtime)));
+    /// <summary>Opt out of the default web model restrictions when initializing from an extension export.</summary>
+    public static ChatGPTWebRuntime Initialize(string authenticationString, bool ignoreModelRestrictions, string sessionDirectory = ".sessions",
+        string userId = "default", ChatGPTWebMode mode = ChatGPTWebMode.Hybrid, BrowserSentinelOptions? browser = null, string accountId = "default", string? projectId = null, bool temporaryChat = false, McpConversationOptions? mcp = null) =>
+        Initialize(new ChatGPTWebRuntimeOptions
+        {
+            Credentials = new StaticWebCredentialProvider(accountId, WebAuthentication.Import(authenticationString)), IgnoreModelRestrictions = ignoreModelRestrictions, Mcp = mcp,
+            AccountId = accountId, UserId = userId, SessionDirectory = sessionDirectory, Mode = mode, Browser = browser ?? new(), ProjectId = projectId, TemporaryChat = temporaryChat
+        });
     /// <summary>Initializes extension authentication and registered MCP servers for automatic conversation tool calls.</summary>
     public static ChatGPTWebRuntime Initialize(string authenticationString, McpConversationOptions mcp, string sessionDirectory = ".sessions",
         string userId = "default", ChatGPTWebMode mode = ChatGPTWebMode.Hybrid, BrowserSentinelOptions? browser = null, string accountId = "default", string? projectId = null, bool temporaryChat = false) =>
@@ -195,12 +204,15 @@ public static class ChatGPTWeb
             AccountId = accountId, UserId = userId, SessionDirectory = sessionDirectory, Mode = mode, Browser = browser ?? new(), ProjectId = projectId, TemporaryChat = temporaryChat
         });
     internal static void Unconfigure(ChatGPTWebRuntime runtime) => Interlocked.CompareExchange(ref _current, null, runtime);
-    public static async Task<ChatGPTWebRuntime> InitializeFromHarAsync(string harPath, string sessionDirectory,
+    public static Task<ChatGPTWebRuntime> InitializeFromHarAsync(string harPath, string sessionDirectory,
+        string userId = "default", ChatGPTWebMode mode = ChatGPTWebMode.Hybrid, BrowserSentinelOptions? browser = null, CancellationToken ct = default) =>
+        InitializeFromHarAsync(harPath, sessionDirectory, false, userId, mode, browser, ct);
+    public static async Task<ChatGPTWebRuntime> InitializeFromHarAsync(string harPath, string sessionDirectory, bool ignoreModelRestrictions,
         string userId = "default", ChatGPTWebMode mode = ChatGPTWebMode.Hybrid, BrowserSentinelOptions? browser = null, CancellationToken ct = default)
     {
         await using var input = File.OpenRead(harPath);
         var capture = await HarCapture.ImportAsync(input, ct).ConfigureAwait(false);
         return Initialize(new() { Credentials = new StaticWebCredentialProvider("default", capture.Credentials), SessionDirectory = sessionDirectory,
-            UserId = userId, Mode = mode, Endpoints = capture.Endpoints, Browser = browser ?? new() });
+            UserId = userId, Mode = mode, Endpoints = capture.Endpoints, Browser = browser ?? new(), IgnoreModelRestrictions = ignoreModelRestrictions });
     }
 }
