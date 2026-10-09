@@ -15,8 +15,7 @@ for (const [name, mutate] of Object.entries({
   'API schema': (u, s) => { s.apiShape = other; },
   'model catalog addition': (u, s) => { s.catalog.push('gpt-next'); },
   'model catalog removal': (u, s) => { s.catalog = []; },
-  'partial SDK failure': (u, s) => { s.status = 'degraded'; },
-  'blocked SDK': (u, s) => { s.status = 'blocked'; },
+  'partial SDK failure': (u, s) => { s.status = 'degraded'; s.models[0].status = 'failed'; },
   'public UI failure': u => { u.status = 'failed'; u.fingerprint = null; }
 })) test(`Daily monitor reports ${name} as CHANGE`, () => {
   const u = ui(), s = smoke(); mutate(u, s); assert.equal(summarize(u, s, baseline()).severity, 'CHANGE');
@@ -26,7 +25,7 @@ test('Complete SDK failure escalates to CRITICAL even if the public UI works', (
 });
 test('A challenge is not mistaken for a UI deployment', () => {
   const u = { status: 'blocked', code: 'public_access_challenge', fingerprint: null }; const r = summarize(u, smoke(), baseline());
-  assert(!r.changes.includes('ui_assets_changed')); assert.equal(r.severity, 'HEALTHY');
+  assert(!r.changes.includes('ui_assets_changed')); assert.equal(r.severity, 'UNAVAILABLE');
 });
 test('Browser UI observation takes precedence over a blocked public HTTP fetch', () => {
   const s = smoke(); s.uiFingerprint = hash; assert.equal(summarize({ status: 'blocked', code: 'public_access_challenge', fingerprint: null }, s, { ...baseline(), uiSource: 'browser' }).ui.status, 'passed');
@@ -34,7 +33,11 @@ test('Browser UI observation takes precedence over a blocked public HTTP fetch',
 test('A browser baseline is never compared to the signed-out HTTP page', () => {
   const r = summarize({ status: 'passed', code: 'ok', fingerprint: other }, smoke(), { ...baseline(), uiSource: 'browser' }); assert.equal(r.ui.status, 'blocked'); assert(!r.changes.includes('ui_assets_changed'));
 });
-test('Missing baseline is actionable instead of silently accepting new contracts', () => assert(summarize(ui(), smoke(), { schema: 1, ui: null, apiShape: null, catalog: [] }).changes.includes('baseline_incomplete')));
+test('Missing baseline produces a workflow warning without a fabricated change', () => {
+  const s = smoke(); delete s.apiShape;
+  const r = summarize(ui(), s, { schema: 1, ui: null, apiShape: null, catalog: [] });
+  assert(r.warnings.includes('baseline_incomplete')); assert.equal(r.severity, 'UNAVAILABLE'); assert.deepEqual(r.changes, []);
+});
 test('Catalog order and duplicates do not cause changes', () => {
   const s = smoke(); s.catalog = ['gpt-6', 'gpt-6']; assert.equal(summarize(ui(), s, baseline()).severity, 'HEALTHY');
 });
@@ -68,16 +71,16 @@ function publisher(report, existing = null) {
   const github = { paginate: async () => existing ? [existing] : [], rest: { issues: {
     listForRepo() {}, create: async r => writes.push(['create', r]), update: async r => writes.push(['update', r])
   } } };
-  const options = { github, context: { repo: { owner: 'owner', repo: 'sdk' } }, core: { info() {} } };
+  const options = { github, context: { repo: { owner: 'owner', repo: 'sdk' } }, core: { info() {}, warning() {} } };
   const io = { fs: { lstat: async () => ({ isFile: () => true, isSymbolicLink: () => false, size: 100 }), readFile: async () => JSON.stringify(report) } };
   return { options, io, writes };
 }
 for (const severity of ['CHANGE', 'CRITICAL']) test(`Issue publisher creates [${severity}] incident`, async () => {
-  const s = smoke(); s.status = severity === 'CRITICAL' ? 'failed' : 'blocked';
+  const s = smoke(); s.status = severity === 'CRITICAL' ? 'failed' : 'degraded'; s.models[0].status = 'failed';
   const f = publisher(summarize(ui(), s, baseline())); await publishMonitorIssue(f.options, f.io); assert(f.writes[0][1].title.startsWith(`[${severity}]`));
 });
 test('Unchanged incidents are deduplicated without daily comments', async () => {
-  const s = smoke(); s.status = 'blocked'; const report = summarize(ui(), s, baseline()); const f = publisher(report); await publishMonitorIssue(f.options, f.io);
+  const s = smoke(); s.status = 'degraded'; s.models[0].status = 'failed'; const report = summarize(ui(), s, baseline()); const f = publisher(report); await publishMonitorIssue(f.options, f.io);
   const i = f.writes[0][1]; const again = publisher(report, { number: 9, title: i.title, body: i.body }); await publishMonitorIssue(again.options, again.io); assert.equal(again.writes.length, 0);
 });
 test('Existing CHANGE incident escalates in place when the SDK stops working', async () => {
@@ -96,4 +99,32 @@ test('Issue publisher refuses CRITICAL for a blocked example', async () => {
 });
 test('Issue publisher rejects unsafe interpolated fields instead of displaying them', async () => {
   const report = summarize(ui(), smoke(), baseline()); report.example.code = 'private-token\n@everyone'; const f = publisher(report); await assert.rejects(() => publishMonitorIssue(f.options, f.io)); assert.equal(f.writes.length, 0);
+});
+
+for (const code of ['authentication_missing', 'authentication_invalid', 'web_challenge_required', 'http_401', 'http_403', 'http_429', 'network_unavailable', 'request_timeout', 'example_report_missing'])
+  test(`Unavailable ${code} checks never open or close a change incident`, async () => {
+    const s = { schema: 1, status: 'blocked', code, catalog: [], models: [] };
+    const r = summarize({ status: 'blocked', code: 'public_access_challenge', fingerprint: null }, s, { ...baseline(), uiSource: 'browser' });
+    assert.equal(r.severity, 'UNAVAILABLE'); assert.deepEqual(r.changes, []);
+    for (const existing of [null, { number: 9, body: '<!-- chatgptwebsdk-daily-monitor:v1 -->\nReal earlier change' }]) {
+      const f = publisher(r, existing); await publishMonitorIssue(f.options, f.io); assert.deepEqual(f.writes, []);
+    }
+  });
+test('An observed API change still opens an issue when generation is blocked', async () => {
+  const s = smoke(); s.status = 'blocked'; s.models[0].status = 'blocked'; s.apiShape = other;
+  const r = summarize(ui(), s, baseline()); assert.equal(r.severity, 'CHANGE'); assert(r.changes.includes('api_schema_changed'));
+  const f = publisher(r); await publishMonitorIssue(f.options, f.io); assert.equal(f.writes[0][0], 'create');
+});
+test('Partial blocked models without proven failures do not fabricate a change', async () => {
+  const s = smoke(); s.status = 'degraded'; s.models.push({ model: 'gpt-5-6', status: 'blocked', code: 'http_429' });
+  const r = summarize(ui(), s, baseline()); assert.equal(r.severity, 'UNAVAILABLE');
+  const f = publisher(r); await publishMonitorIssue(f.options, f.io); assert.deepEqual(f.writes, []);
+});
+test('A confirmed failed model remains actionable while another model is blocked', () => {
+  const s = smoke(); s.status = 'blocked'; s.models[0].status = 'failed';
+  assert.equal(summarize(ui(), s, baseline()).severity, 'CHANGE');
+});
+test('Issue publisher refuses CHANGE without an observed change', async () => {
+  const r = summarize(ui(), smoke(), baseline()); r.severity = 'CHANGE'; const f = publisher(r);
+  await assert.rejects(() => publishMonitorIssue(f.options, f.io)); assert.deepEqual(f.writes, []);
 });
