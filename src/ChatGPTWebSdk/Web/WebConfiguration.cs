@@ -76,6 +76,7 @@ public sealed class WebEndpointProfile
 
 public sealed class WebClientOptions
 {
+    public bool IgnoreModelRestrictions { get; init; }
     public Uri BaseUri { get; init; } = new("https://chatgpt.com/");
     public WebEndpointProfile Endpoints { get; init; } = new();
     public bool FetchRequirements { get; init; } = true;
@@ -109,4 +110,3 @@ public static class WebHttpClient
     }) { Timeout = TimeSpan.FromMinutes(5) };
     public static HttpClient CreateCurl(string executable = "curl") => new(new CurlHttpMessageHandler(executable)) { Timeout = TimeSpan.FromMinutes(5) };
 }
-
