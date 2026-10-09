@@ -2,11 +2,27 @@
 
 Earlier releases were verified on 2026-10-02 and 2026-10-03 on Windows; the v1.3.0 scope checks below were recorded on 2026-10-04 on Linux. The earlier live checks used the user's authorized ChatGPT account, fresh browser-obtained Sentinel answers, system curl, and new disposable SDK conversations. No platform API generation requests were made. Credentials, private captures and signed asset URLs are excluded from this record and from packages.
 
+## v1.5.0 CI, dependencies and monitor incident rules
+
+Recorded on 2026-10-09 on Linux. The complete gate passed **1,199 SDK tests**, **110 automation tests** and **12 extension tests**: **1,321 passing cases, zero failures and zero skips**. This adds 15 streaming compatibility cases and 27 automation cases to the corrected Windows gate. The solution build completed with zero warnings and errors.
+
+Windows checkout line endings are normalized by the workflow synchronization tool and its source comparisons. An integration test runs the real synchronizer against a CRLF checkout and verifies both embedded publishers. The updated dependency set includes Dependabot #1 (github-script) and #3 (seven .NET packages). ClientModel 1.16 renamed its experimental streaming results; a thin compatibility facade retains OpenAI 2.14's original signatures and delegates parsing, cancellation and response disposal to the new implementation. Tests cover all five factories, required terminal events, single enumeration, early disposal, disposed access and both cancellation lifetimes.
+
+The upstream comparison passed **8,767 official signatures, 8,855 replacement signatures and zero missing**, using separate dependency directories for the official 1.15 and replacement 1.16 ClientModel assemblies. A fresh .NET 8 NuGet consumer restored into an isolated cache and exercised initialization, chat, message and native MCP scopes with typed Responses SSE. The OpenAI assembly version remains **2.14.0.0**.
+
+A blocked-only monitor run now reports **UNAVAILABLE** with a workflow warning and performs no issue reads or writes. Replaying the actual hosted-runner report that created issue #2 produced UNAVAILABLE with no changes; the false incident was closed. Regression cases cover challenges, missing or expired authentication, HTTP 401/403/429, transport timeouts, missing reports and partial model outcomes. Confirmed catalog/API/UI changes still produce CHANGE, and complete confirmed example failures produce CRITICAL. A blocked run does not close an existing incident.
+
+The Actions CodeQL security-extended suite and actionlint passed for all four workflows with zero security findings. Local packaging produced the three NuGet packages, SDK/proxy and extension archives, and the Linux browser bundle with checksums. Bundled Chromium passed invisible JavaScript/canvas checks in automatic rendering with software fallback and explicit software mode. Published Windows/macOS bundles are validated by their native CI runners. Real-account model/context checks recorded for v1.4.0 remain the live baseline; a blocked GitHub runner does not prove live generation acceptance.
+
+The rebuilt main history uses focused, nonempty Conventional Commits with component/category scopes and the required co-author trailer. Each historical checkpoint retains its exact source tree; the final tree matches the tested v1.5.0 source. A local Git bundle preserves the original history. Existing published release tags retain their original targets. Release titles and notes use the concise format in CONTRIBUTING.md.
+
 ## v1.4.0 model policy, compatibility monitor and release security
 
 Recorded on 2026-10-09 on Linux. The default model policy permits the observed GPT-6 and GPT-5.6 Sol slugs and their Instant/Thinking variants, plus GPT-5.5 before October 14, 2026 at 00:00 UTC. The website notice specifies a date; the UTC boundary is the SDK's documented interpretation. Initialization, native transport and proxy options can opt out. Rejected models fail before authentication, uploads, MCP execution or conversation-state changes. Raw discovery retains the complete model catalog for change detection.
 
 The complete local release gate passed **1,184 SDK tests**, **82 automation tests** and **12 extension tests**: **1,278 passing cases, zero failures and zero skips**. The SDK total includes **124 new cases** beyond v1.3.0. Coverage includes the retirement boundary, aliases and opt-out paths, append/edit/regenerate behavior, model filtering, the actual automated example, sanitized reports, monitor issue escalation/recovery, release provenance and artifact validation. The solution build completed with zero warnings and zero errors.
+
+The initial hosted Windows run exposed the CRLF comparison issue corrected in v1.5.0. GitHub's Actions CodeQL scan completed successfully and the original untrusted-checkout finding is no longer open.
 
 Real-account checks initially discovered 22 model slugs. The automated .NET 8 QuickStart example passed with **gpt-6**, **gpt-5-6** and **gpt-5-5**. Each family completed an ordinary turn followed by SSE streaming that recalled a random marker in the same temporary conversation. The checks passed both in a desktop browser and with the final v1.4.0 bundle running normal Chromium on a private Xvfb virtual display, with no desktop window. The owned display and browser processes closed after the checks. No marker, response text, remote conversation ID or credentials enter monitor reports. The later virtual-display run observed 24 model slugs, including newly advertised `gpt-6-mini` and `gpt-6-t-mini`; these remain outside the default policy. The monitor correctly reported the changed model catalog and UI fingerprint as **CHANGE** while every generation check passed. The reviewed baseline was refreshed from that successful run, and comparison returned **HEALTHY**. A headless run encountered Cloudflare and correctly reported **blocked**, without claiming the SDK had stopped working. Daily Linux CI uses the tested virtual-display approach; hosted-runner acceptance still requires verification after publication.
 
@@ -16,7 +32,7 @@ Local v1.4.0 packaging produced the three NuGet packages, SDK DLL archive, proxy
 
 A fresh .NET 8 consumer restored the new NuGet packages into an isolated cache and passed model discovery, Chat, Responses, typed SSE, linked continuation, model restrictions, runtime opt-out, extension-string initialization and HAR opt-out initialization. The upstream comparison found **8,767 official signatures, 8,844 replacement signatures and zero missing**. The replacement OpenAI assembly version remains **2.14.0.0**.
 
-The original external SSD checkout was unavailable, so these changes and checks use a dedicated local clone. Windows and both macOS browser bundles remain checks for their CI runners. The new daily workflow requires a push to the default branch and the repository secret **CHATGPT_WEB_MONITOR_AUTH**; that secret was not configured during local verification. Expiring authentication, account limits and interactive challenges can still block hosted-runner checks. See [MONITORING.md](MONITORING.md) for setup and baseline maintenance.
+The original external SSD checkout was unavailable, so these changes and checks use a dedicated local clone. Windows and both macOS browser bundles remain checks for their CI runners. After the user configured **CHATGPT_WEB_MONITOR_AUTH**, the daily workflow was dispatched on GitHub and both its probe and issue-publishing jobs completed successfully. ChatGPT challenged model discovery from the hosted runner before generation, so its sanitized report classified `web_challenge_required` as **blocked**. The original issue policy incorrectly opened a CHANGE incident for that incomplete check; v1.5.0 corrects the policy and closes the false alarm. Expiring authentication, account limits and interactive challenges can still block hosted-runner checks. See [MONITORING.md](MONITORING.md) for setup and baseline maintenance.
 
 ## v1.3.0 scoped MCP integration
 
@@ -70,7 +86,7 @@ Archive inspection found no HARs, session files, user profiles, private HAR path
 
 ## Released SDK compatibility
 
-The replacement vendors the runtime source of [OpenAI .NET 2.14.0](https://github.com/openai/openai-dotnet/tree/OpenAI_2.14.0), commit `2e77b08828145f658ec04e49aec87abb1543c553`. Its dependency on `System.ClientModel` matches the released package's `1.15.0` dependency.
+The replacement vendors the runtime source of [OpenAI .NET 2.14.0](https://github.com/openai/openai-dotnet/tree/OpenAI_2.14.0), commit `2e77b08828145f658ec04e49aec87abb1543c553`. The official package uses `System.ClientModel` 1.15.0; v1.5.0 updates the replacement to 1.16.0 and retains the renamed experimental streaming types through a compatibility facade.
 
 The comparison tool enumerates exported types and declared public/protected constructors, methods, accessors and fields. It compares canonical type names, parameter names and optional flags against the released NuGet assembly. The baseline has **8,767 signatures; none are missing** from the replacement.
 
@@ -83,10 +99,11 @@ dotnet run --project tools/ChatGPTWebSdk.ApiCompat -- `
   C:\baseline\OpenAI.dll `
   src/ChatGPTWebSdk.OpenAI/bin/Release/net8.0/OpenAI.dll `
   tests/ChatGPTWebSdk.Tests/bin/Release/net10.0 `
-  api-compat-report.json
+  api-compat-report.json `
+  C:\baseline\dependencies
 ```
 
-Use the `net8.0/OpenAI.dll` from the official NuGet package **2.14.0** as the baseline. The dependency directory must contain matching `System.ClientModel`, configuration abstractions and other dependencies. The comparison tool uses an isolated assembly load context for each assembly.
+Use the `net8.0/OpenAI.dll` from the official NuGet package **2.14.0** as the baseline. Each dependency directory must contain the matching `System.ClientModel`, configuration abstractions and other dependencies. The optional fifth argument supplies the official dependency directory; without it both scans use the third argument. The comparison tool uses an isolated assembly load context for each assembly.
 
 ## Live acceptance
 
