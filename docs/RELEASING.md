@@ -4,7 +4,7 @@
 
 Three separate workflow files run in sequence:
 
-1. **Tests** (`.github/workflows/tests.yml`) runs on every branch push, pull request and manual dispatch. For repository pushes, it validates the version in the commit title/body and runs extension and SDK tests on Windows x64, Linux x64, Intel macOS and Apple Silicon macOS. The gate requires at least 1184 passing SDK cases, plus extension and automation tests. Dependabot pull requests validate and test the version without requiring the generated dependency commit to mention it. Tests compile their dependencies; release asset builds wait for the complete successful test matrix.
+1. **Tests** (`.github/workflows/tests.yml`) runs on every branch push, pull request and manual dispatch. For repository pushes, it validates the Conventional Commit title and version in the commit title/body and runs extension and SDK tests on Windows x64, Linux x64, Intel macOS and Apple Silicon macOS. The gate requires at least 1199 passing SDK cases, plus extension and automation tests. Dependabot pull requests validate and test the version without requiring the generated dependency commit to mention it. Tests compile their dependencies; release asset builds wait for the complete successful test matrix.
 2. **Build** (`.github/workflows/build.yml`) is a reusable workflow called only after all repository test jobs succeed. It checks out the exact tested SHA, builds SDK packages and extensions, validates Firefox and downloads Chromium through pinned Microsoft.Playwright 1.63.0. Four platform jobs package their matching browser and driver, then check the actual native launcher headlessly in automatic and software rendering modes. Pull request runs do not trigger this workflow chain. Branch pushes produce downloadable Actions artifacts.
 3. **Release** (`.github/workflows/release.yml`) starts after the successful Tests workflow, whose gated reusable Build has completed. It independently checks the originating test run's workflow, repository, conclusion, event, branch, commit ancestry and exact artifact set. Only a tested `main` commit publishes. It downloads assets from that specific Build run, requires every asset, generates checksums and creates `vVERSION` as a draft, uploads all required assets and publishes last. The write-permission job has no checkout and executes no downloaded code. Versions and release notes are read as bounded data through GitHub APIs.
 
@@ -24,7 +24,7 @@ To release an update:
 
 1. Bump VERSION and the extension manifests/package.json once.
 2. Run `./build.ps1 -BuildRoot artifacts/build -BundleBrowser`, verify the requested behavior and inspect archives. Tests run before artifact builds; `-SkipTests` is used by the gated CI Build workflow.
-3. Commit with the version in the title or body and AGENTS.md's exact co-author trailer.
+3. Split independent changes into focused `type(scope): summary` commits, each ending with AGENTS.md's exact co-author trailer. Finish with `chore(release): X.Y.Z`; that checkpoint triggers the release gate. Keep `docs/RELEASE_NOTES.md` to a short summary and categorized bullets. Release titles are `vX.Y.Z`.
 4. Push main when the user authorizes it. The three workflows handle testing, builds and publication.
 
 A version tagged at another commit is rejected. An immutable release for the same tested commit and complete asset set is preserved on a rerun. New updates require a new version. v1.0.0 was already immutable when the browser/project follow-up was requested, so that work is released as v1.1.0.
@@ -32,3 +32,5 @@ A version tagged at another commit is rejected. An immutable release for the sam
 Dispatch Tests manually to restart the chain. Actions use pinned SHAs. Only Release receives repository contents write permission. The daily monitor separately writes its own issues after consuming a sanitized report; it does not have contents write permission. No NuGet registry or browser store publication is configured. Permanent installation in normal Firefox requires Mozilla signing.
 
 Release and monitor publishers are tested in `tests/automation`. Their implementations are embedded in workflow YAML so privileged jobs never execute files from a triggering checkout. After editing `tools/ci/release.cjs` or `monitor-issue.cjs`, run `node tools/ci/sync-workflows.mjs`; tests reject stale embedded code. Scheduled monitor setup and baseline maintenance are documented in [MONITORING.md](MONITORING.md).
+
+History maintenance keeps published release tags at their original commits. Rebuilt main history is checked against each original release tree and the final tested tree before a guarded force push. A local Git bundle preserves the complete original history. See [CONTRIBUTING.md](../CONTRIBUTING.md) for message conventions.
