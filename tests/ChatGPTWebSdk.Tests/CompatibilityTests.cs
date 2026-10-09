@@ -17,7 +17,7 @@ public sealed class CompatibilityTests
     {
         using var handler = new FakeWebHandler();
         var adapter = new OpenAiWebAdapter(handler.Client());
-        var body = new JsonObject { ["model"] = "fixture-model", ["input"] = "hello", [field] = JsonNode.Parse(value) };
+        var body = new JsonObject { ["model"] = "gpt-6", ["input"] = "hello", [field] = JsonNode.Parse(value) };
         await Assert.ThrowsAsync<UnsupportedWebFeatureException>(() => adapter.PrepareResponseAsync(new("account", "alice"), body));
         Assert.Empty(handler.Turns);
     }
@@ -27,7 +27,7 @@ public sealed class CompatibilityTests
         using var handler = new FakeWebHandler();
         var adapter = new OpenAiWebAdapter(handler.Client());
         var events = new List<ServerSentEvent>();
-        await foreach (var item in adapter.ResponsesAsync(new("account", "alice"), new() { ["model"] = "fixture-model", ["input"] = "hello", ["stream"] = true })) events.Add(item);
+        await foreach (var item in adapter.ResponsesAsync(new("account", "alice"), new() { ["model"] = "gpt-6", ["input"] = "hello", ["stream"] = true })) events.Add(item);
         Assert.Equal("response.created", events[0].Event);
         Assert.Equal("response.completed", events[^1].Event);
         Assert.Contains(events, item => item.Event == "response.output_item.added");
@@ -47,7 +47,7 @@ public sealed class CompatibilityTests
         using var handler = new FakeWebHandler();
         var adapter = new OpenAiWebAdapter(handler.Client());
         var events = new List<ServerSentEvent>();
-        await foreach (var item in adapter.ChatAsync(new("account", "alice"), new() { ["model"] = "fixture-model", ["messages"] = new JsonArray(new JsonObject { ["role"] = "user", ["content"] = "hello" }), ["stream"] = true })) events.Add(item);
+        await foreach (var item in adapter.ChatAsync(new("account", "alice"), new() { ["model"] = "gpt-6", ["messages"] = new JsonArray(new JsonObject { ["role"] = "user", ["content"] = "hello" }), ["stream"] = true })) events.Add(item);
         Assert.Equal("[DONE]", events[^1].Data);
         Assert.Equal("stop", JsonNode.Parse(events[^2].Data)!["choices"]![0]!["finish_reason"]!.GetValue<string>());
         Assert.Equal("Hello world", string.Concat(events.Take(events.Count - 1).Select(e => JsonNode.Parse(e.Data)!["choices"]![0]!["delta"]!["content"]?.GetValue<string>())));
@@ -57,10 +57,10 @@ public sealed class CompatibilityTests
     {
         using var handler = new FakeWebHandler { TurnFailure = System.Net.HttpStatusCode.Unauthorized };
         var client = handler.Client();
-        await Assert.ThrowsAsync<SdkException>(() => client.SendAsync(new("account", "alice"), "hello", "fixture-model"));
+        await Assert.ThrowsAsync<SdkException>(() => client.SendAsync(new("account", "alice"), "hello", "gpt-6"));
         Assert.False((await client.GetStateAsync(new("account", "alice"))).RequiresReconciliation);
         handler.TurnFailure = null;
-        Assert.Equal("Hello world", (await client.SendAsync(new("account", "alice"), "hello", "fixture-model")).Text);
+        Assert.Equal("Hello world", (await client.SendAsync(new("account", "alice"), "hello", "gpt-6")).Text);
     }
 }
 

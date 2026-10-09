@@ -92,7 +92,7 @@ public sealed class OpenAiTests
     [Fact]
     public void Typed_responses_preserve_arbitrary_official_fields_and_reject_identity_overrides()
     {
-        var request = new ResponseRequest { Model = "fixture-model", Input = JsonValue.Create("hello")!, Extra = new() { ["tools"] = new JsonArray(new JsonObject { ["type"] = "web_search" }) } };
+        var request = new ResponseRequest { Model = "gpt-6", Input = JsonValue.Create("hello")!, Extra = new() { ["tools"] = new JsonArray(new JsonObject { ["type"] = "web_search" }) } };
         Assert.Equal("web_search", request.ToJson()["tools"]![0]!["type"]!.GetValue<string>());
         Assert.Throws<ArgumentException>(() => new ResponseRequest { Input = JsonValue.Create("hello")!, Extra = new() { ["input"] = JsonValue.Create("overridden") } }.ToJson());
     }

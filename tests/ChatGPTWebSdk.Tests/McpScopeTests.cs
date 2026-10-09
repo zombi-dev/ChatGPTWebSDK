@@ -17,7 +17,7 @@ public sealed class McpScopeTests
     private static ConversationScope Scope(string thread = "research", string user = "alice", string account = "account") => new(account, user, thread);
     private static McpServerConfiguration Config(string label, McpBridgeTests.Server server) => new() { Label = label, Client = server };
     private static WebTurnRequest Request(McpScopeOptions? mcp = null, string context = "normal") => new()
-    { Model = "fixture-model", Messages = [WebInputMessage.User("Use available tools")], Mcp = mcp, TemporaryChat = context == "temporary", ProjectId = context == "project" ? "g-p-project" : null };
+    { Model = "gpt-6", Messages = [WebInputMessage.User("Use available tools")], Mcp = mcp, TemporaryChat = context == "temporary", ProjectId = context == "project" ? "g-p-project" : null };
     private static string Text(JsonObject body) => body["messages"]![0]!["content"]!["parts"]![0]!.GetValue<string>();
     private static string AutoReply(JsonObject body, int index)
     {
@@ -77,7 +77,7 @@ public sealed class McpScopeTests
         var client = runtime.CreateClient(threadId: thread);
         if (kind == "chat")
         {
-            var chat = client.GetChatClient("fixture-model");
+            var chat = client.GetChatClient("gpt-6");
             if (!streaming) return synchronous ? chat.CompleteChat("Use available tools").Value.Content[0].Text : (await chat.CompleteChatAsync("Use available tools")).Value.Content[0].Text;
             var text = "";
             if (synchronous) foreach (var update in chat.CompleteChatStreaming("Use available tools")) foreach (var part in update.ContentUpdate) text += part.Text;
@@ -85,10 +85,10 @@ public sealed class McpScopeTests
             return text;
         }
         var responses = client.GetResponsesClient();
-        if (!streaming) return synchronous ? responses.CreateResponse("fixture-model", "Use available tools").Value.GetOutputText() : (await responses.CreateResponseAsync("fixture-model", "Use available tools")).Value.GetOutputText();
+        if (!streaming) return synchronous ? responses.CreateResponse("gpt-6", "Use available tools").Value.GetOutputText() : (await responses.CreateResponseAsync("gpt-6", "Use available tools")).Value.GetOutputText();
         var answer = "";
-        if (synchronous) foreach (var update in responses.CreateResponseStreaming("fixture-model", "Use available tools")) { if (update is StreamingResponseOutputTextDeltaUpdate delta) answer += delta.Delta; }
-        else await foreach (var update in responses.CreateResponseStreamingAsync("fixture-model", "Use available tools")) if (update is StreamingResponseOutputTextDeltaUpdate delta) answer += delta.Delta;
+        if (synchronous) foreach (var update in responses.CreateResponseStreaming("gpt-6", "Use available tools")) { if (update is StreamingResponseOutputTextDeltaUpdate delta) answer += delta.Delta; }
+        else await foreach (var update in responses.CreateResponseStreamingAsync("gpt-6", "Use available tools")) if (update is StreamingResponseOutputTextDeltaUpdate delta) answer += delta.Delta;
         return answer;
     }
     [Theory, MemberData(nameof(OfficialClients))]

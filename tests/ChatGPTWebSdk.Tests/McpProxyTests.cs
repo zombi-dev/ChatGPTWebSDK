@@ -51,7 +51,7 @@ public sealed class McpProxyTests
         await using var server = await McpTransportTests.HttpFixture.StartAsync("http-json");
         using var factory = new Factory(server.Endpoint); using var http = factory.CreateClient();
         http.DefaultRequestHeaders.Authorization = new("Bearer", "alice-synthetic-key-0000");
-        using var response = await http.PostAsJsonAsync("/v1/chat/completions", new { model = "fixture-model", messages = new[] { new { role = "user", content = "Add 2 and 3" } }, stream = streaming });
+        using var response = await http.PostAsJsonAsync("/v1/chat/completions", new { model = "gpt-6", messages = new[] { new { role = "user", content = "Add 2 and 3" } }, stream = streaming });
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var text = await response.Content.ReadAsStringAsync(); Assert.DoesNotContain("[[mcp:", text); Assert.DoesNotContain("[[final:", text);
         if (streaming) { Assert.Equal("text/event-stream", response.Content.Headers.ContentType!.MediaType); Assert.Contains("data: [DONE]", text); }
@@ -64,7 +64,7 @@ public sealed class McpProxyTests
         await using var server = await McpTransportTests.HttpFixture.StartAsync("http-json");
         using var factory = new Factory(server.Endpoint); using var http = factory.CreateClient();
         http.DefaultRequestHeaders.Authorization = new("Bearer", "bob-synthetic-key-0000");
-        using var response = await http.PostAsJsonAsync("/v1/responses", new { model = "fixture-model", input = "Use calculator", tools = new[] { new { type = "mcp", server_label = "calculator", server_url = server.Endpoint.ToString(), require_approval = "never" } } });
+        using var response = await http.PostAsJsonAsync("/v1/responses", new { model = "gpt-6", input = "Use calculator", tools = new[] { new { type = "mcp", server_label = "calculator", server_url = server.Endpoint.ToString(), require_approval = "never" } } });
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode); Assert.Empty(factory.Handler.Turns);
         Assert.Equal("mcp_server_denied", (await response.Content.ReadFromJsonAsync<JsonObject>())!["error"]!["code"]!.GetValue<string>());
     }

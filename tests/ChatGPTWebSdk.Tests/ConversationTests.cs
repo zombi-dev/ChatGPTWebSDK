@@ -29,8 +29,8 @@ public sealed class ConversationTests
     {
         using var handler = new FakeWebHandler();
         var client = handler.Client();
-        var first = await client.SendAsync(Scope(), "First turn", "fixture-model");
-        var second = await client.SendAsync(Scope(), "Second turn", "fixture-model");
+        var first = await client.SendAsync(Scope(), "First turn", "gpt-6");
+        var second = await client.SendAsync(Scope(), "Second turn", "gpt-6");
         Assert.Equal("Hello world", second.Text);
         Assert.Equal(first.Response.ConversationId, second.Response.ConversationId);
         Assert.Null(handler.Turns[0].Body["conversation_id"]);
@@ -50,7 +50,7 @@ public sealed class ConversationTests
         using var handler = new FakeWebHandler();
         var client = handler.Client();
         foreach (var scope in new[] { Scope(), Scope("bob"), Scope(thread: "second"), Scope(account: "other-account") })
-            await client.SendAsync(scope, "input", "fixture-model");
+            await client.SendAsync(scope, "input", "gpt-6");
         Assert.All(handler.Turns, t => Assert.Null(t.Body["conversation_id"]));
         Assert.Equal("other-fixture-token", handler.Turns[3].Authorization);
         Assert.All(handler.Turns.Take(3), t => Assert.Equal("fixture-token", t.Authorization));
@@ -62,7 +62,7 @@ public sealed class ConversationTests
     {
         using var handler = new FakeWebHandler { DelayMilliseconds = 40 };
         var client = handler.Client();
-        await Task.WhenAll(client.SendAsync(Scope(), "one", "fixture-model"), client.SendAsync(Scope(), "two", "fixture-model"));
+        await Task.WhenAll(client.SendAsync(Scope(), "one", "gpt-6"), client.SendAsync(Scope(), "two", "gpt-6"));
         Assert.Equal("assistant-1", handler.Turns[1].Body["parent_message_id"]!.GetValue<string>());
         Assert.Equal("conversation-1", handler.Turns[1].Body["conversation_id"]!.GetValue<string>());
         Assert.Equal(4, (await client.GetStateAsync(Scope())).History.Count);
@@ -74,9 +74,9 @@ public sealed class ConversationTests
         try
         {
             using var handler = new FakeWebHandler();
-            var first = await handler.Client(new FileConversationStore(directory)).SendAsync(Scope(), "one", "fixture-model");
+            var first = await handler.Client(new FileConversationStore(directory)).SendAsync(Scope(), "one", "gpt-6");
             var client = handler.Client(new FileConversationStore(directory));
-            await client.SendAsync(Scope(), "two", "fixture-model");
+            await client.SendAsync(Scope(), "two", "gpt-6");
             Assert.Equal(first.Response.MessageId, handler.Turns[1].Body["parent_message_id"]!.GetValue<string>());
             Assert.Equal(4, (await client.GetStateAsync(Scope())).History.Count);
             var stored = await client.GetResponseAsync(Scope(), first.Response.Id);
@@ -104,14 +104,14 @@ public sealed class ConversationTests
     {
         using var handler = new FakeWebHandler { StreamFactory = (body, index) => FakeWebHandler.Event(FakeWebHandler.Snapshot("conversation-1", "assistant-1", "Hel", false)) };
         var client = handler.Client();
-        await Assert.ThrowsAsync<SdkException>(() => client.SendAsync(Scope(), "input", "fixture-model"));
+        await Assert.ThrowsAsync<SdkException>(() => client.SendAsync(Scope(), "input", "gpt-6"));
         Assert.True((await client.GetStateAsync(Scope())).RequiresReconciliation);
-        await Assert.ThrowsAsync<ConversationReconciliationException>(() => client.SendAsync(Scope(), "retry", "fixture-model"));
+        await Assert.ThrowsAsync<ConversationReconciliationException>(() => client.SendAsync(Scope(), "retry", "gpt-6"));
         Assert.Single(handler.Turns);
         handler.Remote = handler.CompletedRemote(handler.Turns[0].Body);
         await client.ReconcileAsync(Scope());
         handler.StreamFactory = null;
-        await client.SendAsync(Scope(), "new input", "fixture-model");
+        await client.SendAsync(Scope(), "new input", "gpt-6");
         Assert.Equal("assistant-1", handler.Turns[1].Body["parent_message_id"]!.GetValue<string>());
     }
     [Fact]
@@ -119,7 +119,7 @@ public sealed class ConversationTests
     {
         using var handler = new FakeWebHandler();
         var client = handler.Client();
-        await foreach (var item in client.StreamAsync(Scope(), new() { Model = "fixture-model", Messages = [WebInputMessage.User("input")] })) break;
+        await foreach (var item in client.StreamAsync(Scope(), new() { Model = "gpt-6", Messages = [WebInputMessage.User("input")] })) break;
         Assert.True((await client.GetStateAsync(Scope())).RequiresReconciliation);
     }
     [Fact]
@@ -137,9 +137,9 @@ public sealed class ConversationTests
         };
         using var handler = new FakeWebHandler { StreamFactory = (_, _) => FakeWebHandler.Event(image) };
         var client = handler.Client();
-        await Assert.ThrowsAsync<SdkException>(() => client.SendAsync(Scope(), "Make an image", "fixture-model"));
+        await Assert.ThrowsAsync<SdkException>(() => client.SendAsync(Scope(), "Make an image", "gpt-6"));
         Assert.True((await client.GetStateAsync(Scope())).RequiresReconciliation);
-        await Assert.ThrowsAsync<ConversationReconciliationException>(() => client.SendAsync(Scope(), "follow-up", "fixture-model"));
+        await Assert.ThrowsAsync<ConversationReconciliationException>(() => client.SendAsync(Scope(), "follow-up", "gpt-6"));
         Assert.Single(handler.Turns);
         handler.Remote = handler.CompletedRemote(handler.Turns[0].Body);
         var mapping = handler.Remote["mapping"]!.AsObject();
@@ -151,7 +151,7 @@ public sealed class ConversationTests
         Assert.False((await client.GetStateAsync(Scope())).RequiresReconciliation);
         Assert.Equal("image-tool", (await client.GetStateAsync(Scope())).ParentMessageId);
         handler.StreamFactory = null;
-        await client.SendAsync(Scope(), "follow-up", "fixture-model");
+        await client.SendAsync(Scope(), "follow-up", "gpt-6");
         Assert.Equal("image-tool", handler.Turns[1].Body["parent_message_id"]!.GetValue<string>());
     }
     [Fact]
@@ -159,7 +159,7 @@ public sealed class ConversationTests
     {
         using var handler = new FakeWebHandler { Requirements = new() { ["token"] = "fixture", ["turnstile"] = new JsonObject { ["required"] = true } } };
         var client = handler.Client();
-        await Assert.ThrowsAsync<WebChallengeException>(() => client.SendAsync(Scope(), "input", "fixture-model"));
+        await Assert.ThrowsAsync<WebChallengeException>(() => client.SendAsync(Scope(), "input", "gpt-6"));
         Assert.False((await client.GetStateAsync(Scope())).RequiresReconciliation);
         Assert.Empty(handler.Turns);
     }
@@ -168,10 +168,10 @@ public sealed class ConversationTests
     {
         using var handler = new FakeWebHandler();
         var client = handler.Client();
-        var response = await client.SendAsync(Scope(), "one", "fixture-model");
-        await Assert.ThrowsAsync<SdkException>(() => client.SendAsync(Scope("bob"), new() { Model = "fixture-model", Messages = [WebInputMessage.User("input")], PreviousResponseId = response.Response.Id }));
-        await client.SendAsync(Scope(), "two", "fixture-model");
-        await Assert.ThrowsAsync<SdkException>(() => client.SendAsync(Scope(), new() { Model = "fixture-model", Messages = [WebInputMessage.User("branch")], PreviousResponseId = response.Response.Id }));
+        var response = await client.SendAsync(Scope(), "one", "gpt-6");
+        await Assert.ThrowsAsync<SdkException>(() => client.SendAsync(Scope("bob"), new() { Model = "gpt-6", Messages = [WebInputMessage.User("input")], PreviousResponseId = response.Response.Id }));
+        await client.SendAsync(Scope(), "two", "gpt-6");
+        await Assert.ThrowsAsync<SdkException>(() => client.SendAsync(Scope(), new() { Model = "gpt-6", Messages = [WebInputMessage.User("branch")], PreviousResponseId = response.Response.Id }));
         Assert.Equal(2, handler.Turns.Count);
     }
     [Fact]
@@ -180,7 +180,7 @@ public sealed class ConversationTests
         using var handler = new FakeWebHandler();
         var client = handler.Client();
         var adapter = new OpenAiWebAdapter(client);
-        JsonObject Request(JsonArray messages) => new() { ["model"] = "fixture-model", ["messages"] = messages };
+        JsonObject Request(JsonArray messages) => new() { ["model"] = "gpt-6", ["messages"] = messages };
         JsonObject Message(string role, string text) => new() { ["role"] = role, ["content"] = text };
         await client.SendAsync(Scope(), adapter.PrepareChat(Request(new(Message("user", "one")))));
         await client.SendAsync(Scope(), adapter.PrepareChat(Request(new(Message("user", "one"), Message("assistant", "Hello world"), Message("user", "two")))));
@@ -195,7 +195,7 @@ public sealed class ConversationTests
         handler.Remote = handler.CompletedRemote(input);
         var client = handler.Client();
         await client.LinkAsync(Scope(), "existing-conversation");
-        await client.SendAsync(Scope(), "append", "fixture-model");
+        await client.SendAsync(Scope(), "append", "gpt-6");
         Assert.Equal("existing-conversation", handler.Turns[0].Body["conversation_id"]!.GetValue<string>());
         Assert.Equal("assistant-1", handler.Turns[0].Body["parent_message_id"]!.GetValue<string>());
         Assert.Single(handler.Turns);

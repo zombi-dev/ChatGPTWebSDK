@@ -73,9 +73,9 @@ public sealed class ProxyTests
         Assert.NotEqual(80, http.BaseAddress!.Port);
         var capabilities = await http.GetFromJsonAsync<JsonObject>("/capabilities");
         Assert.Equal(353, capabilities!["spec"]!["operationCount"]!.GetValue<int>());
-        var first = await http.PostAsJsonAsync("/v1/responses", new { model = "fixture-model", input = "one" });
+        var first = await http.PostAsJsonAsync("/v1/responses", new { model = "gpt-6", input = "one" });
         first.EnsureSuccessStatusCode();
-        var second = await http.PostAsJsonAsync("/v1/responses", new { model = "fixture-model", input = "two" });
+        var second = await http.PostAsJsonAsync("/v1/responses", new { model = "gpt-6", input = "two" });
         second.EnsureSuccessStatusCode();
         Assert.Equal("assistant-1", factory.Handler.Turns[1].Body["parent_message_id"]!.GetValue<string>());
         Assert.Equal("conversation-1", factory.Handler.Turns[1].Body["conversation_id"]!.GetValue<string>());
@@ -87,7 +87,7 @@ public sealed class ProxyTests
     {
         using var factory = new Factory();
         using var alice = Authorized(factory, AliceKey);
-        var result = await alice.PostAsJsonAsync("/v1/responses", new { model = "fixture-model", input = "hello", conversation = "another-users-conversation" });
+        var result = await alice.PostAsJsonAsync("/v1/responses", new { model = "gpt-6", input = "hello", conversation = "another-users-conversation" });
         Assert.Equal(HttpStatusCode.Forbidden, result.StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await alice.PostAsJsonAsync("/web/link", new { conversation_id = "external" })).StatusCode);
         Assert.Empty(factory.Handler.Turns);
@@ -98,8 +98,8 @@ public sealed class ProxyTests
         using var factory = new Factory();
         using var http = factory.CreateClient();
         var sdk = new OpenAiClient(http, AliceKey, new("http://localhost/v1/"));
-        var first = await sdk.Responses.CreateAsync(new() { Model = "fixture-model", Input = JsonValue.Create("one")! });
-        var second = await sdk.Responses.CreateAsync(new() { Model = "fixture-model", Input = JsonValue.Create("two")!, PreviousResponseId = first["id"]!.GetValue<string>() });
+        var first = await sdk.Responses.CreateAsync(new() { Model = "gpt-6", Input = JsonValue.Create("one")! });
+        var second = await sdk.Responses.CreateAsync(new() { Model = "gpt-6", Input = JsonValue.Create("two")!, PreviousResponseId = first["id"]!.GetValue<string>() });
         Assert.Equal(first["conversation"]!["id"]!.GetValue<string>(), second["conversation"]!["id"]!.GetValue<string>());
         Assert.Equal("assistant-1", factory.Handler.Turns[1].Body["parent_message_id"]!.GetValue<string>());
         var retrieved = await sdk.Responses.GetAsync(first["id"]!.GetValue<string>());
@@ -109,10 +109,10 @@ public sealed class ProxyTests
         var denied = await bob.GetAsync("/v1/responses/" + first["id"]!.GetValue<string>());
         Assert.Equal(HttpStatusCode.NotFound, denied.StatusCode);
         http.DefaultRequestHeaders.Add("X-ChatGPT-Thread-Id", "other-thread");
-        await sdk.Responses.CreateAsync(new() { Model = "fixture-model", Input = JsonValue.Create("independent")! });
+        await sdk.Responses.CreateAsync(new() { Model = "gpt-6", Input = JsonValue.Create("independent")! });
         Assert.Null(factory.Handler.Turns[2].Body["conversation_id"]);
         using var models = await sdk.Operations.ListModelsAsync();
-        Assert.Equal("fixture-model", (await models.ReadJsonAsync())!["data"]![0]!["id"]!.GetValue<string>());
+        Assert.Equal("gpt-6", (await models.ReadJsonAsync())!["data"]![0]!["id"]!.GetValue<string>());
     }
     [Fact]
     public async Task Actual_HTTP_proxy_stream_is_readable_by_the_official_operation_client()
@@ -121,7 +121,7 @@ public sealed class ProxyTests
         using var http = factory.CreateClient();
         var sdk = new OpenAiClient(http, AliceKey, new("http://localhost/v1/"));
         var events = new List<JsonNode>();
-        await foreach (var item in sdk.Responses.StreamAsync(new() { Model = "fixture-model", Input = JsonValue.Create("stream me")! }))
+        await foreach (var item in sdk.Responses.StreamAsync(new() { Model = "gpt-6", Input = JsonValue.Create("stream me")! }))
             events.Add(JsonNode.Parse(item.Data)!);
         Assert.All(events, e => Assert.True(e["type"] is not null, e.ToJsonString()));
         Assert.Equal("response.created", events[0]["type"]!.GetValue<string>());
@@ -136,7 +136,7 @@ public sealed class ProxyTests
         using var noAuth = factory.CreateClient();
         Assert.Equal(HttpStatusCode.Unauthorized, (await noAuth.GetAsync("/web/binding")).StatusCode);
         using var alice = Authorized(factory, AliceKey);
-        var unsupported = await alice.PostAsJsonAsync("/v1/responses", new { model = "fixture-model", input = "hello", temperature = 0.1 });
+        var unsupported = await alice.PostAsJsonAsync("/v1/responses", new { model = "gpt-6", input = "hello", temperature = 0.1 });
         Assert.Equal(HttpStatusCode.NotImplemented, unsupported.StatusCode);
         Assert.Equal(HttpStatusCode.NotImplemented, (await alice.PostAsJsonAsync("/v1/embeddings", new { model = "fixture", input = "hello" })).StatusCode);
         Assert.Empty(factory.Handler.Turns);
@@ -150,7 +150,7 @@ public sealed class ProxyTests
         using var factory = new Factory();
         factory.Handler.Requirements = new() { ["turnstile"] = new JsonObject { ["required"] = true } };
         using var http = Authorized(factory, AliceKey);
-        var result = await http.PostAsJsonAsync("/v1/responses", new { model = "fixture-model", input = "hello", stream = true });
+        var result = await http.PostAsJsonAsync("/v1/responses", new { model = "gpt-6", input = "hello", stream = true });
         Assert.Equal(HttpStatusCode.Forbidden, result.StatusCode);
         Assert.Empty(factory.Handler.Turns);
     }

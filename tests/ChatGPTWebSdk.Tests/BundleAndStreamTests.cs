@@ -73,13 +73,13 @@ public sealed class BundleAndStreamTests
         {
             using var fake = new FakeWebHandler(); var scope = new ConversationScope("account", "alice", "temporary");
             var first = fake.Client(new FileConversationStore(directory));
-            var result = await first.SendAsync(scope, new() { Model = "fixture-model", Messages = [WebInputMessage.User("private temporary input")], TemporaryChat = true });
+            var result = await first.SendAsync(scope, new() { Model = "gpt-6", Messages = [WebInputMessage.User("private temporary input")], TemporaryChat = true });
             var restarted = fake.Client(new FileConversationStore(directory));
             Assert.True((await restarted.GetStateAsync(scope)).TemporaryChat);
             Assert.Null((await restarted.GetStateAsync(scope)).ConversationId);
             var next = compatible
-                ? await new Compatibility.OpenAiWebAdapter(restarted).PrepareResponseAsync(scope, new() { ["model"] = "fixture-model", ["input"] = "new input", ["store"] = false })
-                : new WebTurnRequest { Model = "fixture-model", Messages = [WebInputMessage.User("new input")], TemporaryChat = true };
+                ? await new Compatibility.OpenAiWebAdapter(restarted).PrepareResponseAsync(scope, new() { ["model"] = "gpt-6", ["input"] = "new input", ["store"] = false })
+                : new WebTurnRequest { Model = "gpt-6", Messages = [WebInputMessage.User("new input")], TemporaryChat = true };
             await restarted.SendAsync(scope, next);
             Assert.Null(fake.Turns[1].Body["conversation_id"]);
             Assert.False(fake.Turns[1].Body["temporary_chat_requests_personalization"]!.GetValue<bool>());
@@ -104,7 +104,7 @@ public sealed class BundleAndStreamTests
             ? Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.NotFound)) : invoker.SendAsync(request, ct)));
         var client = new ChatGptWebClient(new(http, new StaticWebCredentialProvider("account", new() { AccessToken = "synthetic" })), new InMemoryConversationStore());
         var scope = new ConversationScope("account", "alice");
-        await client.SendAsync(scope, new() { Model = "fixture-model", Messages = [WebInputMessage.User("hello")], TemporaryChat = temporary });
+        await client.SendAsync(scope, new() { Model = "gpt-6", Messages = [WebInputMessage.User("hello")], TemporaryChat = temporary });
         if (temporary)
         {
             await client.UpdateConversationAsync(scope, delete: true);

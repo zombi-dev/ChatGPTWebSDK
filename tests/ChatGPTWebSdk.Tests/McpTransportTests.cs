@@ -69,7 +69,7 @@ public sealed class McpTransportTests
         handler.StreamFactory = (body, index) => McpBridgeTests.Stream(body, index, index == 1 ? McpBridgeTests.ToolReply(McpBridgeTests.Nonce(body)) : "[[final:" + McpBridgeTests.Nonce(body) + "]]5");
         var client = new ChatGptWebClient(handler.Client().Transport, new InMemoryConversationStore(), new()
         { Servers = [new() { Label = "calculator", Command = "node", Arguments = [Fixture], AllowedTools = ["add"] }] });
-        Assert.Equal("5", (await client.SendAsync(new("account", "alice"), "Add 2 and 3", "fixture-model")).Text);
+        Assert.Equal("5", (await client.SendAsync(new("account", "alice"), "Add 2 and 3", "gpt-6")).Text);
         Assert.Contains("\"sum\":5", handler.Turns[1].Body["messages"]![0]!["content"]!["parts"]![0]!.GetValue<string>());
     }
 
@@ -82,7 +82,7 @@ public sealed class McpTransportTests
         using var runtime = new ChatGPTWebRuntime(new() { Mode = ChatGPTWebMode.ApiOnly, Credentials = new StaticWebCredentialProvider("account", new() { AccessToken = "synthetic" }),
             AccountId = "account", UserId = "alice", HttpClient = new(handler, false), ConversationStore = new InMemoryConversationStore(), Endpoints = new(),
             Mcp = new() { Servers = [new() { Label = "calculator", Endpoint = fixture.Endpoint }] } });
-        var options = new CreateResponseOptions { Model = "fixture-model", StreamingEnabled = streaming };
+        var options = new CreateResponseOptions { Model = "gpt-6", StreamingEnabled = streaming };
         options.InputItems.Add(ResponseItem.CreateUserMessageItem("Add 2 and 3"));
         options.Tools.Add(ResponseTool.CreateMcpTool("calculator", fixture.Endpoint, toolCallApprovalPolicy: DefaultMcpToolCallApprovalPolicy.NeverRequireApproval));
         var responses = runtime.CreateClient().GetResponsesClient();

@@ -42,7 +42,7 @@ public sealed class ModernFeaturesTests
         var credentials = new StaticWebCredentialProvider("account", new() { AccessToken = "synthetic-account-token" });
         using var http = new HttpClient(handler);
         var client = new ChatGptWebClient(new(http, credentials, new() { Endpoints = WebEndpointProfile.Modern, SentinelChallengeProvider = new Answers() }), new InMemoryConversationStore());
-        await client.SendAsync(Scope, "hello", "fixture-model");
+        await client.SendAsync(Scope, "hello", "gpt-6");
         Assert.Equal(4, requests.Count);
         Assert.Equal("synthetic-prepare", requests[1].Body["prepare_token"]!.GetValue<string>());
         Assert.Equal("synthetic-proof", requests[1].Body["proofofwork"]!.GetValue<string>());
@@ -73,7 +73,7 @@ public sealed class ModernFeaturesTests
             var body = (await request.Content!.ReadFromJsonAsync<JsonObject>(ct))!;
             return new(HttpStatusCode.OK) { Content = new StringContent(FakeWebHandler.NormalStream(body, proofHeaders.Count), Encoding.UTF8, "text/event-stream") };
         });
-        using var runtime = Runtime(handler, sentinel: sessions); var chat = runtime.CreateClient().GetChatClient("fixture-model");
+        using var runtime = Runtime(handler, sentinel: sessions); var chat = runtime.CreateClient().GetChatClient("gpt-6");
         await chat.CompleteChatAsync("first"); await chat.CompleteChatAsync("second");
         Assert.Equal(2, sessions.Calls); Assert.Equal(new[] { "synthetic-proof-1", "synthetic-proof-2" }, proofHeaders);
     }
@@ -92,7 +92,7 @@ public sealed class ModernFeaturesTests
     {
         using var handler = new FakeWebHandler(); using var runtime = Runtime(handler);
         ChatGPTWeb.Configure(runtime);
-        var client = new ChatClient("fixture-model", runtime.ClientKey);
+        var client = new ChatClient("gpt-6", runtime.ClientKey);
         Assert.Equal("Hello world", (await client.CompleteChatAsync("hello")).Value.Content[0].Text);
     }
 
@@ -103,8 +103,8 @@ public sealed class ModernFeaturesTests
         try
         {
             using var handler = new FakeWebHandler(); var client = handler.Client(new FileConversationStore(directory));
-            var first = await client.SendAsync(Scope, new() { Model = "fixture-model", Messages = [WebInputMessage.User("private-marker-42")], TemporaryChat = true });
-            await client.SendAsync(Scope, new() { Model = "fixture-model", Messages = [WebInputMessage.User("follow-up")], TemporaryChat = true });
+            var first = await client.SendAsync(Scope, new() { Model = "gpt-6", Messages = [WebInputMessage.User("private-marker-42")], TemporaryChat = true });
+            await client.SendAsync(Scope, new() { Model = "gpt-6", Messages = [WebInputMessage.User("follow-up")], TemporaryChat = true });
             Assert.True(handler.Turns[0].Body["history_and_training_disabled"]!.GetValue<bool>());
             Assert.False(handler.Turns[0].Body["temporary_chat_requests_personalization"]!.GetValue<bool>());
             Assert.Null(handler.Turns[1].Body["temporary_chat_requests_personalization"]);
@@ -114,7 +114,7 @@ public sealed class ModernFeaturesTests
             Assert.Equal(first.Response.Id, (await client.GetResponseAsync(Scope, first.Response.Id)).Id);
             await client.DeleteResponseAsync(Scope, first.Response.Id);
             await Assert.ThrowsAsync<SdkException>(() => client.GetResponseAsync(Scope, first.Response.Id));
-            await Assert.ThrowsAsync<SdkException>(() => client.SendAsync(Scope, "persistent", "fixture-model"));
+            await Assert.ThrowsAsync<SdkException>(() => client.SendAsync(Scope, "persistent", "gpt-6"));
         }
         finally { TestDirectory.Delete(directory); }
     }
@@ -123,13 +123,13 @@ public sealed class ModernFeaturesTests
     public async Task Native_edit_regeneration_and_delete_keep_the_remote_branch_and_local_binding_consistent()
     {
         using var handler = new FakeWebHandler(); var client = handler.Client();
-        var first = await client.SendAsync(Scope, "original", "fixture-model");
+        var first = await client.SendAsync(Scope, "original", "gpt-6");
         handler.Remote = handler.CompletedRemote(handler.Turns[0].Body);
-        var edited = await client.EditAsync(Scope, first.Response.Input[0].Id, "edited", "fixture-model");
+        var edited = await client.EditAsync(Scope, first.Response.Input[0].Id, "edited", "gpt-6");
         Assert.Equal("root", handler.Turns[1].Body["parent_message_id"]!.GetValue<string>());
         Assert.DoesNotContain((await client.GetStateAsync(Scope)).History, m => m.Id == first.Response.MessageId);
         handler.Remote = handler.CompletedRemote(handler.Turns[1].Body, 2);
-        var regenerated = await client.RegenerateAsync(Scope, "fixture-model");
+        var regenerated = await client.RegenerateAsync(Scope, "gpt-6");
         Assert.Equal("variant", handler.Turns[2].Body["action"]!.GetValue<string>());
         Assert.Empty(handler.Turns[2].Body["messages"]!.AsArray());
         Assert.Equal(edited.Response.Input[0].Id, handler.Turns[2].Body["parent_message_id"]!.GetValue<string>());
@@ -146,7 +146,7 @@ public sealed class ModernFeaturesTests
     public async Task Sentinel_failure_keeps_503_for_the_official_nonstreaming_and_streaming_clients(bool streaming)
     {
         using var handler = new FakeWebHandler(); using var runtime = Runtime(handler, sentinel: new Failure());
-        var client = runtime.CreateClient().GetChatClient("fixture-model");
+        var client = runtime.CreateClient().GetChatClient("gpt-6");
         var error = await Assert.ThrowsAsync<ClientResultException>(async () =>
         {
             if (streaming) { await foreach (var _ in client.CompleteChatStreamingAsync("hello")) { } }
@@ -243,7 +243,7 @@ public sealed class ModernFeaturesTests
             }
             return new(HttpStatusCode.NotFound);
         });
-        using var runtime = Runtime(handler); var images = runtime.CreateClient(projectId: context == "project" ? "g-p-synthetic-project" : null, temporaryChat: context == "temporary").GetImageClient("fixture-model");
+        using var runtime = Runtime(handler); var images = runtime.CreateClient(projectId: context == "project" ? "g-p-synthetic-project" : null, temporaryChat: context == "temporary").GetImageClient("gpt-6");
         var result = edit ? await images.GenerateImageEditAsync(new MemoryStream(Png), "pixel.png", "Make it blue") : await images.GenerateImageAsync("A blue circle");
         Assert.Equal(Png, result.Value.ImageBytes.ToArray());
         Assert.Equal(finalText ? "assistant-generated" : "image-tool", (await runtime.Web.GetStateAsync(Scope)).ParentMessageId);
@@ -259,7 +259,7 @@ public sealed class ModernFeaturesTests
         try
         {
             using var handler = new FakeWebHandler(); var thread = new ConversationScope("account", "alice", "another-thread");
-            var first = await handler.Client(new FileConversationStore(directory)).SendAsync(thread, "hello", "fixture-model");
+            var first = await handler.Client(new FileConversationStore(directory)).SendAsync(thread, "hello", "gpt-6");
             var client = handler.Client(new FileConversationStore(directory));
             Assert.Equal(thread, await client.ResolveResponseScopeAsync(Scope, first.Response.Id));
             await Assert.ThrowsAsync<SdkException>(() => client.ResolveResponseScopeAsync(new("account", "bob"), first.Response.Id));
