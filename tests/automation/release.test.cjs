@@ -12,10 +12,15 @@ function fixture() {
     head_branch: 'main', head_repository: { full_name: 'owner/sdk' }, repository: { full_name: 'owner/sdk' } };
   const artifacts = ['browser-linux-x64', 'browser-osx-arm64', 'browser-osx-x64', 'browser-win-x64', 'release-common']
     .map((name, i) => ({ id: i, name, expired: false, size_in_bytes: 50, workflow_run: { id: 10, head_sha: sha } }));
-  const state = { version: '1.4.0', comparison: 'ahead', tag: null, existing: null, artifacts, run };
+  const state = { version: '1.4.0', comparison: 'ahead', tag: null, tagRef: null, existing: null, artifacts, run };
   const missing = () => { const error = new Error('missing'); error.status = 404; throw error; };
   const github = { paginate: async () => artifacts, rest: { actions: {
     getWorkflowRun: async () => ({ data: run }), listWorkflowRunArtifacts() {}
+  }, git: {
+    getRef: async ({ ref }) => {
+      assert.equal(ref, 'tags/v1.4.0');
+      return state.tag ? { data: { object: { sha: state.tagRef ?? state.tag } } } : missing();
+    }
   }, repos: {
     get: async () => ({ data: { default_branch: 'main' } }),
     compareCommitsWithBasehead: async () => ({ data: { status: state.comparison } }),
@@ -23,7 +28,11 @@ function fixture() {
       assert.equal(ref, sha); const content = name === 'VERSION' ? state.version : 'SDK release notes.';
       return { data: { type: 'file', encoding: 'base64', content: Buffer.from(content).toString('base64'), size: Buffer.byteLength(content) } };
     },
-    getCommit: async () => state.tag ? { data: { sha: state.tag } } : missing(),
+    getCommit: async ({ ref }) => {
+      assert.equal(ref, 'refs/tags/v1.4.0');
+      if (state.tag) return { data: { sha: state.tag } };
+      const error = new Error('No commit found for SHA'); error.status = 422; throw error;
+    },
     getReleaseByTag: async () => state.existing ? { data: state.existing } : missing(),
     createRelease: async data => { writes.push(['create', data]); return { data: { id: 20, draft: true, assets: [] } }; },
     deleteReleaseAsset: async data => { writes.push(['delete', data]); },
@@ -103,6 +112,19 @@ test('Release rejects symbolic-link asset metadata', async t => {
 test('Release refuses to move an existing version tag', async t => {
   const f = fixture(), files = await assets(t); f.state.tag = 'b'.repeat(40);
   await assert.rejects(() => publishRelease(f, files), /another commit/); assert.equal(f.writes.length, 0);
+});
+test('Release creates a new tag when reference lookup returns 404, without a missing-commit lookup', async t => {
+  const f = fixture(), files = await assets(t); await publishRelease(f, files);
+  assert.equal(f.writes[0][0], 'create'); assert.equal(f.writes.at(-1)[0], 'update');
+});
+for (const status of [401, 403, 422, 500]) test(`Release propagates reference lookup HTTP ${status} without writing`, async t => {
+  const f = fixture(), files = await assets(t);
+  f.github.rest.git.getRef = async () => { const error = new Error('Reference lookup failed'); error.status = status; throw error; };
+  await assert.rejects(() => publishRelease(f, files), error => error.status === status); assert.equal(f.writes.length, 0);
+});
+test('Release resolves annotated tags to the tested commit', async t => {
+  const f = fixture(), files = await assets(t); f.state.tag = f.sha; f.state.tagRef = 'c'.repeat(40);
+  await publishRelease(f, files); assert.equal(f.writes[0][0], 'create'); assert.equal(f.writes.at(-1)[0], 'update');
 });
 test('Release preserves complete immutable assets on an exact rerun', async t => {
   const f = fixture(), files = await assets(t); await publishRelease(f, files);
