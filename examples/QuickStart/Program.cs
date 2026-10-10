@@ -29,6 +29,7 @@ if (args.Contains("--verify-bundle"))
 {
     foreach (var acceleration in new[] { BrowserAcceleration.Automatic, BrowserAcceleration.Software })
     {
+        Console.WriteLine($"Verifying bundled Chromium in {acceleration} rendering mode.");
         var result = await BrowserDiagnostics.VerifyAsync(new() { BundledBrowserDirectory = browserDirectory, Headless = true, Acceleration = acceleration, Progress = Console.WriteLine, Timeout = TimeSpan.FromSeconds(45) });
         if (acceleration == BrowserAcceleration.Software && (!result.SoftwareRendering || result.HardwareAcceleration == true)) throw new InvalidOperationException("Software rendering was not applied.");
         Console.WriteLine($"Bundled Chromium {result.BrowserVersion}: invisible launch, {acceleration}, software={result.SoftwareRendering}, hardware={result.HardwareAcceleration}; JavaScript and canvas passed.");

@@ -75,7 +75,11 @@ try {
     $taskFingerprint = Get-BundleFingerprint
     if ((Get-Content -LiteralPath $taskPreparedFile -Raw) -cne $taskFingerprint) { throw 'Prepared SDK or browser inputs changed.' }
     if ($Stage -in @('All', 'Verify')) {
-        dotnet run --project (Join-Path $taskBundle 'example') -c Release -- --verify-bundle
+        Write-Host "Building the bundled example for $taskPlatform."
+        dotnet build (Join-Path $taskBundle 'example') -c Release --nologo
+        if ($LASTEXITCODE -ne 0) { throw 'The bundled example did not build.' }
+        Write-Host "Launching the bundled example for native rendering verification."
+        dotnet run --project (Join-Path $taskBundle 'example') -c Release --no-build --no-restore -- --verify-bundle
         if ($LASTEXITCODE -ne 0) { throw 'The bundled example, driver or browser failed its offline launch check.' }
         foreach ($taskGeneratedName in @('bin', 'obj')) {
             $taskGenerated = [IO.Path]::GetFullPath((Join-Path $taskBundle "example/$taskGeneratedName"))
