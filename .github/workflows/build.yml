@@ -59,7 +59,9 @@ jobs:
       - name: Verify native browser launch and rendering
         timeout-minutes: 3
         shell: pwsh
-        run: ./tools/Bundle-Browser.ps1 -Stage Verify
+        run: |
+          node tools/ci/run-bounded.cjs 150 pwsh -NoLogo -NoProfile -File tools/Bundle-Browser.ps1 -Stage Verify
+          if ($LASTEXITCODE -ne 0) { throw 'Native browser verification failed.' }
       - name: Archive verified browser bundle
         timeout-minutes: 5
         shell: pwsh
