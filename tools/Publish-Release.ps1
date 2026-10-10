@@ -36,6 +36,7 @@ if ($LASTEXITCODE -eq 0) {
     exit 0
 }
 $taskNotes = Join-Path $taskRoot "artifacts/release-notes-$taskVersion.md"
-Copy-Item -LiteralPath (Join-Path $taskRoot 'docs/RELEASE_NOTES.md') -Destination $taskNotes
+node (Join-Path $taskRoot 'tools/ci/format-release-notes.cjs') $env:GH_REPO $env:RELEASE_COMMIT $taskVersion (Join-Path $taskRoot 'docs/RELEASE_NOTES.md') $taskNotes
+if ($LASTEXITCODE -ne 0) { throw 'Could not format release notes with the complete commit history.' }
 gh release create $taskTag @taskFiles $taskChecksumFile --repo $env:GH_REPO --target $env:RELEASE_COMMIT --title $taskTag --notes-file $taskNotes
 if ($LASTEXITCODE -ne 0) { throw 'Release creation failed.' }
