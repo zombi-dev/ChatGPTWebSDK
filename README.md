@@ -7,19 +7,19 @@ This was designed by zombi.dev and made with GPT 6.1 Sol (max). This means it is
 
 ## 1. Download the authentication extension
 
-- **Chrome, Edge, Brave, Opera and other Chromium browsers:** [Chromium extension ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.5.0/chatgpt-web-sdk-auth-chromium-1.5.0.zip). Extract it, enable Developer mode in your browser's extension page, and choose **Load unpacked**.
-- **Firefox:** [Firefox XPI](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.5.0/chatgpt-web-sdk-auth-firefox-1.5.0.xpi) or [Firefox extension ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.5.0/chatgpt-web-sdk-auth-firefox-1.5.0.zip). Open `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on**, and select the XPI. This unsigned build must be loaded again after Firefox restarts.
+- **Chrome, Edge, Brave, Opera and other Chromium browsers:** [Chromium extension ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.5.1/chatgpt-web-sdk-auth-chromium-1.5.1.zip). Extract it, enable Developer mode in your browser's extension page, and choose **Load unpacked**.
+- **Firefox:** [Firefox XPI](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.5.1/chatgpt-web-sdk-auth-firefox-1.5.1.xpi) or [Firefox extension ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.5.1/chatgpt-web-sdk-auth-firefox-1.5.1.zip). Open `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on**, and select the XPI. This unsigned build must be loaded again after Firefox restarts.
 
 ## 2. Download the library
 
-**v1.5.0 complete downloads include the SDK DLLs, dependencies, proxy, example app, and Chromium browser.**
+**v1.5.1 complete downloads include the SDK DLLs, dependencies, proxy, example app, and Chromium browser.**
 
 | Your platform | Download |
 | --- | --- |
-| Windows x64 | [SDK + browser ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.5.0/ChatGPTWebSdk-Bundle-win-x64-1.5.0.zip) |
-| Linux x64 | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.5.0/ChatGPTWebSdk-Bundle-linux-x64-1.5.0.tar.gz) |
-| macOS Intel | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.5.0/ChatGPTWebSdk-Bundle-osx-x64-1.5.0.tar.gz) |
-| macOS Apple Silicon | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.5.0/ChatGPTWebSdk-Bundle-osx-arm64-1.5.0.tar.gz) |
+| Windows x64 | [SDK + browser ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.5.1/ChatGPTWebSdk-Bundle-win-x64-1.5.1.zip) |
+| Linux x64 | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.5.1/ChatGPTWebSdk-Bundle-linux-x64-1.5.1.tar.gz) |
+| macOS Intel | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.5.1/ChatGPTWebSdk-Bundle-osx-x64-1.5.1.tar.gz) |
+| macOS Apple Silicon | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.5.1/ChatGPTWebSdk-Bundle-osx-arm64-1.5.1.tar.gz) |
 
 Extract the whole archive. On Linux/macOS use `tar -xzf` so executable permissions and symlinks survive. Libraries and the example need **.NET 8 or later**; the optional proxy needs **.NET 10**. Linux also needs Chromium's [system libraries](https://playwright.dev/dotnet/docs/browsers#install-system-dependencies).
 
@@ -51,7 +51,7 @@ Console.WriteLine(second.Value.Content[0].Text);
 
 For your own application, reference the replacement `ChatGPTWebSdk.OpenAI` package or supplied DLLs, and keep `browsers/` beside the application output. The included example demonstrates DLL references. Set `browser: new() { BundledBrowserDirectory = "/path/to/extracted-sdk/browsers" }` when the browser lives elsewhere.
 
-## Models (v1.5.0)
+## Models (v1.5.1)
 
 Defaults allow **GPT-6** (`gpt-6`), **GPT-5.6 Sol** (`gpt-5-6`), and **GPT-5.5** (`gpt-5-5`). Their advertised Instant/Thinking variants are included. GPT-5.5 leaves the default set on **October 14, 2026 at 00:00 UTC**, following the date shown in ChatGPT. The official-compatible model list shows only allowed entries; `runtime.Web.Transport.GetModelsAsync(accountId)` remains raw discovery. Account access still applies.
 
