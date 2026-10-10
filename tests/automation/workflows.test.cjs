@@ -39,6 +39,8 @@ test('Build is reusable and follows every successful test matrix job', () => {
   const build = read('.github/workflows/build.yml'), tests = read('.github/workflows/tests.yml');
   assert(build.includes('workflow_call:')); assert(!build.includes('workflow_run')); assert(tests.includes('needs: tests')); assert(tests.includes('uses: ./.github/workflows/build.yml'));
   assert(tests.includes("github.event_name != 'pull_request'")); assert(!build.includes('contents: write'));
+  const prepare = build.indexOf('Bundle-Browser.ps1 -Stage Prepare'), verify = build.indexOf('Bundle-Browser.ps1 -Stage Verify'), archive = build.indexOf('Bundle-Browser.ps1 -Stage Archive');
+  assert(prepare > 0 && prepare < verify && verify < archive && archive < build.indexOf('Upload platform browser bundle'));
 });
 test('Daily authenticated probe is limited to the default branch and its credential never reaches the publisher', () => {
   const monitor = read('.github/workflows/monitor.yml'); const publisher = monitor.slice(monitor.indexOf('  report:\n'));
