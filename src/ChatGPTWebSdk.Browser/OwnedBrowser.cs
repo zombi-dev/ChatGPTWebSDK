@@ -31,7 +31,7 @@ internal sealed class OwnedBrowser(IBrowser browser, Process? process = null, st
         {
             var session = await launched.Browser.NewBrowserCDPSessionAsync().WaitAsync(ct).ConfigureAwait(false);
             try { hardware = HasHardwareAcceleration(await session.SendAsync("SystemInfo.getInfo").WaitAsync(ct).ConfigureAwait(false)); }
-            finally { await session.DetachAsync().ConfigureAwait(false); }
+            finally { await session.DetachAsync().WaitAsync(ct).ConfigureAwait(false); }
         }
         catch (PlaywrightException) { hardware = null; }
         catch { await launched.DisposeAsync().ConfigureAwait(false); throw; }
@@ -86,9 +86,17 @@ internal sealed class OwnedBrowser(IBrowser browser, Process? process = null, st
         }
         catch
         {
-            if (browser is not null) try { await browser.CloseAsync().ConfigureAwait(false); } catch (PlaywrightException) { }
-            await StopProcessAsync(process).ConfigureAwait(false);
-            await CleanupProfileAsync(profile).ConfigureAwait(false);
+            try
+            {
+                if (browser is not null)
+                    try { await browser.CloseAsync().WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false); }
+                    catch (Exception ex) when (ex is PlaywrightException or TimeoutException) { }
+            }
+            finally
+            {
+                await StopProcessAsync(process).ConfigureAwait(false);
+                await CleanupProfileAsync(profile).ConfigureAwait(false);
+            }
             throw;
         }
     }
@@ -181,9 +189,11 @@ internal sealed class OwnedBrowser(IBrowser browser, Process? process = null, st
         throw new SdkException("The temporary browser closed, but its owned profile remains locked. Release the lock and retry cleanup.", "sentinel_browser_cleanup_failed", HttpStatusCode.ServiceUnavailable);
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync() => DisposeAsync(TimeSpan.FromSeconds(5));
+
+    internal async ValueTask DisposeAsync(TimeSpan closeTimeout)
     {
-        try { await Browser.CloseAsync().ConfigureAwait(false); }
+        try { await Browser.CloseAsync().WaitAsync(closeTimeout).ConfigureAwait(false); }
         catch (PlaywrightException) { }
         finally
         {
