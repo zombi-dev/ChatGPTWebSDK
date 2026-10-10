@@ -10,6 +10,8 @@ The five existing public release bodies were expanded to at least 1.5 times thei
 
 Dependabot #4 was merged after the latest four native test jobs passed. It updates the pinned setup-node, upload-artifact and download-artifact actions. A check using real GitHub history confirmed that the new formatter stops at the exact v1.5.0 tag and includes the merged dependency commit. Both the workflow and manual publisher use the same formatter. Native platform tests and browser builds remain publication gates; real ChatGPT generation was not repeated for this release-presentation and Actions update.
 
+The first v1.5.1 run passed all four native test jobs, CodeQL and the Windows, Linux and Intel macOS bundle builds. The macOS 26 ARM runner stopped reporting progress during native browser verification, past its step timeout; logs were unavailable and the run was canceled. The Apple Silicon matrix now uses GitHub's macOS 15 ARM image, retaining both automatic and software rendering checks. The stall's underlying cause is unconfirmed.
+
 ## v1.5.0 CI, dependencies and monitor incident rules
 
 Recorded on 2026-10-09 and rechecked on 2026-10-10 on Linux. The complete gate passed **1,199 SDK tests**, **116 automation tests** and **12 extension tests**: **1,327 passing cases, zero failures and zero skips**. This adds 15 streaming compatibility cases and 33 automation cases to the corrected Windows gate. The solution build completed with zero warnings and errors.

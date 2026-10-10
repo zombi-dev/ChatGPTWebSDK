@@ -14,6 +14,10 @@ A patch release for fuller changelogs and updated GitHub Actions dependencies. R
 
 - Include [Dependabot #4](https://github.com/zombi-dev/ChatGPTWebSDK/pull/4): setup-node 7.1.0, upload-artifact 7.0.2 and download-artifact 8.0.2, pinned to exact commits.
 
+## Build and CI
+
+- Run Apple Silicon tests and native browser verification on GitHub's macOS 15 ARM image after repeated macOS 26 runner stalls. Automatic and software rendering checks remain required before publishing a browser bundle.
+
 ## Validation and downloads
 
 - Run 1,199 SDK tests, 143 automation tests and 12 extension tests before building release assets on each of the four supported platforms.
