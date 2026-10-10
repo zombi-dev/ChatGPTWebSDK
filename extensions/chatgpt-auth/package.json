@@ -1,7 +1,7 @@
 {
   "name": "chatgpt-web-sdk-auth",
   "private": true,
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Local, user-initiated ChatGPT authentication export",
   "scripts": { "test": "node --test tests/*.test.cjs", "build": "node build.mjs" },
   "engines": { "node": ">=22" }

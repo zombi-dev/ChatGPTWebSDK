@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ChatGPT Web SDK Auth",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Click on your signed-in ChatGPT tab to copy one authentication string for the C# ChatGPT Web SDK.",
   "permissions": ["activeTab", "scripting", "cookies", "clipboardWrite"],
   "host_permissions": ["https://chatgpt.com/*"],
