@@ -145,8 +145,9 @@ jobs:
               if (!release) {
                 const { data: notes } = await github.rest.repos.getContent({ ...repo, path: 'docs/RELEASE_NOTES.md', ref: commit });
                 if (notes.type !== 'file' || notes.encoding !== 'base64' || notes.size > 32768) throw new Error('Invalid release notes.');
+                const changes = await collectReleaseChanges({ github, context }, { version, commit });
                 release = (await github.rest.repos.createRelease({ ...repo, tag_name: tag, target_commitish: commit, name: tag,
-                  body: Buffer.from(notes.content, 'base64').toString('utf8'), draft: true })).data;
+                  body: formatReleaseNotes(Buffer.from(notes.content, 'base64').toString('utf8'), { ...changes, repo }), draft: true })).data;
               }
               if (!release.draft) throw new Error('Existing published release is mutable. Inspect it before modifying it.');
               for (const existing of release.assets) {
@@ -161,5 +162,68 @@ jobs:
               }
               await github.rest.repos.updateRelease({ ...repo, release_id: release.id, draft: false });
               core.info(`Published ${tag} from the tested commit ${commit}.`);
+            }
+
+            function compareVersions(left, right) {
+              const a = left.replace(/^v/, '').split('.').map(Number), b = right.replace(/^v/, '').split('.').map(Number);
+              for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i] - b[i];
+              return 0;
+            }
+
+            async function collectReleaseChanges({ github, context }, { version, commit }) {
+              const repo = context.repo;
+              const [history, releases] = await Promise.all([
+                github.paginate(github.rest.repos.listCommits, { ...repo, sha: commit, per_page: 100 }),
+                github.paginate(github.rest.repos.listReleases, { ...repo, per_page: 100 })
+              ]);
+              if (!history.length || history[0].sha !== commit) throw new Error('Release history does not start at the tested commit.');
+              const published = releases.filter(r => !r.draft && /^v\d+\.\d+\.\d+$/.test(r.tag_name));
+              const candidates = published.filter(r => !r.prerelease && compareVersions(r.tag_name, version) < 0)
+                .sort((a, b) => compareVersions(b.tag_name, a.tag_name));
+              let boundary = history.length, rebased = false;
+              for (const release of candidates) {
+                const { data: target } = await github.rest.repos.getCommit({ ...repo, ref: `refs/tags/${release.tag_name}` });
+                // Rebuilt history retains each published source tree even though its commit IDs changed.
+                const index = history.findIndex(c => c.sha === target.sha ||
+                  (target.commit?.tree?.sha && c.commit?.tree?.sha === target.commit.tree.sha));
+                if (index >= 0) { boundary = index; rebased = history[index].sha !== target.sha; break; }
+              }
+              const commits = history.slice(0, boundary).reverse();
+              const publicTags = new Set(published.map(r => r.tag_name));
+              const skippedVersions = [...new Set(commits.flatMap(c => {
+                const match = /^chore\(release\): v?(\d+\.\d+\.\d+)\s*$/.exec(c.commit.message.split(/\r?\n/, 1)[0]);
+                return match && compareVersions(match[1], version) < 0 && !publicTags.has(`v${match[1]}`) ? [match[1]] : [];
+              }))].sort(compareVersions);
+              return { commits, skippedVersions, rebased };
+            }
+
+            function formatReleaseNotes(notes, { commits, repo, skippedVersions = [], rebased = false }) {
+              const groups = new Map();
+              const seen = new Set();
+              const escape = text => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                .replace(/[\\`*_\[\]!|]/g, '\\$&');
+              for (const commit of commits) {
+                if (!/^[a-f0-9]{40}$/.test(commit.sha) || seen.has(commit.sha)) throw new Error('Invalid or duplicate release commit.');
+                seen.add(commit.sha);
+                const title = commit.commit.message.split(/\r?\n/, 1)[0];
+                const category = /^\w+\(security\):/.test(title) ? 'Security' : /^\w+\(deps\):/.test(title) ? 'Dependencies' :
+                  /^feat\(/.test(title) ? 'Features' : /^fix\(/.test(title) ? 'Fixes' : /^test\(/.test(title) ? 'Tests' :
+                  /^(?:build|ci)\(/.test(title) ? 'Build and CI' : /^(?:perf|refactor)\(/.test(title) ? 'Implementation' : 'Documentation and maintenance';
+                if (!groups.has(category)) groups.set(category, []);
+                const url = `https://github.com/${encodeURIComponent(repo.owner)}/${encodeURIComponent(repo.repo)}/commit/${commit.sha}`;
+                groups.get(category).push(`- [${commit.sha.slice(0, 7)}](${url}) ${escape(title)}`);
+              }
+              let body = notes.trim();
+              if (skippedVersions.length) {
+                const versions = skippedVersions.map(v => `v${v}`).join(', ');
+                body = `> **Version note:** ${versions} ${skippedVersions.length === 1 ? 'was an internal development version and was' : 'were internal development versions and were'} not publicly released. ${skippedVersions.length === 1 ? 'Its' : 'Their'} changes are included in this release.\n\n${body}`;
+              }
+              if (commits.length) {
+                const sections = [...groups].map(([name, lines]) => `### ${name}\n\n${lines.join('\n')}`).join('\n\n');
+                const historyNote = rebased ? 'Commit links follow the rebuilt main history. Published tags and downloads retain their original targets.\n\n' : '';
+                body += `\n\n<details>\n<summary>All ${commits.length} ${commits.length === 1 ? 'commit' : 'commits'}</summary>\n\n${historyNote}${sections}\n\n</details>`;
+              }
+              if (Buffer.byteLength(body) > 120000) throw new Error('Release notes exceed the publishing size limit.');
+              return body + '\n';
             }
             await publishRelease({ github, context, core });
