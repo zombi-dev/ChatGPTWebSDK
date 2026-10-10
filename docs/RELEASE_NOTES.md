@@ -18,8 +18,10 @@ A patch release for fuller changelogs and updated GitHub Actions dependencies. R
 
 - Run Apple Silicon tests and native browser verification on GitHub's macOS 15 ARM image after repeated macOS 26 runner stalls. Automatic and software rendering checks remain required before publishing a browser bundle.
 - Accept release versions followed by sentence punctuation in commit bodies, while rejecting partial matches against other versions. The workflow now uses the tested commit validator for both title and version checks.
+- Bound browser driver initialization, CDP detach and context/browser cleanup, including disposal of drivers that finish after cancellation. A stalled browser close still terminates the owned process and removes its profile.
+- Log native verification stages and enforce an independent process deadline. Descendants that retain output pipes fail the build instead of leaving CI waiting indefinitely.
 
 ## Validation and downloads
 
-- Run 1,199 SDK tests, 158 automation tests and 12 extension tests before building release assets on each of the four supported platforms.
+- Run 1,206 SDK tests, 164 automation tests and 12 extension tests before building release assets on each of the four supported platforms.
 - Publish synchronized SDK, proxy and extension packages, plus native Chromium bundles for Windows, Linux, Intel macOS and Apple Silicon, with SHA256 checksums.
