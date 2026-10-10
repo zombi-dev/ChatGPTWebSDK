@@ -4,13 +4,15 @@ Earlier releases were verified on 2026-10-02 and 2026-10-03 on Windows; the v1.3
 
 ## v1.5.1 release notes and Actions updates
 
-Recorded on 2026-10-10 on Linux. The complete gate passed **1,199 SDK tests**, **143 automation tests** and **12 extension tests**: **1,354 passing cases, zero failures and zero skips**. The 27 added automation cases cover complete linked commit appendices, Markdown escaping, chronological ranges, rewritten source-tree boundaries, real internal checkpoints, public prereleases, API failures, pagination and the manual formatter. The build completed successfully, and bundled Chromium passed invisible automatic/software rendering checks. Actionlint and the Actions CodeQL security-extended scan passed with zero findings.
+Recorded on 2026-10-10 on Linux. The complete gate passed **1,199 SDK tests**, **158 automation tests** and **12 extension tests**: **1,369 passing cases, zero failures and zero skips**. The 42 added automation cases cover complete linked commit appendices, Markdown escaping, chronological ranges, rewritten source-tree boundaries, real internal checkpoints, public prereleases, API failures, pagination, the manual formatter and release versions in commit bodies. The build completed successfully, and bundled Chromium passed invisible automatic/software rendering checks. Actionlint and the Actions CodeQL security-extended scan passed with zero findings.
 
 The five existing public release bodies were expanded to at least 1.5 times their previous visible word count. All 239 released main-history commits are linked exactly once across their categorized, closed-by-default appendices. GitHub's Markdown API rendered all five bodies with every commit link inside the collapsed section. Release IDs, names, published tags, asset IDs/sizes/digests and original publication timestamps were preserved. The v1.5.0 body starts by explaining that v1.4.0 was internal and was not publicly released.
 
 Dependabot #4 was merged after the latest four native test jobs passed. It updates the pinned setup-node, upload-artifact and download-artifact actions. A check using real GitHub history confirmed that the new formatter stops at the exact v1.5.0 tag and includes the merged dependency commit. Both the workflow and manual publisher use the same formatter. Native platform tests and browser builds remain publication gates; real ChatGPT generation was not repeated for this release-presentation and Actions update.
 
 The first v1.5.1 run passed all four native test jobs, CodeQL and the Windows, Linux and Intel macOS bundle builds. The macOS 26 ARM runner stopped reporting progress during native browser verification, past its step timeout; logs were unavailable and the run was canceled. The Apple Silicon matrix now uses GitHub's macOS 15 ARM image, retaining both automatic and software rendering checks. The stall's underlying cause is unconfirmed.
+
+The retry exposed a commit-version check that rejected a sentence-ending period after the correct version. Both commit checks now run through the same Node validator, with regression cases for punctuation, differing version components and a real temporary Git commit. A failed validation still prevents every asset build.
 
 ## v1.5.0 CI, dependencies and monitor incident rules
 
