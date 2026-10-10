@@ -24,6 +24,8 @@ Codex commits end with this trailer, separated by a blank line:
 Co-authored-by: Codex (GPT 6.1 Sol max) <noreply@openai.com>
 ```
 
-For a release, update the shared version and use `chore(release): X.Y.Z`. Keep `docs/RELEASE_NOTES.md` brief: one optional summary, then categorized bullets such as **Features**, **Fixes**, **Security**, **Dependencies** and **Maintenance**. Release titles are just `vX.Y.Z`. Existing published release tags remain fixed.
+For a release, update the shared version and use `chore(release): X.Y.Z`. Write a summary and categorized bullets in `docs/RELEASE_NOTES.md`, with enough detail to explain behavior, practical impact and validation: roughly 1.5 times the earlier brief notes. Useful categories include **Features**, **Fixes**, **Security**, **Dependencies** and **Maintenance**. Release titles are just `vX.Y.Z`. Existing published release tags remain fixed.
+
+The publisher appends every commit in a closed-by-default `<details>` section, grouped by category with a direct link to each commit. Keep the visible changelog readable; individual commit entries belong in that appendix. If a release checkpoint was internal and never published, the next public release starts with a version note explaining that its changes are included. A numerical version gap alone does not establish an internal version.
 
 Run `./test.ps1` before packaging. Repository pushes check the commit title, release version and full test suite before build artifacts can be published. Keep private captures, authentication and generated build output out of commits.

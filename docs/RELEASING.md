@@ -24,7 +24,7 @@ To release an update:
 
 1. Bump VERSION and the extension manifests/package.json once.
 2. Run `./build.ps1 -BuildRoot artifacts/build -BundleBrowser`, verify the requested behavior and inspect archives. Tests run before artifact builds; `-SkipTests` is used by the gated CI Build workflow.
-3. Split independent changes into focused `type(scope): summary` commits, each ending with AGENTS.md's exact co-author trailer. Finish with `chore(release): X.Y.Z`; that checkpoint triggers the release gate. Keep `docs/RELEASE_NOTES.md` to a short summary and categorized bullets. Release titles are `vX.Y.Z`.
+3. Split independent changes into focused `type(scope): summary` commits, each ending with AGENTS.md's exact co-author trailer. Finish with `chore(release): X.Y.Z`; that checkpoint triggers the release gate. Write a summary and categorized bullets in `docs/RELEASE_NOTES.md`, with roughly 1.5 times the detail of the earlier brief notes. Release titles are `vX.Y.Z`.
 4. Push main when the user authorizes it. The three workflows handle testing, builds and publication.
 
 A version tagged at another commit is rejected. An immutable release for the same tested commit and complete asset set is preserved on a rerun. New updates require a new version. v1.0.0 was already immutable when the browser/project follow-up was requested, so that work is released as v1.1.0.
@@ -34,3 +34,7 @@ Dispatch Tests manually to restart the chain. Actions use pinned SHAs. Only Rele
 Release and monitor publishers are tested in `tests/automation`. Their implementations are embedded in workflow YAML so privileged jobs never execute files from a triggering checkout. After editing `tools/ci/release.cjs` or `monitor-issue.cjs`, run `node tools/ci/sync-workflows.mjs`; tests reject stale embedded code. Scheduled monitor setup and baseline maintenance are documented in [MONITORING.md](MONITORING.md).
 
 History maintenance keeps published release tags at their original commits. Rebuilt main history is checked against each original release tree and the final tested tree before a guarded force push. A local Git bundle preserves the complete original history. See [CONTRIBUTING.md](../CONTRIBUTING.md) for message conventions.
+
+The workflow reads commit history and published release metadata through GitHub's API, then appends a closed-by-default **All N commits** section with categorized, individually linked subjects. The previous published tag bounds the range; after history reconstruction, its matching source tree identifies the equivalent checkpoint. The appendix explains when it links rebuilt history. The manual publishing script uses the same formatter through `tools/ci/format-release-notes.cjs`.
+
+Unpublished `chore(release): X.Y.Z` checkpoints in that range produce a version note at the very top. For example, v1.4.0 was internal and was not publicly released; its changes shipped in v1.5.0. Version numbers absent from the history are not described as internal releases.

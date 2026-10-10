@@ -1,21 +1,20 @@
-# v1.5.0
+# v1.5.1
 
-CI fixes, dependency updates and quieter compatibility monitoring.
+A patch release for fuller changelogs and updated GitHub Actions dependencies. Release pages now explain the changes in more detail while keeping the complete commit history folded away until requested.
 
-## Fixes
+## Release notes
 
-- Handle Windows line endings in workflow checks and synchronization.
-- Check missing release tags through the Git references endpoint.
-- Separate browser download, native checks and archiving in CI.
-- Warn on blocked monitor checks without opening false change issues.
+- Add a categorized appendix containing every commit in the update, with a direct link to each commit. The section stays collapsed when readers first open the release page.
+- Put a version note at the top when an internal release checkpoint was never publicly released, and explain that its changes are included in the next public update.
+- Match historical release boundaries by source tree after a history rebuild, preserving the original published tags and download targets.
+- Use the same formatter for automatic workflow publication and manual releases.
+- Expand the existing public changelogs, including the note that internal v1.4.0 shipped through v1.5.0.
 
 ## Dependencies
 
-- Include Dependabot #1: updated github-script pin.
-- Include Dependabot #3: updated .NET client and test dependencies.
-- Preserve OpenAI 2.14 streaming signatures after the ClientModel type rename.
+- Include [Dependabot #4](https://github.com/zombi-dev/ChatGPTWebSDK/pull/4): setup-node 7.1.0, upload-artifact 7.0.2 and download-artifact 8.0.2, pinned to exact commits.
 
-## Maintenance
+## Validation and downloads
 
-- Use focused, categorized Conventional Commits and concise release notes.
-- Rebuild the main history while preserving published release tags.
+- Run 1,199 SDK tests, 143 automation tests and 12 extension tests before building release assets on each of the four supported platforms.
+- Publish synchronized SDK, proxy and extension packages, plus native Chromium bundles for Windows, Linux, Intel macOS and Apple Silicon, with SHA256 checksums.
