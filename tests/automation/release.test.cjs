@@ -12,9 +12,11 @@ function fixture() {
     head_branch: 'main', head_repository: { full_name: 'owner/sdk' }, repository: { full_name: 'owner/sdk' } };
   const artifacts = ['browser-linux-x64', 'browser-osx-arm64', 'browser-osx-x64', 'browser-win-x64', 'release-common']
     .map((name, i) => ({ id: i, name, expired: false, size_in_bytes: 50, workflow_run: { id: 10, head_sha: sha } }));
-  const state = { version: '1.4.0', comparison: 'ahead', tag: null, tagRef: null, existing: null, artifacts, run };
+  const state = { version: '1.4.0', comparison: 'ahead', tag: null, tagRef: null, existing: null, artifacts, run,
+    commits: [{ sha, commit: { message: 'chore(release): 1.4.0' } }], releases: [] };
   const missing = () => { const error = new Error('missing'); error.status = 404; throw error; };
-  const github = { paginate: async () => artifacts, rest: { actions: {
+  const github = { paginate: async method => method === github.rest.repos.listCommits ? state.commits :
+    method === github.rest.repos.listReleases ? state.releases : artifacts, rest: { actions: {
     getWorkflowRun: async () => ({ data: run }), listWorkflowRunArtifacts() {}
   }, git: {
     getRef: async ({ ref }) => {
@@ -22,6 +24,7 @@ function fixture() {
       return state.tag ? { data: { object: { sha: state.tagRef ?? state.tag } } } : missing();
     }
   }, repos: {
+    listCommits() {}, listReleases() {},
     get: async () => ({ data: { default_branch: 'main' } }),
     compareCommitsWithBasehead: async () => ({ data: { status: state.comparison } }),
     getContent: async ({ path: name, ref }) => {
@@ -87,6 +90,8 @@ test('Release uploads twelve validated binary assets and checksums, then publish
   const f = fixture(), files = await assets(t); await publishRelease(f, files);
   assert.equal(f.writes[0][0], 'create'); assert.equal(f.writes[0][1].draft, true); assert.equal(f.writes[0][1].target_commitish, f.sha);
   assert.equal(f.writes[0][1].name, 'v1.4.0');
+  assert(f.writes[0][1].body.includes('<summary>All 1 commit</summary>'));
+  assert(f.writes[0][1].body.includes('https://github.com/owner/sdk/commit/' + f.sha));
   const uploads = f.writes.filter(w => w[0] === 'upload'); assert.equal(uploads.length, 13);
   const sums = uploads.find(w => w[1].name === 'SHA256SUMS.txt')[1].data.toString();
   for (const [, a] of uploads.filter(w => w[1].name !== 'SHA256SUMS.txt')) {
