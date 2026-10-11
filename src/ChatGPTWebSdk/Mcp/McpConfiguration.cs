@@ -20,6 +20,9 @@ public sealed record McpServerConfiguration
     public IReadOnlyDictionary<string, string> Headers { get; init; } = new Dictionary<string, string>();
     public IReadOnlyList<string>? AllowedTools { get; init; }
     public bool RequireApproval { get; init; }
+    /// <summary>Resume interrupted SSE responses using GET and Last-Event-ID; never repeats a tool POST.</summary>
+    public int MaxReconnectionAttempts { get; init; } = 2;
+    public TimeSpan ReconnectionInterval { get; init; } = TimeSpan.FromMilliseconds(250);
     [JsonIgnore] public IMcpWebServer? Client { get; init; }
 
     internal void Validate()
@@ -27,6 +30,8 @@ public sealed record McpServerConfiguration
         if (!IsValidLabel(Label))
             throw new ArgumentException("MCP labels must contain 1..128 ASCII letters, digits, dots, dashes or underscores.");
         if (!Enum.IsDefined(Transport)) throw new ArgumentException("Unknown MCP transport.");
+        if (MaxReconnectionAttempts is < 0 or > 10 || ReconnectionInterval < TimeSpan.Zero || ReconnectionInterval > TimeSpan.FromMinutes(1))
+            throw new ArgumentException("Invalid MCP SSE resumption limits.");
         var sources = (Endpoint is null ? 0 : 1) + (Command is null ? 0 : 1) + (Client is null ? 0 : 1);
         if (sources != 1) throw new ArgumentException("Each MCP server needs exactly one endpoint, command or existing client.");
         if (Endpoint is { } endpoint && (!endpoint.IsAbsoluteUri || endpoint.Scheme is not ("http" or "https") || endpoint.UserInfo.Length > 0 || endpoint.Fragment.Length > 0))
@@ -53,6 +58,15 @@ public sealed class McpConversationOptions
     public int MaxToolArgumentsCharacters { get; init; } = 64 * 1024;
     public int MaxToolResultCharacters { get; init; } = 512 * 1024;
     public TimeSpan ToolTimeout { get; init; } = TimeSpan.FromMinutes(2);
+    /// <summary>Keep owned connections between messages in the same account/user/thread. Disable for per-message processes.</summary>
+    public bool ReuseConnections { get; init; } = true;
+    public TimeSpan ConnectionTimeout { get; init; } = TimeSpan.FromSeconds(30);
+    public TimeSpan ConnectionIdleTimeout { get; init; } = TimeSpan.FromMinutes(2);
+    public int MaxConnections { get; init; } = 32;
+    /// <summary>Retries initialization and tool discovery only. Tool execution is never retried.</summary>
+    public int DiscoveryRetries { get; init; } = 1;
+    public TimeSpan DiscoveryRetryDelay { get; init; } = TimeSpan.FromMilliseconds(250);
+    public int MaxProtocolRepairs { get; init; } = 1;
     [JsonIgnore] public Func<ConversationScope, string, bool>? IsServerAllowed { get; init; }
     [JsonIgnore] public Func<McpToolCallContext, CancellationToken, ValueTask<bool>>? ApproveToolCall { get; init; }
     [JsonIgnore] public IProgress<McpToolProgress>? Progress { get; init; }
@@ -62,6 +76,9 @@ public sealed class McpConversationOptions
         if (MaxToolRounds is < 1 or > 100 || MaxToolCalls is < 1 or > 1000 || MaxManifestCharacters is < 128 or > 4 * 1024 * 1024 ||
             MaxToolArgumentsCharacters is < 128 or > 4 * 1024 * 1024 || MaxToolResultCharacters is < 128 or > 4 * 1024 * 1024 || ToolTimeout <= TimeSpan.Zero || ToolTimeout > TimeSpan.FromHours(1))
             throw new ArgumentException("Invalid MCP conversation limits.");
+        if (ConnectionTimeout <= TimeSpan.Zero || ConnectionTimeout > TimeSpan.FromHours(1) || ConnectionIdleTimeout <= TimeSpan.Zero || ConnectionIdleTimeout > TimeSpan.FromHours(1) ||
+            MaxConnections is < 1 or > 256 || DiscoveryRetries is < 0 or > 3 || DiscoveryRetryDelay < TimeSpan.Zero || DiscoveryRetryDelay > TimeSpan.FromMinutes(1) || MaxProtocolRepairs is < 0 or > 3)
+            throw new ArgumentException("Invalid MCP connection or repair limits.");
         foreach (var server in Servers) server.Validate();
         if (Servers.Select(s => s.Label).Distinct(StringComparer.Ordinal).Count() != Servers.Count) throw new ArgumentException("MCP server labels must be unique.");
     }

@@ -5,10 +5,16 @@ using ModelContextProtocol.Client;
 
 namespace ChatGPTWebSdk.Mcp;
 
-internal sealed class McpServerConnection(IMcpWebServer server, IAsyncDisposable? owner = null) : IAsyncDisposable
+internal sealed class McpServerConnection(IMcpWebServer server, IAsyncDisposable? owner = null, HttpClient? httpOwner = null) : IAsyncDisposable
 {
+    private int _disposed;
     public IMcpWebServer Server => server;
-    public ValueTask DisposeAsync() => owner?.DisposeAsync() ?? ValueTask.CompletedTask;
+    public async ValueTask DisposeAsync()
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+        try { if (owner is not null) await owner.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(10)).ConfigureAwait(false); }
+        finally { httpOwner?.Dispose(); }
+    }
 
     public static async Task<McpServerConnection> ConnectAsync(McpServerConfiguration configuration, TimeSpan timeout, CancellationToken ct)
     {
@@ -35,7 +41,8 @@ internal sealed class McpServerConnection(IMcpWebServer server, IAsyncDisposable
                 Name = configuration.Label, Endpoint = configuration.Endpoint!, ConnectionTimeout = timeout,
                 AdditionalHeaders = configuration.Headers.ToDictionary(p => p.Key, p => p.Value),
                 TransportMode = configuration.Transport switch { McpWebTransport.Sse => HttpTransportMode.Sse, McpWebTransport.StreamableHttp => HttpTransportMode.StreamableHttp, _ => HttpTransportMode.AutoDetect },
-                EnableStandaloneGetStream = false, MaxReconnectionAttempts = 0
+                EnableStandaloneGetStream = false, MaxReconnectionAttempts = configuration.MaxReconnectionAttempts,
+                DefaultReconnectionInterval = configuration.ReconnectionInterval
             }, http, ownsHttpClient: true);
         }
         try
@@ -45,7 +52,7 @@ internal sealed class McpServerConnection(IMcpWebServer server, IAsyncDisposable
                 ClientInfo = new() { Name = "ChatGPTWebSdk", Version = typeof(McpServerConnection).Assembly.GetName().Version!.ToString(3) },
                 ProtocolVersion = "2025-11-25", InitializationTimeout = timeout
             }, cancellationToken: ct).ConfigureAwait(false);
-            return new(new OfficialClient(client), client);
+            return new(new OfficialClient(client), client, http);
         }
         catch { if (transport is IAsyncDisposable disposable) await disposable.DisposeAsync().ConfigureAwait(false); http?.Dispose(); throw; }
     }
