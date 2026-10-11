@@ -38,21 +38,21 @@ internal sealed class McpConversationBridge(ChatGptWebClient client, McpConversa
         }
         if (request.Action != WebTurnAction.Append) throw new UnsupportedWebFeatureException("automatic MCP calls during edit/regeneration; send a new appended turn or set UseMcp=false");
         var inputs = ResolveInputs(request, state);
-        var connections = new List<McpServerConnection>();
+        var connections = new List<McpConnectionPool.Connection>();
         try
         {
             var tools = new Dictionary<string, AvailableTool>(StringComparer.Ordinal);
             foreach (var selection in selections)
             {
-                McpServerConnection connection;
+                McpConnectionPool.Connection connection;
                 IReadOnlyList<McpWebTool> listed;
                 using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
                 deadline.CancelAfter(options.ToolTimeout);
                 try
                 {
-                    connection = await McpServerConnection.ConnectAsync(selection.Server, options.ToolTimeout, deadline.Token).ConfigureAwait(false);
+                    connection = await client.McpConnections.AcquireAsync(scope, selection.Server, deadline.Token).ConfigureAwait(false);
                     connections.Add(connection);
-                    listed = await connection.Server.ListToolsAsync(deadline.Token).WaitAsync(deadline.Token).ConfigureAwait(false);
+                    listed = connection.Tools;
                 }
                 catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
                 catch { throw new SdkException("The registered MCP server could not initialize or list its tools.", "mcp_connection_failed"); }
@@ -62,7 +62,7 @@ internal sealed class McpConversationBridge(ChatGptWebClient client, McpConversa
                         throw new SdkException("An MCP server returned an invalid tool declaration.", "mcp_invalid_tool");
                     if (selection.Server.AllowedTools is { } allow && !allow.Contains(tool.Name, StringComparer.Ordinal) ||
                         selection.AllowedTools is { } selected && !selected.Contains(tool.Name, StringComparer.Ordinal) || selection.ReadOnly is { } readOnly && readOnly != tool.ReadOnly) continue;
-                    if (!tools.TryAdd(Key(selection.Server.Label, tool.Name), new(selection, connection.Server, tool)))
+                    if (!tools.TryAdd(Key(selection.Server.Label, tool.Name), new(selection, connection, tool)))
                         throw new SdkException("An MCP server returned duplicate tool names.", "mcp_invalid_tool");
                 }
             }
@@ -80,6 +80,7 @@ internal sealed class McpConversationBridge(ChatGptWebClient client, McpConversa
             var usedIds = new HashSet<string>(StringComparer.Ordinal);
             var internalResponses = new List<string>();
             int calls = 0;
+            int repairs = 0;
             for (int round = 0; ; round++)
             {
                 var protocol = new ReplyDecoder(nonce);
@@ -118,7 +119,22 @@ internal sealed class McpConversationBridge(ChatGptWebClient client, McpConversa
                     await lease.SaveAsync(CancellationToken.None).ConfigureAwait(false);
                 }
                 if (round >= options.MaxToolRounds) throw new SdkException("The MCP conversation exceeded its tool-round limit.", "mcp_round_limit");
-                var requested = ParseCalls(protocol.ToolJson(), tools, usedIds, nonce);
+                IReadOnlyList<RequestedCall>? requested = null;
+                SdkException? protocolError = null;
+                try { requested = ParseCalls(protocol.ToolJson(), tools, usedIds, nonce); }
+                catch (SdkException ex) when (repairs < options.MaxProtocolRepairs && ex.Code is "mcp_invalid_call" or "mcp_invalid_arguments")
+                { protocolError = ex; }
+                if (protocolError is not null)
+                {
+                    repairs++;
+                    var correction = WebInputMessage.User("The previous MCP request was rejected before any tools ran (" + protocolError.Code + "). " +
+                        "Correct the JSON array using the declared tool names and required argument schema. " +
+                        "Output only [[mcp:" + nonce + "]]JSON_ARRAY[[/mcp:" + nonce + "]], or [[final:" + nonce + "]] followed by a final answer.") with
+                    { Metadata = new() { ["is_visually_hidden_from_conversation"] = true, ["sdk_mcp_kind"] = "protocol_repair" } };
+                    current = InnerRequest(request, [correction], null);
+                    continue;
+                }
+                requested ??= [];
                 if (requested.Count + calls > options.MaxToolCalls) throw new SdkException("The MCP conversation exceeded its tool-call limit.", "mcp_call_limit");
                 calls += requested.Count;
                 var results = new List<McpToolExecution>();
@@ -138,7 +154,7 @@ internal sealed class McpConversationBridge(ChatGptWebClient client, McpConversa
         }
         finally
         {
-            foreach (var connection in connections.AsEnumerable().Reverse()) await connection.DisposeAsync().ConfigureAwait(false);
+            await Task.WhenAll(connections.Select(async connection => await connection.DisposeAsync().ConfigureAwait(false))).ConfigureAwait(false);
         }
     }
 
@@ -159,12 +175,12 @@ internal sealed class McpConversationBridge(ChatGptWebClient client, McpConversa
             lease.State.McpExecutions.Add(execution);
             await lease.SaveAsync(ct).ConfigureAwait(false);
         }
-        if (!approved) { options.Progress?.Report(new(context, "denied", execution.Result)); return execution; }
+        if (!approved) { ReportProgress(new(context, "denied", execution.Result)); return execution; }
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(ct);
         deadline.CancelAfter(options.ToolTimeout);
         try
         {
-            options.Progress?.Report(new(context, "executing"));
+            ReportProgress(new(context, "executing"));
             execution.Result = await call.Tool.Server.CallToolAsync(context.ToolName, (JsonObject)call.Arguments.DeepClone(), deadline.Token).WaitAsync(deadline.Token).ConfigureAwait(false);
             if (execution.Result.ToJsonString().Length > options.MaxToolResultCharacters) throw new SdkException("The MCP tool result exceeds its configured limit.", "mcp_result_too_large");
             execution.Status = "completed";
@@ -183,8 +199,14 @@ internal sealed class McpConversationBridge(ChatGptWebClient client, McpConversa
             saved.Result = execution.Result; saved.Status = "completed";
             await lease.SaveAsync(CancellationToken.None).ConfigureAwait(false);
         }
-        options.Progress?.Report(new(context, "completed", (JsonObject)execution.Result!.DeepClone()));
+        ReportProgress(new(context, "completed", (JsonObject)execution.Result!.DeepClone()));
         return execution;
+    }
+
+    private void ReportProgress(McpToolProgress progress)
+    {
+        try { options.Progress?.Report(progress); }
+        catch { /* Observers cannot change tool execution or its durable outcome. */ }
     }
 
     private bool RequiresApproval(AvailableTool tool)
@@ -207,16 +229,18 @@ internal sealed class McpConversationBridge(ChatGptWebClient client, McpConversa
         catch (JsonException) { throw new SdkException("The model returned malformed MCP tool-call JSON.", "mcp_invalid_call"); }
         if (array.Count == 0) throw new SdkException("An MCP tool-call batch cannot be empty.", "mcp_invalid_call");
         var result = new List<RequestedCall>();
+        var batchIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var node in array)
         {
             if (node is not JsonObject obj || obj.Any(p => p.Key is not ("id" or "server" or "name" or "arguments")) || obj["arguments"] is not JsonObject arguments ||
-                obj["id"] is not JsonValue idNode || !idNode.TryGetValue<string>(out var id) || string.IsNullOrWhiteSpace(id) || id.Length > 128 || id.Any(char.IsControl) || !usedIds.Add(id) ||
+                obj["id"] is not JsonValue idNode || !idNode.TryGetValue<string>(out var id) || string.IsNullOrWhiteSpace(id) || id.Length > 128 || id.Any(char.IsControl) || usedIds.Contains(id) || !batchIds.Add(id) ||
                 obj["server"] is not JsonValue serverNode || !serverNode.TryGetValue<string>(out var server) || obj["name"] is not JsonValue nameNode || !nameNode.TryGetValue<string>(out var name))
                 throw new SdkException("The model returned an invalid or repeated MCP tool call.", "mcp_invalid_call");
             if (!tools.TryGetValue(Key(server, name), out var tool)) throw new SdkException("The model requested a tool outside the selected MCP allowlist.", "mcp_tool_denied", HttpStatusCode.Forbidden);
             ValidateArguments(arguments, tool.Tool.InputSchema);
             result.Add(new(nonce + ":" + id, tool, (JsonObject)arguments.DeepClone()));
         }
+        usedIds.UnionWith(batchIds);
         return result;
     }
 
@@ -279,18 +303,31 @@ internal sealed class McpConversationBridge(ChatGptWebClient client, McpConversa
         ProjectId = original.ProjectId, GizmoId = original.GizmoId, ThinkingEffort = original.ThinkingEffort, UseMcp = false, InternalMcpTurn = true
     };
 
-    private sealed class ReplyDecoder(string nonce)
+    internal sealed class ReplyDecoder(string nonce)
     {
         private readonly string _toolPrefix = "[[mcp:" + nonce + "]]";
         private readonly string _toolEnd = "[[/mcp:" + nonce + "]]";
         private readonly string _finalPrefix = "[[final:" + nonce + "]]";
         private string _raw = "", _sent = "";
+        private bool _fenced;
         private int _mode; // 0 undecided, 1 tool request, 2 final with prefix, 3 plain final
         public bool IsFinal => _mode is 2 or 3;
         public string Text => _mode == 2 ? _raw[_finalPrefix.Length..] : _raw;
         public WebStreamUpdate? Decode(WebStreamUpdate update)
         {
             _raw = update.Text.TrimStart();
+            if (_mode == 0 && _raw is "`" or "``" && !update.Completed) return null;
+            if (_mode is 0 or 1 && _raw.StartsWith("```", StringComparison.Ordinal))
+            {
+                var newline = _raw.IndexOf('\n');
+                if (newline < 0 && !update.Completed) return null;
+                if (newline >= 0)
+                {
+                    var content = _raw[(newline + 1)..].TrimStart();
+                    if (content.StartsWith(_toolPrefix, StringComparison.Ordinal) || _toolPrefix.StartsWith(content, StringComparison.Ordinal))
+                    { _fenced = true; _raw = content; }
+                }
+            }
             if (_mode == 0 && _raw.Length > 0)
             {
                 if (_raw.StartsWith(_toolPrefix, StringComparison.Ordinal)) _mode = 1;
@@ -311,6 +348,8 @@ internal sealed class McpConversationBridge(ChatGptWebClient client, McpConversa
         }
         public string ToolJson()
         {
+            _raw = _raw.TrimEnd();
+            if (_fenced && _raw.EndsWith("```", StringComparison.Ordinal)) _raw = _raw[..^3].TrimEnd();
             if (_mode != 1 || !_raw.EndsWith(_toolEnd, StringComparison.Ordinal)) throw new SdkException("The model returned an incomplete MCP tool request.", "mcp_invalid_call");
             return _raw[_toolPrefix.Length..^_toolEnd.Length].Trim();
         }

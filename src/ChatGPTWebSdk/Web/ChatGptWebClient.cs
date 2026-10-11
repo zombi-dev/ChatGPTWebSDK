@@ -43,11 +43,22 @@ public sealed record WebChatEvent(WebStreamUpdate Update, WebResponseRecord? Res
     public required long CreatedAt { get; init; }
 }
 
-public sealed class ChatGptWebClient(ChatGptWebTransport transport, IConversationStore store)
+public sealed class ChatGptWebClient(ChatGptWebTransport transport, IConversationStore store) : IAsyncDisposable
 {
     private readonly McpConversationBridge? _mcp;
     private readonly ConcurrentDictionary<ConversationScope, McpScopeOptions> _chatMcp = new();
     private readonly McpConversationOptions _defaultMcp = new();
+    private McpConnectionPool? _connections;
+    private readonly object _connectionSync = new();
+    private bool _disposed;
+    internal McpConnectionPool McpConnections
+    {
+        get { lock (_connectionSync) { ObjectDisposedException.ThrowIf(_disposed, this); return _connections ??= new(_defaultMcp); } }
+    }
+    public ValueTask DisposeAsync()
+    {
+        lock (_connectionSync) { _disposed = true; return _connections?.DisposeAsync() ?? ValueTask.CompletedTask; }
+    }
     private readonly IReadOnlyList<McpServerConfiguration> _initialServers = [];
     public McpConversationOptions? Mcp => _mcp?.Options;
     public ChatGptWebClient(ChatGptWebTransport transport, IConversationStore store, McpConversationOptions mcp) : this(transport, store)
@@ -124,6 +135,7 @@ public sealed class ChatGptWebClient(ChatGptWebTransport transport, IConversatio
         [EnumeratorCancellation] CancellationToken ct = default)
     {
         // One lease spans the entire tool loop, including the time between remote generation turns.
+        ObjectDisposedException.ThrowIf(_disposed, this);
         transport.ModelPolicy.Resolve(request.Model);
         await using var operation = await store.AcquireAsync(new(scope.AccountId, scope.UserId, "__sdk_operation_" + scope.StorageKey), ct).ConfigureAwait(false);
         var events = request.UseMcp ? (_mcp ?? new McpConversationBridge(this, _defaultMcp)).StreamAsync(scope, request, ct) : StreamCoreAsync(scope, request, ct);
