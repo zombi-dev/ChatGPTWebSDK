@@ -9,6 +9,11 @@ using ChatGPTWebSdk.Web;
 var json = new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true };
 try
 {
+    if (args.Length == 2 && args[0] == "browser-reuse-check")
+    {
+        await SentinelReuseCheck.RunAsync(args[1]);
+        return 0;
+    }
     if (args.Length == 2 && args[0] == "browser-check")
     {
         var config = JsonNode.Parse(await File.ReadAllTextAsync(args[1]))!;
@@ -72,16 +77,17 @@ try
         var mode = Mode(config);
         if (mode == global::OpenAI.ChatGPTWebMode.BrowserOnly) throw new NotSupportedException("Browser-only mode is reserved and is not implemented.");
         using var http = DiagnosticHttp(config);
+        await using var sentinel = mode == global::OpenAI.ChatGPTWebMode.Hybrid ? new ChatGPTWebSdk.Browser.BrowserSentinelProvider(Browser(config)) : null;
         var transport = new ChatGptWebTransport(http, new StaticWebCredentialProvider(account["id"]!.GetValue<string>(), credentials),
             new() { BaseUri = new(config["baseUri"]?.GetValue<string>() ?? "https://chatgpt.com/"), Endpoints = profile,
-                SentinelSessionProvider = mode == global::OpenAI.ChatGPTWebMode.Hybrid ? new ChatGPTWebSdk.Browser.BrowserSentinelProvider(Browser(config)) : null });
+                SentinelSessionProvider = sentinel });
         var models = await transport.GetModelsAsync(account["id"]!.GetValue<string>());
         Console.WriteLine("Authenticated models request succeeded.");
         if (models["models"] is JsonArray modelList) Console.WriteLine("Available model slugs: " + string.Join(", ", modelList.Select(m => m!["slug"]?.GetValue<string>())));
         if (args.Length == 4 && args[2] == "--send")
         {
             var scope = new ConversationScope(account["id"]!.GetValue<string>(), "sdk-smoke", Guid.NewGuid().ToString("N"));
-            var client = new ChatGptWebClient(transport, new FileConversationStore(config["sessionDirectory"]?.GetValue<string>() ?? ".sessions"));
+            await using var client = new ChatGptWebClient(transport, new FileConversationStore(config["sessionDirectory"]?.GetValue<string>() ?? ".sessions"));
             var nonce = Guid.NewGuid().ToString("N");
             var first = await client.SendAsync(scope, $"Remember this exact marker for the next message: {nonce}. Reply OK.", args[3]);
             var second = await client.SendAsync(scope, "What exact marker did I give you in my previous message? Reply with the marker only.", args[3]);
@@ -371,6 +377,8 @@ static ChatGPTWebSdk.Browser.BrowserSentinelOptions Browser(JsonNode config)
 {
     var configured = config["browser"]?.Deserialize<ChatGPTWebSdk.Browser.BrowserSentinelOptions>(new JsonSerializerOptions(JsonSerializerDefaults.Web)) ?? new();
     return new() { CdpEndpoint = configured.CdpEndpoint, Channel = configured.Channel, ExecutablePath = configured.ExecutablePath, UseDesktopLauncher = configured.UseDesktopLauncher, ComposerSelector = configured.ComposerSelector, SendButtonSelector = configured.SendButtonSelector,
+        BundledBrowserDirectory = configured.BundledBrowserDirectory, Headless = configured.Headless, Acceleration = configured.Acceleration,
+        ReuseSession = configured.ReuseSession, PreloadNextTurn = configured.PreloadNextTurn, SessionIdleTimeout = configured.SessionIdleTimeout, MaxSessions = configured.MaxSessions,
         Progress = Console.WriteLine, Timeout = TimeSpan.FromSeconds(int.TryParse(Environment.GetEnvironmentVariable("CHATGPT_WEB_BROWSER_TIMEOUT"), out var seconds) ? seconds : configured.Timeout.TotalSeconds),
         MaxRetries = configured.MaxRetries, RetryDelay = configured.RetryDelay,
         DiagnosticScreenshotPath = Environment.GetEnvironmentVariable("CHATGPT_WEB_BROWSER_SCREENSHOT"), DiagnosticComposerPath = Environment.GetEnvironmentVariable("CHATGPT_WEB_BROWSER_COMPOSER"), DiagnosticHandshakePath = Environment.GetEnvironmentVariable("CHATGPT_WEB_BROWSER_HANDSHAKE") };
