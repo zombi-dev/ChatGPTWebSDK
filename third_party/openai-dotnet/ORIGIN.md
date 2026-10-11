@@ -10,4 +10,6 @@ OpenAIClientUtilities and guarding the direct Realtime WebSocket entry point
 when web transport is active. Web behavior lives outside the upstream source.
 The replacement is for source compatibility when replacing the OpenAI NuGet
 reference. It is unsigned; binary replacement of strongly named assemblies
-and coexistence with the official OpenAI package are not supported.
+and coexistence with the official OpenAI package are not supported by this replacement.
+The separate ChatGPTWebSdk.Native integration references the unmodified official
+NuGet package instead of compiling this fork; it cannot be combined with the replacement.
