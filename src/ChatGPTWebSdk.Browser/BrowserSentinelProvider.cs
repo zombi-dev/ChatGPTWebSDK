@@ -1,6 +1,7 @@
-using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Text.Json.Nodes;
 using ChatGPTWebSdk.Protocol;
+using ChatGPTWebSdk.Resources;
 using ChatGPTWebSdk.Web;
 using Microsoft.Playwright;
 
@@ -20,6 +21,14 @@ public sealed class BrowserSentinelOptions
     /// <summary>Automatic prefers hardware rendering and restarts only the owned browser with software rendering when hardware is unavailable.</summary>
     public BrowserAcceleration Acceleration { get; init; } = BrowserAcceleration.Automatic;
     public TimeSpan Timeout { get; init; } = TimeSpan.FromMinutes(2);
+    /// <summary>Reuse an isolated account context. Each send still obtains a fresh handshake.</summary>
+    public bool ReuseSession { get; init; } = true;
+    /// <summary>Reload the composer after capture while the API turn runs. Never requests challenge answers while idle.</summary>
+    public bool PreloadNextTurn { get; init; } = true;
+    public TimeSpan SessionIdleTimeout { get; init; } = TimeSpan.FromMinutes(2);
+    public int MaxSessions { get; init; } = 2;
+    /// <summary>Sanitized phase measurements; contains no URLs, account IDs or credentials.</summary>
+    public Action<BrowserSentinelTiming>? TimingObserved { get; init; }
     public int MaxRetries { get; init; } = 3;
     public TimeSpan RetryDelay { get; init; } = TimeSpan.FromSeconds(5);
     public Action<string>? Progress { get; init; }
@@ -32,98 +41,93 @@ public sealed class BrowserSentinelOptions
     public string? SendButtonSelector { get; init; }
 }
 
-/// <summary>Opens one page for an authorized Sentinel handshake, blocks browser generation, and cleans up owned resources.</summary>
-public sealed class BrowserSentinelProvider(BrowserSentinelOptions? options = null) : IWebSentinelSessionProvider
+public sealed record BrowserSentinelTiming(string Stage, TimeSpan Elapsed, bool ReusedSession);
+
+/// <summary>Obtains fresh authorization in an isolated browser session, with bounded idle reuse and explicit disposal.</summary>
+public sealed class BrowserSentinelProvider : IWebSentinelSessionProvider, IAsyncDisposable
 {
-    private readonly BrowserSentinelOptions _options = options ?? new();
-    private readonly ConcurrentDictionary<string, SemaphoreSlim> _locks = new();
+    private readonly BrowserSentinelOptions _options;
+    private readonly AsyncLeasePool<BrowserSentinelWorkspace> _sessions;
+    private readonly Func<WebCredentials, CancellationToken, Task<BrowserSentinelWorkspace>> _createWorkspace;
+    public BrowserSentinelProvider(BrowserSentinelOptions? options = null) : this(options ?? new(), null) { }
+    internal BrowserSentinelProvider(BrowserSentinelOptions options, Func<WebCredentials, CancellationToken, Task<BrowserSentinelWorkspace>>? createWorkspace)
+    {
+        _options = options;
+        _sessions = new(_options.ReuseSession, _options.SessionIdleTimeout, _options.MaxSessions);
+        _createWorkspace = createWorkspace ?? ((credentials, ct) => BrowserSentinelWorkspace.CreateAsync(_options, credentials, ct));
+    }
+    public ValueTask DisposeAsync() => _sessions.DisposeAsync();
 
     public async ValueTask<WebAuthorizedSession> GetSessionAsync(string accountId, WebCredentials credentials, JsonObject turnBody, CancellationToken ct = default)
     {
-        var gate = _locks.GetOrAdd(accountId, _ => new(1, 1));
-        await gate.WaitAsync(ct).ConfigureAwait(false);
-        try
-        {
-            // Captured turns each perform a fresh handshake. Expiry alone does not prove that answers may be reused.
-            return await SentinelBootstrapRetry.RunAsync(_options, attemptCt => AcquireAsync(credentials, attemptCt), ct).ConfigureAwait(false);
-        }
-        finally { gate.Release(); }
+        ArgumentException.ThrowIfNullOrWhiteSpace(accountId);
+        ArgumentNullException.ThrowIfNull(credentials);
+        return await SentinelBootstrapRetry.RunAsync(_options, async attemptCt => await AcquireAsync(accountId, credentials, false, attemptCt).ConfigureAwait(false) ?? throw new InvalidOperationException("The handshake returned no session."), ct).ConfigureAwait(false);
     }
 
-    private async Task<WebAuthorizedSession> AcquireAsync(WebCredentials credentials, CancellationToken ct)
+    /// <summary>Load the authenticated ChatGPT page ahead of a send. Does not request or cache challenge answers.</summary>
+    public async Task WarmUpAsync(string accountId, WebCredentials credentials, CancellationToken ct = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(accountId);
+        ArgumentNullException.ThrowIfNull(credentials);
+        await AcquireAsync(accountId, credentials, true, ct).ConfigureAwait(false);
+    }
+
+    private async Task<WebAuthorizedSession?> AcquireAsync(string accountId, WebCredentials credentials, bool warmUp, CancellationToken ct)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeout.CancelAfter(_options.Timeout);
-        using var playwright = await Playwright.CreateAsync().ConfigureAwait(false);
-        IBrowser? browser = null; IBrowserContext? context = null; IPage? diagnosticPage = null;
-        OwnedBrowser? owned = null;
-        bool ownsBrowser = _options.CdpEndpoint is null;
+        var total = Stopwatch.StartNew();
+        var phase = Stopwatch.StartNew();
+        AsyncLeasePool<BrowserSentinelWorkspace>.Lease? lease = null;
+        IBrowserContext? context = null;
+        IPage? diagnosticPage = null;
+        EventHandler<IResponse>? responseHandler = null;
+        bool success = false, created = false;
+        var challengeResponses = 0;
         try
         {
-            if (!ownsBrowser)
+            Task<BrowserSentinelWorkspace> Create(CancellationToken token)
+            { created = true; return _createWorkspace(credentials, token); }
+            lease = await _sessions.AcquireAsync(accountId, Create, timeout.Token).ConfigureAwait(false);
+            if (!lease.Resource.Matches(credentials))
             {
-                if (!Uri.TryCreate(_options.CdpEndpoint, UriKind.Absolute, out var endpoint) || !endpoint.IsLoopback)
-                    throw new ArgumentException("The existing-browser CDP endpoint must be a loopback address.");
-                browser = await playwright.Chromium.ConnectOverCDPAsync(_options.CdpEndpoint!, new() { Timeout = (float)_options.Timeout.TotalMilliseconds }).ConfigureAwait(false);
+                lease.Invalidate(); await lease.DisposeAsync().ConfigureAwait(false);
+                lease = await _sessions.AcquireAsync(accountId, Create, timeout.Token).ConfigureAwait(false);
             }
-            else { owned = await OwnedBrowser.LaunchAsync(playwright, _options, timeout.Token).ConfigureAwait(false); browser = owned.Browser; }
-            context = await browser.NewContextAsync(new() { ServiceWorkers = ServiceWorkerPolicy.Block, ViewportSize = ViewportSize.NoViewport }).ConfigureAwait(false);
-            if (credentials.Cookies.Count > 0)
-                await context.AddCookiesAsync(credentials.Cookies.Where(c => c.ExpiresAt is null || c.ExpiresAt > DateTimeOffset.UtcNow).Select(ToBrowserCookie)).ConfigureAwait(false);
-            else if (!string.IsNullOrWhiteSpace(credentials.CookieHeader))
-            {
-                var cookies = credentials.CookieHeader.Split(';').Select(pair => pair.Trim().Split('=', 2)).Where(pair => pair.Length == 2)
-                    .Select(pair => new Cookie { Name = pair[0], Value = pair[1], Url = "https://chatgpt.com/", Secure = true }).ToArray();
-                await context.AddCookiesAsync(cookies).ConfigureAwait(false);
-            }
-            else if (!ownsBrowser && browser.Contexts.FirstOrDefault(c => c != context) is { } signedIn)
-                await context.AddCookiesAsync((await signedIn.CookiesAsync(["https://chatgpt.com/"]).ConfigureAwait(false)).Select(c => new Cookie { Name = c.Name, Value = c.Value, Domain = c.Domain, Path = c.Path, Secure = c.Secure, HttpOnly = c.HttpOnly, SameSite = c.SameSite })).ConfigureAwait(false);
-            var page = await context.NewPageAsync().ConfigureAwait(false);
-            if (!_options.Headless) await page.BringToFrontAsync().ConfigureAwait(false);
-            diagnosticPage = page;
+            var workspace = lease.Resource;
+            context = workspace.Context;
+            var page = diagnosticPage = workspace.Page;
+            Observe("browser_ready", phase.Elapsed, !created); phase.Restart();
+            if (!_options.Headless) await page.BringToFrontAsync().WaitAsync(timeout.Token).ConfigureAwait(false);
             var captured = new TaskCompletionSource<IReadOnlyDictionary<string, string>>(TaskCreationOptions.RunContinuationsAsynchronously);
-            page.Close += (_, _) => captured.TrySetException(new PlaywrightException("The temporary Sentinel page was closed before the handshake completed."));
-            page.Crash += (_, _) => captured.TrySetException(new PlaywrightException("The temporary Sentinel page stopped before the handshake completed."));
+            workspace.Capture = captured;
             long? expires = null;
-            var challengeResponses = 0;
-            page.Response += async (_, response) =>
+            page.Response += responseHandler = async (_, response) =>
             {
                 try
                 {
                     if (new Uri(response.Url).Host == "chatgpt.com" && response.Request.IsNavigationRequest && response.Request.Frame == page.MainFrame
                         && response.Status == 403 && await response.HeaderValueAsync("cf-mitigated").ConfigureAwait(false) == "challenge")
                     {
-                        if (_options.Headless)
-                            captured.TrySetException(new SdkException("Cloudflare requires an interactive check. Set Browser.Headless=false or use an existing signed-in CDP session, then retry.", "sentinel_browser_challenge", System.Net.HttpStatusCode.ServiceUnavailable));
-                        else if (Interlocked.Increment(ref challengeResponses) == 1)
-                            _options.Progress?.Invoke("Cloudflare is requesting an interactive check in the temporary browser.");
-                        else
-                            captured.TrySetException(new SdkException("Cloudflare reloaded its challenge without accepting it. The Sentinel handshake did not reach ChatGPT.", "sentinel_browser_challenge", System.Net.HttpStatusCode.ServiceUnavailable));
+                        if (Interlocked.Increment(ref challengeResponses) == 1)
+                            ReportProgress(_options.Headless
+                                ? "Cloudflare is requesting an interactive check. Waiting for the configured timeout; use a visible session if interaction is required."
+                                : "Cloudflare is requesting an interactive check. Keeping the same browser open while waiting for it to clear.");
                     }
                 }
                 catch (PlaywrightException) { /* Responses can finish after the owned page closes. */ }
                 if (new Uri(response.Url).Host != "chatgpt.com" || !(response.Url.Contains("/sentinel/chat-requirements/finalize", StringComparison.Ordinal) || response.Url.Contains("/sentinel/chat-requirements/prepare", StringComparison.Ordinal)) || response.Status != 200) return;
                 try { var body = JsonNode.Parse(await response.TextAsync().ConfigureAwait(false)); expires = body?["expire_at"]?.GetValue<long>(); } catch (Exception ex) when (ex is PlaywrightException or System.Text.Json.JsonException or InvalidOperationException or OperationCanceledException) { }
             };
-            // The web app builds its own authorized challenge headers. No conversation turn reaches the backend here.
-            await page.RouteAsync("https://chatgpt.com/backend-api/**/conversation", async route =>
-            {
-                if (route.Request.Method != "POST") { await route.ContinueAsync().ConfigureAwait(false); return; }
-                var headers = await route.Request.AllHeadersAsync().ConfigureAwait(false);
-                await route.AbortAsync("aborted").ConfigureAwait(false);
-                captured.TrySetResult(new Dictionary<string, string>(headers, StringComparer.OrdinalIgnoreCase));
-            }).ConfigureAwait(false);
-            await page.RouteAsync("https://chatgpt.com/backend-api/conversation", async route =>
-            {
-                if (route.Request.Method == "POST")
-                { var headers = await route.Request.AllHeadersAsync().ConfigureAwait(false); await route.AbortAsync("aborted").ConfigureAwait(false); captured.TrySetResult(new Dictionary<string, string>(headers, StringComparer.OrdinalIgnoreCase)); }
-                else await route.ContinueAsync().ConfigureAwait(false);
-            }).ConfigureAwait(false);
-            _options.Progress?.Invoke(_options.Headless ? "Opening invisible Chromium for Sentinel." : "Opening ChatGPT for Sentinel. Complete sign-in or an interactive challenge if the browser requests it.");
-            await WaitForPageAsync(page.GotoAsync("https://chatgpt.com/", new() { WaitUntil = WaitUntilState.DOMContentLoaded, Timeout = (float)_options.Timeout.TotalMilliseconds }), captured.Task, timeout.Token).ConfigureAwait(false);
-            _options.Progress?.Invoke("ChatGPT page loaded. Waiting for its message composer.");
+            ReportProgress(_options.Headless ? "Opening invisible Chromium for Sentinel." : "Opening ChatGPT for Sentinel. Complete sign-in or an interactive challenge if the browser requests it.");
+            if (workspace.NeedsNavigation) await WaitForPageAsync(workspace.NavigateAsync(_options.Timeout), captured.Task, timeout.Token).ConfigureAwait(false);
+            ReportProgress("ChatGPT page loaded. Waiting for its message composer.");
             var input = page.Locator(_options.ComposerSelector);
             await WaitForPageAsync(input.WaitForAsync(new() { Timeout = (float)_options.Timeout.TotalMilliseconds }), captured.Task, timeout.Token).ConfigureAwait(false);
+            workspace.PageReady();
+            Observe("page_ready", phase.Elapsed, !created); phase.Restart();
+            if (warmUp) { success = true; return null; }
             if (_options.UiFingerprintObserved is { } observe)
             {
                 var structure = await page.EvaluateAsync<string>("""
@@ -137,20 +141,23 @@ public sealed class BrowserSentinelProvider(BrowserSentinelOptions? options = nu
                       });
                       return JSON.stringify({markers:[...new Set(markers)].sort(),assets:[...new Set(assets)].sort()});
                     }
-                    """).ConfigureAwait(false);
+                    """).WaitAsync(timeout.Token).ConfigureAwait(false);
                 observe(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(structure))).ToLowerInvariant());
             }
-            _options.Progress?.Invoke("Message composer ready. Obtaining a fresh Sentinel handshake.");
+            ReportProgress("Message composer ready. Obtaining a fresh Sentinel handshake.");
             // This unsent draft triggers the normal frontend handshake. Its generation request is intercepted and aborted.
-            await input.FillAsync("Prepare SDK connection.").ConfigureAwait(false);
-            if (_options.SendButtonSelector is { } send) await page.Locator(send).ClickAsync(new() { Timeout = (float)_options.Timeout.TotalMilliseconds }).ConfigureAwait(false);
-            else await input.PressAsync("Enter").ConfigureAwait(false);
+            workspace.NeedsNavigation = true;
+            await input.FillAsync("Prepare SDK connection.").WaitAsync(timeout.Token).ConfigureAwait(false);
+            workspace.CaptureHeaders = true;
+            if (_options.SendButtonSelector is { } send) await page.Locator(send).ClickAsync(new() { Timeout = (float)_options.Timeout.TotalMilliseconds }).WaitAsync(timeout.Token).ConfigureAwait(false);
+            else await input.PressAsync("Enter").WaitAsync(timeout.Token).ConfigureAwait(false);
             if (_options.DiagnosticScreenshotPath is not null || _options.DiagnosticComposerPath is not null)
             {
                 await Task.WhenAny(captured.Task, Task.Delay(TimeSpan.FromSeconds(10), timeout.Token)).ConfigureAwait(false);
                 if (!captured.Task.IsCompleted) await CaptureDiagnosticsAsync(page).ConfigureAwait(false);
             }
             var headers = await captured.Task.WaitAsync(timeout.Token).ConfigureAwait(false);
+            Observe("handshake", phase.Elapsed, !created);
             if (_options.DiagnosticHandshakePath is { } diagnostic)
                 await File.WriteAllTextAsync(diagnostic, System.Text.Json.JsonSerializer.Serialize(new { headerNames = headers.Keys.Order().ToArray(), expires })).ConfigureAwait(false);
             var isPrepareToken = false;
@@ -164,14 +171,14 @@ public sealed class BrowserSentinelProvider(BrowserSentinelOptions? options = nu
             var accessToken = headers.TryGetValue("authorization", out var authorization) && authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) ? authorization[7..] : credentials.AccessToken;
             if (Subject(credentials.AccessToken) is { } expected && Subject(accessToken) is { } actual && expected != actual)
                 throw new SdkException("The Sentinel browser signed in to a different ChatGPT account.", "authentication_account_mismatch");
-            var browserCookies = await context.CookiesAsync().ConfigureAwait(false);
+            var browserCookies = await context.CookiesAsync().WaitAsync(timeout.Token).ConfigureAwait(false);
             var exportedCookies = browserCookies.Where(c => c.Domain is "chatgpt.com" or ".chatgpt.com").Select(c => new WebCookie
             {
                 Name = c.Name, Value = c.Value, Domain = c.Domain, Path = c.Path, Secure = c.Secure, HttpOnly = c.HttpOnly,
                 HostOnly = !c.Domain.StartsWith('.'), ExpiresAt = c.Expires > 0 ? DateTimeOffset.FromUnixTimeSeconds((long)c.Expires) : null,
                 SameSite = c.SameSite switch { SameSiteAttribute.Strict => "strict", SameSiteAttribute.Lax => "lax", _ => "no_restriction" }
             }).ToArray();
-            var cookieHeader = string.Join("; ", (await context.CookiesAsync(["https://chatgpt.com/"]).ConfigureAwait(false)).Select(c => c.Name + "=" + c.Value));
+            var cookieHeader = string.Join("; ", (await context.CookiesAsync(["https://chatgpt.com/"]).WaitAsync(timeout.Token).ConfigureAwait(false)).Select(c => c.Name + "=" + c.Value));
             var stable = new Dictionary<string, string>(credentials.Headers, StringComparer.OrdinalIgnoreCase);
             foreach (var pair in headers)
                 if (pair.Key.StartsWith("oai-", StringComparison.OrdinalIgnoreCase) && !pair.Key.Equals("oai-echo-logs", StringComparison.OrdinalIgnoreCase) || pair.Key.StartsWith("sec-ch-", StringComparison.OrdinalIgnoreCase) || pair.Key is "chatgpt-account-id" or "accept-language" or "originator" or "x-oai-mcp-form-version" or "x-openai-web-frontend" or "x-openai-codex-window-type") stable[pair.Key] = pair.Value;
@@ -179,13 +186,18 @@ public sealed class BrowserSentinelProvider(BrowserSentinelOptions? options = nu
                 ProofToken = headers.GetValueOrDefault("openai-sentinel-proof-token"), TurnstileToken = headers.GetValueOrDefault("openai-sentinel-turnstile-token"), ObserverToken = headers.GetValueOrDefault("openai-sentinel-so-token"), EchoLogs = headers.GetValueOrDefault("oai-echo-logs") };
             var refreshed = new WebCredentials { AccessToken = accessToken, CookieHeader = cookieHeader, UserAgent = headers.GetValueOrDefault("user-agent") ?? credentials.UserAgent,
                 Cookies = exportedCookies, ExpiresAt = WebAuthentication.ReadAccessTokenExpiry(accessToken) ?? credentials.ExpiresAt, Headers = stable, SentinelSession = sentinel };
-            _options.Progress?.Invoke("Sentinel credentials obtained. Closing the temporary browser page.");
+            workspace.Refreshed(refreshed);
+            success = true;
+            if (_options.ReuseSession && _options.PreloadNextTurn) workspace.BeginPreload(_options.Timeout);
+            ReportProgress(_options.ReuseSession ? "Fresh Sentinel credentials obtained. Keeping the isolated session warm until its idle timeout." : "Sentinel credentials obtained. Closing the temporary browser page.");
             return new(refreshed, sentinel);
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
             await CaptureDiagnosticsAsync(diagnosticPage).ConfigureAwait(false);
-            throw new SdkException("Timed out obtaining Sentinel credentials. Complete sign-in in the browser or configure an external provider.", "sentinel_browser_timeout", System.Net.HttpStatusCode.ServiceUnavailable);
+            throw new SdkException(challengeResponses > 0 ? "The browser kept waiting for Cloudflare until the configured timeout. Use a visible authenticated session and increase Browser.Timeout if more time is needed."
+                : "Timed out obtaining Sentinel credentials. Complete sign-in in the browser or configure an external provider.",
+                challengeResponses > 0 ? "sentinel_browser_challenge" : "sentinel_browser_timeout", System.Net.HttpStatusCode.ServiceUnavailable);
         }
         catch (SdkException)
         {
@@ -200,9 +212,28 @@ public sealed class BrowserSentinelProvider(BrowserSentinelOptions? options = nu
         }
         finally
         {
-            try { if (context is not null) await context.CloseAsync().ConfigureAwait(false); }
-            finally { if (owned is not null) await owned.DisposeAsync().ConfigureAwait(false); }
+            if (diagnosticPage is not null && responseHandler is not null) diagnosticPage.Response -= responseHandler;
+            if (lease is not null)
+            {
+                lease.Resource.Capture = null;
+                lease.Resource.CaptureHeaders = false;
+                if (!success) lease.Invalidate();
+                await lease.DisposeAsync().ConfigureAwait(false);
+            }
+            Observe(warmUp ? "warmup_total" : "total", total.Elapsed, !created);
         }
+    }
+
+    private void ReportProgress(string message)
+    {
+        try { _options.Progress?.Invoke(message); }
+        catch { /* Progress observers cannot interrupt a challenge wait or authorization. */ }
+    }
+
+    private void Observe(string stage, TimeSpan elapsed, bool reused)
+    {
+        try { _options.TimingObserved?.Invoke(new(stage, elapsed, reused)); }
+        catch { /* A timing observer must not change authorization or cleanup. */ }
     }
 
     internal static Cookie ToBrowserCookie(WebCookie cookie) => new()
