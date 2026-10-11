@@ -58,7 +58,7 @@ dotnet run --project tools/ChatGPTWebSdk.Cli -- smoke .\local.session.json --sen
 
 The --send test checks remembered context, matching conversation IDs, and independently retrieves the remote graph to verify both assistant messages. It does not delete the test conversation. For restart acceptance, rerun the proxy with the same session directory and use the same client key/thread to append a new message.
 
-If the server requires a fresh preparation body, proof token or another transport, retain that exact request/response sequence in the capture. The default hybrid mode opens and cleans up a temporary visible browser for fresh Sentinel answers. ApiOnly reports unmet challenge requirements and does not automatically open a browser. BrowserOnly is reserved and unimplemented.
+If the server requires a fresh preparation body, proof token or another transport, retain that exact request/response sequence in the capture. The default hybrid mode reuses an isolated visible browser session for fresh Sentinel answers, with idle expiry and runtime disposal. Set Browser.ReuseSession=false to close it after each handshake. ApiOnly reports unmet challenge requirements and does not automatically open a browser. BrowserOnly is reserved and unimplemented.
 
 
 The `smoke-sdk` command repeats the same live acceptance using the actual official OpenAI client types. `resume-sdk <config> <saved-sdk-smoke-thread> <web-model-slug>` checks remembered context and independent remote history after a runtime restart.

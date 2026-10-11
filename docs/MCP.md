@@ -1,4 +1,4 @@
-# MCP tools through ChatGPT conversations (v1.2.0)
+# MCP tools through ChatGPT conversations (v1.6.0)
 
 Register MCP servers once, then use the normal ChatClient or ResponsesClient. The SDK lists the servers' tools, adds a tool manifest to the appended user input, recognizes assistant tool requests, calls the selected MCP server, appends an internal user message containing the results, and continues the same remote ChatGPT conversation until a final answer arrives. Every generation uses fresh Sentinel authorization through your selected authentication mode.
 
@@ -35,7 +35,7 @@ await foreach (var update in chat.CompleteChatStreamingAsync("Find and summarize
         Console.Write(part.Text);
 ```
 
-The SDK uses ModelContextProtocol.Core **2.2.0** for MCP initialization, JSON-RPC, paginated tool discovery, transport negotiation and typed tool-result serialization. `Auto` tries Streamable HTTP and falls back to legacy SSE; `StreamableHttp` and `Sse` select a transport explicitly. Connections created for a conversation turn close when the turn completes, fails or is disposed. The MCP server's HTTP response may itself be JSON or an SSE stream.
+The SDK uses ModelContextProtocol.Core **2.2.0** for MCP initialization, JSON-RPC, paginated tool discovery, transport negotiation and typed tool-result serialization. `Auto` tries Streamable HTTP and falls back to legacy SSE; `StreamableHttp` and `Sse` select a transport explicitly. Owned connections are reused by default across logical messages in the same account/user/thread. The identity includes endpoint or command, arguments, environment, transport and HTTP credentials. Changing a scoped endpoint or credentials selects a separate connection. Tool discovery refreshes every logical message, so tool catalogs and allowlists are not cached across messages. Owned connections expire after two minutes idle or on runtime/native-client disposal. Application-supplied clients remain owned by the application. The MCP server's HTTP response may itself be JSON or an SSE stream.
 
 HTTP headers are sent only to the registered MCP origin. Redirects and legacy SSE endpoints pointing to another origin are blocked. MCP headers, endpoint URLs, local commands, environment values, and ChatGPT session credentials do not enter the tool manifest. Tool arguments and results do enter the ChatGPT conversation, as required for the model to use them.
 
@@ -121,7 +121,19 @@ using var runtime = ChatGPTWeb.Initialize(authenticationString, mcp);
 
 Supply an executable and separate arguments, plus optional `WorkingDirectory` and `Environment` values. Install your server's runtime/dependencies separately. The SDK does not concatenate configuration into shell script text. Stdio servers inherit the MCP client's minimal platform environment rather than the application's complete environment. Processes launched by the SDK are owned and closed by the SDK. An application-supplied `IMcpWebServer` client is left open.
 
-For an explicit reusable connection, use `await using var connection = await McpWebClient.ConnectAsync(serverConfiguration)`. It exposes `ListToolsAsync` and `CallToolAsync`. Register that connection as `Client` instead of `Endpoint`/`Command` if you want its session to span multiple conversation turns; the application disposes it. Exactly one connection source is allowed per configuration.
+For an explicit reusable connection, use `await using var connection = await McpWebClient.ConnectAsync(serverConfiguration)`. It exposes `ListToolsAsync` and `CallToolAsync`. Register that connection as `Client` instead of `Endpoint`/`Command` when the application should control its lifetime; the application disposes it. Native `ChatGptWebClient` now implements `IAsyncDisposable`: keep it for multiple messages, then use `await using` or call `DisposeAsync`. Exactly one connection source is allowed per configuration.
+
+## Connection reuse and recovery
+
+`McpConversationOptions.ReuseConnections` defaults to `true`. `ConnectionIdleTimeout` is **2 minutes**, `MaxConnections` is **32**, and `ConnectionTimeout` is **30 seconds**. Idle entries are evicted first when the limit is reached; busy connections are never taken away from another message. Set `ReuseConnections = false` for the previous per-message lifetime. Endpoint credentials remain isolated even when server labels match. A message-only registration expires as a permission at the end of its logical message; its idle connection can remain until expiry, but is never made available to other scopes.
+
+`DiscoveryRetries = 1` and `DiscoveryRetryDelay = 250 ms` allow one recovery for transient initialization/list failures or an expired HTTP session. Authentication and protocol errors are not blindly retried. These retries occur before ChatGPT generation and before any tool execution. The SDK still stops on an unknown tool outcome and requires explicit recovery.
+
+For interrupted SSE responses, each server's `MaxReconnectionAttempts` defaults to **2**, with `ReconnectionInterval = 250 ms` unless the server supplies its own retry interval. Streamable HTTP resumption uses **GET with Last-Event-ID** when a cursor is available; it does not repeat the original tool POST. Unsupported or unsuccessful resumption leaves the execution uncertain. Set the attempt count to zero to disable it. HTTP redirects to another origin remain blocked.
+
+`MaxProtocolRepairs = 1` permits one hidden correction exchange when the model produces malformed tool JSON or omits required arguments. The entire batch is rejected before execution; its IDs become consumed only after validation succeeds. Disallowed tools and unknown server labels are rejected immediately. A correction consumes a normal ChatGPT generation and counts toward the tool-round limit. Set `MaxProtocolRepairs = 0` for strict parsing. Markdown fences around an otherwise exact tool-request block and trailing whitespace are tolerated, with protocol text withheld from streamed final-answer output. The model can still fail to follow this message-adapter protocol; the configured repair budget bounds recovery.
+
+Progress observers cannot turn a completed execution into an uncertain one by throwing. Approval callbacks still control execution and must return a decision successfully.
 
 ## Official Responses MCP declarations
 
