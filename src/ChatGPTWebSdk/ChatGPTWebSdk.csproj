@@ -14,4 +14,5 @@
     <EmbeddedResource Include="Generated/web-operations.json" />
     <None Include="../../README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
+  <ItemGroup><InternalsVisibleTo Include="ChatGPTWebSdk.Browser" /><InternalsVisibleTo Include="ChatGPTWebSdk.Tests" /></ItemGroup>
 </Project>
