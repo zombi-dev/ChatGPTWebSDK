@@ -16,7 +16,12 @@ using ChatGPTWebSdk.Storage;
 using ChatGPTWebSdk.Web;
 using ChatGPTWebSdk.Mcp;
 
+#if CHATGPTWEB_NATIVE
+using OpenAI;
+namespace ChatGPTWebSdk.Native;
+#else
 namespace OpenAI;
+#endif
 
 public enum ChatGPTWebMode { ApiOnly, Hybrid, BrowserOnly }
 public enum ChatGPTWebHttpDriver { DotNet, SystemCurl }
@@ -49,13 +54,15 @@ public sealed class ChatGPTWebRuntimeOptions
 }
 
 /// <summary>Owns the HTTP web backend and per-user conversation bindings used by the official public clients.</summary>
-public sealed class ChatGPTWebRuntime : IDisposable
+public sealed class ChatGPTWebRuntime : IDisposable, IAsyncDisposable
 {
     private readonly ChatGPTWebRuntimeOptions _options;
     private readonly HttpClient _http;
     private readonly IReadOnlyDictionary<string, ConversationScope> _clients;
     private readonly HttpClientPipelineTransport _transport;
     private readonly HttpClient _compatibilityHttp;
+    private readonly IWebSentinelSessionProvider? _sentinel;
+    private readonly bool _ownsSentinel;
     private readonly AsyncLocal<MessageMcpScope?> _messageMcp = new();
     private bool _disposed;
     public string ClientKey { get; }
@@ -76,6 +83,7 @@ public sealed class ChatGPTWebRuntime : IDisposable
         if (!_clients.ContainsKey(ClientKey)) throw new ArgumentException("ClientKey must identify a configured application user.");
         _http = options.HttpClient ?? (options.HttpDriver == ChatGPTWebHttpDriver.SystemCurl ? WebHttpClient.CreateCurl(options.CurlExecutable) : WebHttpClient.Create());
         var browser = options.SentinelSessionProvider ?? (options.Mode == ChatGPTWebMode.Hybrid ? new BrowserSentinelProvider(options.Browser) : null);
+        _sentinel = browser; _ownsSentinel = options.SentinelSessionProvider is null;
         var transport = new ChatGptWebTransport(_http, options.Credentials, new() { BaseUri = options.BaseUri, Endpoints = options.Endpoints, SentinelSessionProvider = browser, IgnoreModelRestrictions = options.IgnoreModelRestrictions,
             SentinelChallengeProvider = options.SentinelChallengeProvider, RequirementsBodyProvider = options.RequirementsBodyProvider });
         var store = options.ConversationStore ?? new FileConversationStore(options.SessionDirectory);
@@ -92,6 +100,7 @@ public sealed class ChatGPTWebRuntime : IDisposable
     }
     public OpenAIClientOptions CreateClientOptions(string? threadId = null, string? projectId = null, bool? temporaryChat = null)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         new WebChatContext { ProjectId = projectId ?? _options.ProjectId, TemporaryChat = temporaryChat ?? _options.TemporaryChat }.ResolveGizmoId();
         var options = new OpenAIClientOptions { Transport = _transport, RetryPolicy = new ClientRetryPolicy(0), NetworkTimeout = _options.RequestTimeout };
         if (threadId is not null) options.AddPolicy(new ThreadPolicy(threadId), PipelinePosition.PerCall);
@@ -121,11 +130,30 @@ public sealed class ChatGPTWebRuntime : IDisposable
         options.RetryPolicy = new ClientRetryPolicy(0);
         options.NetworkTimeout = _options.RequestTimeout;
     }
-    public void Dispose()
+    /// <summary>Loads the browser session ahead of a send without requesting challenge answers.</summary>
+    public async Task WarmUpAsync(string? accountId = null, CancellationToken ct = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_sentinel is not BrowserSentinelProvider browser) return;
+        var account = accountId ?? _clients[ClientKey].AccountId;
+        var credentials = await _options.Credentials.GetAsync(account, ct).ConfigureAwait(false);
+        await browser.WarmUpAsync(account, credentials, ct).ConfigureAwait(false);
+    }
+    public void Dispose() => DisposeAsync().AsTask().GetAwaiter().GetResult();
+    public async ValueTask DisposeAsync()
     {
         if (_disposed) return;
-        _disposed = true; _compatibilityHttp.Dispose(); if (_options.HttpClient is null) _http.Dispose();
-        ChatGPTWeb.Unconfigure(this);
+        _disposed = true;
+        try { await Web.DisposeAsync().ConfigureAwait(false); }
+        finally
+        {
+            try { if (_ownsSentinel && _sentinel is IAsyncDisposable disposable) await disposable.DisposeAsync().ConfigureAwait(false); }
+            finally
+            {
+                _compatibilityHttp.Dispose(); if (_options.HttpClient is null) _http.Dispose();
+                ChatGPTWeb.Unconfigure(this);
+            }
+        }
     }
     private sealed class MessageMcpScope(ChatGPTWebRuntime owner, McpScopeOptions options, MessageMcpScope? parent) : IDisposable
     {
@@ -157,7 +185,11 @@ public sealed class ChatGPTWebRuntime : IDisposable
     }
 }
 
+#if CHATGPTWEB_NATIVE
+/// <summary>Creates explicitly configured native SDK clients. Native constructors retain their official API defaults.</summary>
+#else
 /// <summary>One-time initialization for unchanged ChatClient, ResponsesClient and OpenAIClient constructors.</summary>
+#endif
 public static class ChatGPTWeb
 {
     private static ChatGPTWebRuntime? _current;
