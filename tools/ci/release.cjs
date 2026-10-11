@@ -30,7 +30,7 @@ async function publishRelease({ github, context, core }, io = {}) {
   const tag = `v${version}`;
   const root = path.resolve(io.root ?? 'artifacts/release');
   const names = [
-    ...['ChatGPTWebSdk', 'ChatGPTWebSdk.Browser', 'ChatGPTWebSdk.OpenAI'].map(n => `${n}.${version}.nupkg`),
+    ...['ChatGPTWebSdk', 'ChatGPTWebSdk.Browser', 'ChatGPTWebSdk.OpenAI', 'ChatGPTWebSdk.Native'].map(n => `${n}.${version}.nupkg`),
     ...['DLLs', 'Proxy'].map(n => `ChatGPTWebSdk-${n}-${version}.zip`),
     `chatgpt-web-sdk-auth-chromium-${version}.zip`, `chatgpt-web-sdk-auth-firefox-${version}.zip`, `chatgpt-web-sdk-auth-firefox-${version}.xpi`,
     `ChatGPTWebSdk-Bundle-win-x64-${version}.zip`,
