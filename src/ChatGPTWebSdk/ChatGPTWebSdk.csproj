@@ -3,7 +3,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <PackageId>ChatGPTWebSdk</PackageId>
     <Description>ChatGPT web HTTP conversation and asset SDK with an OpenAPI operation client.</Description>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageLicenseExpression>MIT AND Apache-2.0</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>
@@ -13,6 +13,9 @@
     <EmbeddedResource Include="Generated/openapi-operations.json" />
     <EmbeddedResource Include="Generated/web-operations.json" />
     <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <None Include="../../third_party/openai-oauth/LICENSE" Pack="true" PackagePath="licenses/openai-oauth/" />
+    <None Include="../../third_party/openai-oauth/NOTICE" Pack="true" PackagePath="licenses/openai-oauth/" />
+    <None Include="../../third_party/openai-oauth/ADAPTATIONS.md" Pack="true" PackagePath="licenses/openai-oauth/" />
   </ItemGroup>
   <ItemGroup><InternalsVisibleTo Include="ChatGPTWebSdk.Browser" /><InternalsVisibleTo Include="ChatGPTWebSdk.Tests" /></ItemGroup>
 </Project>
