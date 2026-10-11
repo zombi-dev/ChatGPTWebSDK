@@ -4,19 +4,19 @@
 
 Three separate workflow files run in sequence:
 
-1. **Tests** (`.github/workflows/tests.yml`) runs on every branch push, pull request and manual dispatch. For repository pushes, it validates the Conventional Commit title and version in the commit title/body and runs extension and SDK tests on Windows x64, Linux x64, Intel macOS and Apple Silicon macOS. The gate requires at least 1206 passing SDK cases, plus extension and automation tests. Dependabot pull requests validate and test the version without requiring the generated dependency commit to mention it. Tests compile their dependencies; release asset builds wait for the complete successful test matrix.
+1. **Tests** (`.github/workflows/tests.yml`) runs on every branch push, pull request and manual dispatch. For repository pushes, it validates the Conventional Commit title and version in the commit title/body and runs extension and SDK tests on Windows x64, Linux x64, Intel macOS and Apple Silicon macOS. The gate requires at least 1361 passing drop-in/core SDK cases and 18 native SDK integration cases, plus extension and automation tests. Dependabot pull requests validate and test the version without requiring the generated dependency commit to mention it. Tests compile their dependencies; release asset builds wait for the complete successful test matrix.
 2. **Build** (`.github/workflows/build.yml`) is a reusable workflow called only after all repository test jobs succeed. It checks out the exact tested SHA, builds SDK packages and extensions, validates Firefox and downloads Chromium through pinned Microsoft.Playwright 1.63.0. Four platform jobs package their matching browser and driver, then check the actual native launcher headlessly in automatic and software rendering modes. Preparation/download, native verification and archiving run as separate steps with bounded timeouts. Archive creation requires matching SHA256 fingerprints from successful preparation and verification. Pull request runs do not trigger this workflow chain. Branch pushes produce downloadable Actions artifacts.
 3. **Release** (`.github/workflows/release.yml`) starts after the successful Tests workflow, whose gated reusable Build has completed. It independently checks the originating test run's workflow, repository, conclusion, event, branch, commit ancestry and exact artifact set. Only a tested `main` commit publishes. It downloads assets from that specific Build run, requires every asset, generates checksums and creates `vVERSION` as a draft, uploads all required assets and publishes last. The write-permission job has no checkout and executes no downloaded code. Versions and release notes are read as bounded data through GitHub APIs.
 
 Native rendering verification also uses `tools/ci/run-bounded.cjs` with a 150-second subprocess deadline. A timed-out command or a descendant retaining output pipes fails the build. SDK diagnostics report driver, browser, rendering and cleanup stages; a failure cannot produce a verified archive receipt.
 
-Every release attaches 13 assets:
+Every release attaches 14 assets:
 
-- Three NuGet packages: ChatGPTWebSdk, ChatGPTWebSdk.Browser, ChatGPTWebSdk.OpenAI.
+- Four NuGet packages: ChatGPTWebSdk, ChatGPTWebSdk.Browser, ChatGPTWebSdk.OpenAI and ChatGPTWebSdk.Native. The Native package depends on the real official SDK; the OpenAI package replaces it.
 - SDK DLL and proxy ZIPs with dependencies and all platform Playwright drivers.
 - Chromium and Firefox extension ZIPs and an unsigned Firefox XPI.
 - Four complete SDK/browser bundles: Windows x64 ZIP; Linux x64, Intel macOS and Apple Silicon macOS tar.gz.
-- SHA256SUMS.txt covering the 12 binary assets.
+- SHA256SUMS.txt covering the 13 binary assets.
 
 Complete bundles include a .NET 8 example, SDK DLLs, the optional .NET 10 proxy and Chromium. Tar preserves Unix executable permissions and macOS application symlinks. Browser and driver licenses/notices are included. Linux requires Chromium's system libraries. Bundles contain no HARs, user profiles or credentials.
 
