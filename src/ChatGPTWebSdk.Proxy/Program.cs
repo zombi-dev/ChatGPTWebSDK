@@ -17,12 +17,15 @@ if (string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ASPNETCORE_URL
 var config = ProxyConfiguration.Load();
 using var http = config.HttpDriver == "systemCurl" ? WebHttpClient.CreateCurl() : WebHttpClient.Create();
 builder.Services.AddSingleton<IConversationStore>(new FileConversationStore(config.SessionDirectory));
-builder.Services.AddSingleton(new ChatGptWebTransport(http, new StaticWebCredentialProvider(config.Accounts.ToDictionary(a => a.Id, a => a.Credentials)), new() { BaseUri = config.BaseUri, Endpoints = config.Profile, IgnoreModelRestrictions = config.IgnoreModelRestrictions, SentinelSessionProvider = config.Mode == "hybrid" ? new BrowserSentinelProvider(config.Browser) : null }));
+if (config.Mode == "hybrid") builder.Services.AddSingleton<BrowserSentinelProvider>(_ => new(config.Browser));
+builder.Services.AddSingleton(sp => new ChatGptWebTransport(http, new StaticWebCredentialProvider(config.Accounts.ToDictionary(a => a.Id, a => a.Credentials)), new() { BaseUri = config.BaseUri, Endpoints = config.Profile, IgnoreModelRestrictions = config.IgnoreModelRestrictions, SentinelSessionProvider = config.Mode == "hybrid" ? sp.GetRequiredService<BrowserSentinelProvider>() : null }));
 builder.Services.AddSingleton(sp => new ChatGptWebClient(sp.GetRequiredService<ChatGptWebTransport>(), sp.GetRequiredService<IConversationStore>(), new McpConversationOptions
 {
     Servers = config.Mcp.Servers, MaxToolRounds = config.Mcp.MaxToolRounds, MaxToolCalls = config.Mcp.MaxToolCalls,
     MaxManifestCharacters = config.Mcp.MaxManifestCharacters, MaxToolArgumentsCharacters = config.Mcp.MaxToolArgumentsCharacters,
     MaxToolResultCharacters = config.Mcp.MaxToolResultCharacters, ToolTimeout = config.Mcp.ToolTimeout,
+    ReuseConnections = config.Mcp.ReuseConnections, ConnectionTimeout = config.Mcp.ConnectionTimeout, ConnectionIdleTimeout = config.Mcp.ConnectionIdleTimeout,
+    MaxConnections = config.Mcp.MaxConnections, DiscoveryRetries = config.Mcp.DiscoveryRetries, DiscoveryRetryDelay = config.Mcp.DiscoveryRetryDelay, MaxProtocolRepairs = config.Mcp.MaxProtocolRepairs,
     IsServerAllowed = (scope, label) => config.Clients.Any(c => c.AccountId == scope.AccountId && c.UserId == scope.UserId && c.McpServers.Contains(label, StringComparer.Ordinal))
 }));
 builder.Services.AddSingleton(sp => new OpenAiWebAdapter(sp.GetRequiredService<ChatGptWebClient>(), config.ModelAliases));
