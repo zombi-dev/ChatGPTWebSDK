@@ -78,7 +78,7 @@ for (const event of ['push', 'workflow_dispatch']) for (const comparison of ['ah
 async function assets(t) {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'websdk-release-')); t.after(() => fs.rm(root, { recursive: true, force: true }));
   const names = [
-    'ChatGPTWebSdk.1.4.0.nupkg', 'ChatGPTWebSdk.Browser.1.4.0.nupkg', 'ChatGPTWebSdk.OpenAI.1.4.0.nupkg',
+    'ChatGPTWebSdk.1.4.0.nupkg', 'ChatGPTWebSdk.Browser.1.4.0.nupkg', 'ChatGPTWebSdk.OpenAI.1.4.0.nupkg', 'ChatGPTWebSdk.Native.1.4.0.nupkg',
     'ChatGPTWebSdk-DLLs-1.4.0.zip', 'ChatGPTWebSdk-Proxy-1.4.0.zip', 'chatgpt-web-sdk-auth-chromium-1.4.0.zip',
     'chatgpt-web-sdk-auth-firefox-1.4.0.zip', 'chatgpt-web-sdk-auth-firefox-1.4.0.xpi', 'ChatGPTWebSdk-Bundle-win-x64-1.4.0.zip',
     ...['linux-x64', 'osx-x64', 'osx-arm64'].map(p => `ChatGPTWebSdk-Bundle-${p}-1.4.0.tar.gz`)
@@ -86,13 +86,13 @@ async function assets(t) {
   for (const name of names) await fs.writeFile(path.join(root, name), name.endsWith('.gz') ? Buffer.from([0x1f, 0x8b, 8, 0, 1, 2]) : Buffer.from([0x50, 0x4b, 3, 4, 1, 2]));
   return { root, names };
 }
-test('Release uploads twelve validated binary assets and checksums, then publishes its draft', async t => {
+test('Release uploads thirteen validated binary assets and checksums, then publishes its draft', async t => {
   const f = fixture(), files = await assets(t); await publishRelease(f, files);
   assert.equal(f.writes[0][0], 'create'); assert.equal(f.writes[0][1].draft, true); assert.equal(f.writes[0][1].target_commitish, f.sha);
   assert.equal(f.writes[0][1].name, 'v1.4.0');
   assert(f.writes[0][1].body.includes('<summary>All 1 commit</summary>'));
   assert(f.writes[0][1].body.includes('https://github.com/owner/sdk/commit/' + f.sha));
-  const uploads = f.writes.filter(w => w[0] === 'upload'); assert.equal(uploads.length, 13);
+  const uploads = f.writes.filter(w => w[0] === 'upload'); assert.equal(uploads.length, 14);
   const sums = uploads.find(w => w[1].name === 'SHA256SUMS.txt')[1].data.toString();
   for (const [, a] of uploads.filter(w => w[1].name !== 'SHA256SUMS.txt')) {
     assert(sums.includes(crypto.createHash('sha256').update(a.data).digest('hex') + '  ' + a.name));
@@ -144,5 +144,5 @@ test('Release leaves an already published mutable release unchanged', async t =>
 });
 test('Release resumes an interrupted draft, uploads missing assets and publishes last', async t => {
   const f = fixture(), files = await assets(t); f.state.tag = f.sha; f.state.existing = { id: 20, draft: true, assets: [{ id: 30, name: 'untrusted.cjs', size: 10, digest: null }] };
-  await publishRelease(f, files); assert.equal(f.writes[0][0], 'delete'); assert.equal(f.writes.filter(w => w[0] === 'upload').length, 13); assert.equal(f.writes.at(-1)[0], 'update');
+  await publishRelease(f, files); assert.equal(f.writes[0][0], 'delete'); assert.equal(f.writes.filter(w => w[0] === 'upload').length, 14); assert.equal(f.writes.at(-1)[0], 'update');
 });

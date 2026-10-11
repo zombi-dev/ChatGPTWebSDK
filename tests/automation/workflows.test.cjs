@@ -42,6 +42,26 @@ test('Build is reusable and follows every successful test matrix job', () => {
   const prepare = build.indexOf('Bundle-Browser.ps1 -Stage Prepare'), verify = build.indexOf('Bundle-Browser.ps1 -Stage Verify'), archive = build.indexOf('Bundle-Browser.ps1 -Stage Archive');
   assert(prepare > 0 && prepare < verify && verify < archive && archive < build.indexOf('Upload platform browser bundle'));
 });
+test('Native browser bundles require real session reuse and the exact packaged SDK assemblies', () => {
+  const bundle = read('tools/Bundle-Browser.ps1');
+  assert(bundle.includes('browser-reuse-check $taskBrowsers'));
+  assert(bundle.includes('The reuse diagnostic must use the exact packaged SDK assemblies.'));
+  assert(bundle.indexOf('browser-reuse-check $taskBrowsers') < bundle.indexOf('[IO.File]::WriteAllText($taskVerifiedFile'));
+});
+test('All platform tests gate the real official SDK integration before packaging', () => {
+  const gate = read('test.ps1');
+  assert(gate.includes('dotnet test tests/ChatGPTWebSdk.Native.Tests/ChatGPTWebSdk.Native.Tests.csproj'));
+  assert(gate.includes('native-tests.trx')); assert(gate.includes('passed -lt 18'));
+  const project = read('src/ChatGPTWebSdk.Native/ChatGPTWebSdk.Native.csproj');
+  assert(project.includes('<PackageReference Include="OpenAI" Version="2.14.0" />'));
+  assert(!project.includes('ProjectReference Include="../ChatGPTWebSdk.OpenAI'));
+});
+test('The native integration package is required in local and privileged release assets', () => {
+  const build = read('build.ps1'), release = read('tools/ci/release.cjs');
+  assert(build.includes('dotnet pack src/ChatGPTWebSdk.Native/ChatGPTWebSdk.Native.csproj'));
+  assert(build.includes("'ChatGPTWebSdk.OpenAI', 'ChatGPTWebSdk.Native'"));
+  assert(release.includes("'ChatGPTWebSdk.OpenAI', 'ChatGPTWebSdk.Native'"));
+});
 test('Daily authenticated probe is limited to the default branch and its credential never reaches the publisher', () => {
   const monitor = read('.github/workflows/monitor.yml'); const publisher = monitor.slice(monitor.indexOf('  report:\n'));
   assert(monitor.includes('cron: "15 7 * * *"')); assert(monitor.includes('github.event.repository.default_branch')); assert(monitor.includes('--smoke-test'));
