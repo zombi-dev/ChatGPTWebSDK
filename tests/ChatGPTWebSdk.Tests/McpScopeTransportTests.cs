@@ -78,7 +78,8 @@ public sealed class McpScopeTransportTests
     [Theory, InlineData(false), InlineData(true)]
     public async Task Message_only_stdio_servers_close_the_owned_process_and_do_not_require_initialization_servers(bool temporary)
     {
-        using var handler = new FakeWebHandler { StreamFactory = PidReply }; var client = handler.Client();
+        using var handler = new FakeWebHandler { StreamFactory = PidReply };
+        await using var client = new ChatGptWebClient(handler.Client().Transport, new InMemoryConversationStore(), new() { ReuseConnections = false });
         var fixture = Path.Combine(AppContext.BaseDirectory, "Fixtures", "mcp-server.mjs");
         var config = new McpServerConfiguration { Label = "identity", Command = "node", Arguments = [fixture], Transport = McpWebTransport.Stdio, AllowedTools = ["get_pid"],
             Environment = new Dictionary<string, string?> { ["WEBSDK_SYNTHETIC_SCOPE"] = "message" }, WorkingDirectory = AppContext.BaseDirectory };

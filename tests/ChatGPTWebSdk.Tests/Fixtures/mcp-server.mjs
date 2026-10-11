@@ -33,7 +33,10 @@ if(mode === 'stdio') {
   input.on('close',()=>process.exit(0));
 } else {
   let legacy;
+  let pending;
+  const stats={initializations:0,lists:0,calls:0,resumptions:0,deletes:0};
   const server=http.createServer(async(req,res)=> {
+    if(req.method === 'GET' && req.url === '/_stats') { res.writeHead(200,{'Content-Type':'application/json'}); res.end(JSON.stringify(stats)); return; }
     if(expectedAuthorization && req.headers.authorization !== expectedAuthorization) {
       res.writeHead(401, {'Content-Type':'application/json'}); res.end('{"error":"Fixture authorization mismatch"}'); return;
     }
@@ -41,10 +44,29 @@ if(mode === 'stdio') {
       res.writeHead(200,{'Content-Type':'text/event-stream','Cache-Control':'no-cache'});
       res.write('event: endpoint\ndata: /messages\n\n'); legacy=res; return;
     }
-    if(req.method === 'DELETE') {res.writeHead(204); res.end(); return;}
+    if(req.method === 'GET' && req.url === '/mcp' && mode === 'http-resume' && pending && req.headers['last-event-id'] === 'fixture-cursor') {
+      stats.resumptions++;
+      res.writeHead(200,{'Content-Type':'text/event-stream'}); res.end('event: message\nid: fixture-final\ndata: '+JSON.stringify(pending)+'\n\n'); pending=null; return;
+    }
+    if(req.method === 'DELETE') { stats.deletes++; res.writeHead(204); res.end(); return; }
     if(req.method !== 'POST' || !['/mcp','/messages'].includes(req.url)) {res.writeHead(405); res.end(); return;}
     let body=''; for await(const part of req) body+=part;
-    const result=respond(JSON.parse(body));
+    const request=JSON.parse(body);
+    if(request.method === 'initialize') stats.initializations++;
+    if(request.method === 'tools/list') {
+      stats.lists++;
+      if(mode === 'http-flaky-list' && stats.lists === 1 || mode === 'http-expiring' && stats.lists === 3) {
+        res.writeHead(mode === 'http-expiring' ? 404 : 503,{'Content-Type':'application/json'}); res.end('{"error":"Synthetic unavailable session"}'); return;
+      }
+    }
+    if(request.method === 'tools/call') stats.calls++;
+    const result=respond(request);
+    if(request.method === 'tools/call' && mode === 'http-uncertain') {req.socket.destroy(); return;}
+    if(request.method === 'tools/call' && mode === 'http-resume') {
+      pending=result;
+      res.writeHead(200,{'Content-Type':'text/event-stream'});
+      res.end('id: fixture-cursor\nretry: 0\ndata: \n\n'); return;
+    }
     if(req.url === '/messages') {
       res.writeHead(202); res.end();
       if(result) legacy.write('event: message\ndata: '+JSON.stringify(result)+'\n\n');
