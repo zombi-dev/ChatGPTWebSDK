@@ -1,4 +1,4 @@
-param([string]$SdkDirectory = 'artifacts/sdk', [string]$ProxyDirectory = 'artifacts/proxy', [string]$OutputDirectory = 'artifacts/release',
+param([string]$SdkDirectory = 'artifacts/sdk', [string]$ProxyDirectory = 'artifacts/proxy', [string]$OutputDirectory = 'artifacts/release', [string]$CliPath,
     [ValidateSet('All', 'Prepare', 'Verify', 'Archive')][string]$Stage = 'All')
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -24,6 +24,8 @@ function Get-BundleFingerprint {
     return ([ordered]@{ version = $taskVersion; platform = $taskPlatform;
         manifest = (Get-FileHash -LiteralPath $taskManifestPath -Algorithm SHA256).Hash;
         browser = (Get-FileHash -LiteralPath $taskNativeExecutable -Algorithm SHA256).Hash;
+        core = (Get-FileHash -LiteralPath (Join-Path $taskBundle 'ChatGPTWebSdk.dll') -Algorithm SHA256).Hash;
+        sentinel = (Get-FileHash -LiteralPath (Join-Path $taskBundle 'ChatGPTWebSdk.Browser.dll') -Algorithm SHA256).Hash;
         sdk = (Get-FileHash -LiteralPath (Join-Path $taskBundle 'OpenAI.dll') -Algorithm SHA256).Hash } | ConvertTo-Json -Compress)
 }
 if ($Stage -in @('All', 'Prepare')) {
@@ -81,6 +83,21 @@ try {
         Write-Host "Launching the bundled example for native rendering verification."
         dotnet run --project (Join-Path $taskBundle 'example') -c Release --no-build --no-restore -- --verify-bundle
         if ($LASTEXITCODE -ne 0) { throw 'The bundled example, driver or browser failed its offline launch check.' }
+        $taskCliCandidates = if ($CliPath) { @([IO.Path]::GetFullPath($(if ([IO.Path]::IsPathRooted($CliPath)) { $CliPath } else { Join-Path $taskRoot $CliPath }))) } else {
+            @((Join-Path $taskRoot 'artifacts/build/ChatGPTWebSdk.Cli/Release/net10.0/ChatGPTWebSdk.Cli.dll'),
+              (Join-Path $taskRoot 'tools/ChatGPTWebSdk.Cli/bin/Release/net10.0/ChatGPTWebSdk.Cli.dll'))
+        }
+        $taskReuseCli = $taskCliCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+        if (!$taskReuseCli) { throw 'Build the SDK diagnostic CLI before verifying browser session reuse.' }
+        foreach ($taskAssembly in @('ChatGPTWebSdk.dll', 'ChatGPTWebSdk.Browser.dll', 'OpenAI.dll')) {
+            $taskCliAssembly = Join-Path ([IO.Path]::GetDirectoryName($taskReuseCli)) $taskAssembly
+            if ((Get-FileHash -LiteralPath $taskCliAssembly -Algorithm SHA256).Hash -cne (Get-FileHash -LiteralPath (Join-Path $taskBundle $taskAssembly) -Algorithm SHA256).Hash) {
+                throw 'The reuse diagnostic must use the exact packaged SDK assemblies.'
+            }
+        }
+        Write-Host 'Verifying real Chromium session reuse, challenge waiting and generation interception with an offline fixture.'
+        dotnet $taskReuseCli browser-reuse-check $taskBrowsers
+        if ($LASTEXITCODE -ne 0) { throw 'Native Sentinel reuse verification failed.' }
         foreach ($taskGeneratedName in @('bin', 'obj')) {
             $taskGenerated = [IO.Path]::GetFullPath((Join-Path $taskBundle "example/$taskGeneratedName"))
             if (!$taskGenerated.StartsWith($taskBundle + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw 'Example cleanup escaped its bundle directory.' }

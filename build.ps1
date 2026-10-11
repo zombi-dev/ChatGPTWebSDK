@@ -19,6 +19,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Browser package failed.' }
     dotnet pack src/ChatGPTWebSdk.OpenAI/ChatGPTWebSdk.OpenAI.csproj -c Release --no-build -o artifacts/packages --nologo @taskBuildArguments
     if ($LASTEXITCODE -ne 0) { throw 'OpenAI replacement package failed.' }
+    dotnet pack src/ChatGPTWebSdk.Native/ChatGPTWebSdk.Native.csproj -c Release --no-build -o artifacts/packages --nologo @taskBuildArguments
+    if ($LASTEXITCODE -ne 0) { throw 'Native OpenAI integration package failed.' }
     dotnet publish src/ChatGPTWebSdk.Proxy/ChatGPTWebSdk.Proxy.csproj -c Release --no-build -o artifacts/proxy --nologo @taskBuildArguments
     if ($LASTEXITCODE -ne 0) { throw 'Proxy publication failed.' }
     dotnet publish src/ChatGPTWebSdk.OpenAI/ChatGPTWebSdk.OpenAI.csproj -c Release --no-build -o artifacts/sdk --nologo @taskBuildArguments
@@ -30,8 +32,14 @@ try {
     Copy-Item -LiteralPath docs/MCP.md -Destination artifacts/sdk/MCP.md
     Copy-Item -LiteralPath third_party/modelcontextprotocol/LICENSE -Destination artifacts/proxy/LICENSE.modelcontextprotocol
     Copy-Item -LiteralPath docs/MCP.md -Destination artifacts/proxy/MCP.md
+    foreach ($taskDistribution in @('sdk', 'proxy')) {
+        Copy-Item -LiteralPath docs/OAUTH.md -Destination "artifacts/$taskDistribution/OAUTH.md"
+        Copy-Item -LiteralPath third_party/openai-oauth/LICENSE -Destination "artifacts/$taskDistribution/LICENSE.openai-oauth"
+        Copy-Item -LiteralPath third_party/openai-oauth/NOTICE -Destination "artifacts/$taskDistribution/NOTICE.openai-oauth"
+        Copy-Item -LiteralPath third_party/openai-oauth/ADAPTATIONS.md -Destination "artifacts/$taskDistribution/OPENAI-OAUTH-ADAPTATIONS.md"
+    }
     New-Item -ItemType Directory -Path artifacts/release -Force | Out-Null
-    foreach ($taskPackage in @('ChatGPTWebSdk', 'ChatGPTWebSdk.Browser', 'ChatGPTWebSdk.OpenAI')) {
+    foreach ($taskPackage in @('ChatGPTWebSdk', 'ChatGPTWebSdk.Browser', 'ChatGPTWebSdk.OpenAI', 'ChatGPTWebSdk.Native')) {
         Copy-Item -LiteralPath "artifacts/packages/$taskPackage.$taskVersion.nupkg" -Destination artifacts/release
     }
     foreach ($taskExtension in @("chatgpt-web-sdk-auth-chromium-$taskVersion.zip", "chatgpt-web-sdk-auth-firefox-$taskVersion.zip", "chatgpt-web-sdk-auth-firefox-$taskVersion.xpi")) {
@@ -43,7 +51,11 @@ try {
         if (Test-Path -LiteralPath $taskZipPath) { Remove-Item -LiteralPath $taskZipPath }
         [IO.Compression.ZipFile]::CreateFromDirectory((Join-Path $PSScriptRoot ('artifacts/' + $taskArchive[0])), $taskZipPath)
     }
-    if ($BundleBrowser) { & ./tools/Bundle-Browser.ps1 }
+    if ($BundleBrowser) {
+        $taskCliPath = if ($BuildRoot) { Join-Path ([IO.Path]::GetFullPath($BuildRoot)) 'ChatGPTWebSdk.Cli/Release/net10.0/ChatGPTWebSdk.Cli.dll' }
+            else { Join-Path $PSScriptRoot 'tools/ChatGPTWebSdk.Cli/bin/Release/net10.0/ChatGPTWebSdk.Cli.dll' }
+        & ./tools/Bundle-Browser.ps1 -CliPath $taskCliPath
+    }
     $taskChecksumLines = Get-ChildItem -LiteralPath artifacts/release -File |
         Where-Object { $_.Extension -in @('.nupkg', '.zip', '.xpi', '.gz') -and $_.Name.Contains($taskVersion) } |
         Sort-Object Name | ForEach-Object { (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + $_.Name }
