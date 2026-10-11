@@ -88,3 +88,17 @@ npx --yes web-ext@10.7.0 lint --source-dir artifacts/extensions/firefox --warnin
 The build reads the root `VERSION` and verifies both manifest versions. It creates unpacked directories, ZIPs and an unsigned Firefox XPI in `artifacts/extensions`. The release archives contain only the explicit source scripts, manifest, generated icons and license. No local profile or credential file is included.
 
 Primary browser references: [clipboard access](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Interact_with_the_clipboard), [browser background implementations](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/background), [Chrome cookies API](https://developer.chrome.com/docs/extensions/reference/api/cookies), and [Firefox data-consent declarations](https://extensionworkshop.com/documentation/develop/firefox-builtin-data-consent/).
+
+## Warm browser sessions (v1.6.0)
+
+Hybrid mode reuses its isolated account context/page by default. `Browser.ReuseSession = false` restores per-handshake cleanup; `SessionIdleTimeout` and `MaxSessions` bound retained resources. `await runtime.WarmUpAsync()` loads ChatGPT ahead of a request without obtaining challenge answers. Fresh proofs are still requested for each send, and `TimingObserved` reports credential-free phase timings. Use `await using` or dispose the runtime to close owned sessions immediately. Externally supplied authentication providers remain application-owned.
+
+`Browser.PreloadNextTurn = true` also starts the next composer navigation after capture, overlapping that work with the HTTP turn. It never submits another draft or collects another proof while idle. Set it to false to navigate only when the next handshake starts. Retaining one runtime and warming it ahead of the first request avoids repeated startup work; network challenges can still exceed one second.
+
+For an API-key method with the native C# library alongside either ChatGPT method, see [native SDK integration](NATIVE_SDK.md). The official API uses its own authentication and endpoint and needs no Sentinel session.
+
+Repeated Cloudflare responses leave the same browser open while waiting for the composer until `Browser.Timeout` or cancellation. An expired attempt may then use the configured bootstrap retry policy. Headless mode cannot display interactive checks. No universal one-second handshake or lower challenge rate has been verified against live ChatGPT.
+
+## Separate Codex OAuth authentication
+
+Version 1.6.0 also provides an opt-in stateless Codex transport, explicit auth-file import, PKCE callback exchange and serialized refresh-token rotation. Its OAuth tokens are not interchangeable with the web extension export or Sentinel answers. See [OAUTH.md](OAUTH.md). The web runtime remains the default for real ChatGPT website conversations.
