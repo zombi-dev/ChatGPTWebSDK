@@ -12,7 +12,7 @@ try {
     dotnet test tests/ChatGPTWebSdk.Tests/ChatGPTWebSdk.Tests.csproj -c Release --nologo --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=tests.trx' --results-directory artifacts/tests @taskArguments
     if ($LASTEXITCODE -ne 0) { throw 'SDK tests failed.' }
     [xml]$taskResults = Get-Content -LiteralPath artifacts/tests/tests.trx -Raw
-    if ([int]$taskResults.TestRun.ResultSummary.Counters.passed -lt 1361) { throw 'The SDK test gate requires at least 1361 passing cases, including OAuth, session reuse, MCP recovery, browser cleanup, streaming compatibility and actual example checks.' }
+    if ([int]$taskResults.TestRun.ResultSummary.Counters.passed -lt 1444) { throw 'The SDK test gate requires at least 1444 passing cases, including escaped MCP follow-ups, bounded repair, OAuth, session reuse, browser cleanup, streaming compatibility and actual example checks.' }
     dotnet test tests/ChatGPTWebSdk.Native.Tests/ChatGPTWebSdk.Native.Tests.csproj -c Release --nologo --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=native-tests.trx' --results-directory artifacts/tests @taskArguments
     if ($LASTEXITCODE -ne 0) { throw 'Native SDK integration tests failed.' }
     [xml]$taskNativeResults = Get-Content -LiteralPath artifacts/tests/native-tests.trx -Raw
