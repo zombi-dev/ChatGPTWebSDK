@@ -69,13 +69,14 @@ public sealed class McpBridgeTests
         Assert.Single(state.McpExecutions); Assert.True(state.McpExecutions[0].Delivered); Assert.False(state.RequiresReconciliation);
     }
 
-    [Theory, InlineData(false, false), InlineData(false, true), InlineData(true, false), InlineData(true, true)]
-    public async Task Official_chat_and_responses_clients_receive_only_the_final_answer(bool streaming, bool escaped)
+    [Theory, InlineData(false, false, false), InlineData(false, true, false), InlineData(true, false, false), InlineData(true, true, false),
+        InlineData(false, false, true), InlineData(false, true, true), InlineData(true, false, true), InlineData(true, true, true)]
+    public async Task Official_chat_and_responses_clients_receive_only_the_final_answer(bool streaming, bool escaped, bool escapedFinal)
     {
         using var handler = new FakeWebHandler(); var server = new Server();
         handler.StreamFactory = (body, index) => Stream(body, index, index % 2 == 1
             ? (escaped ? "<escape>" : "") + ToolReply(Nonce(body)) + (escaped ? "</escape>" : "")
-            : "[[final:" + Nonce(body) + "]]5");
+            : (escapedFinal ? "<escape>" : "") + "[[final:" + Nonce(body) + "]]" + (escapedFinal ? "</escape>" : "") + "5", 1);
         using var runtime = new ChatGPTWebRuntime(new() { Mode = ChatGPTWebMode.ApiOnly, Credentials = new StaticWebCredentialProvider("account", new() { AccessToken = "synthetic" }),
             AccountId = "account", UserId = "alice", HttpClient = new(handler, false), ConversationStore = new InMemoryConversationStore(), Endpoints = new(),
             Mcp = new() { Servers = [new() { Label = "calculator", Client = server }] } });
