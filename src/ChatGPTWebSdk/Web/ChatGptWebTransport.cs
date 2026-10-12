@@ -17,7 +17,8 @@ public sealed partial class ChatGptWebTransport(HttpClient http, IWebCredentialP
     private static string CookieFingerprint(WebCredentials value) => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
         System.Text.Encoding.UTF8.GetBytes(value.CookieHeader + "\n" + System.Text.Json.JsonSerializer.Serialize(value.Cookies))));
     private static string CredentialFingerprint(WebCredentials value) => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
-        System.Text.Encoding.UTF8.GetBytes(CookieFingerprint(value) + "\n" + value.AccessToken)));
+        System.Text.Encoding.UTF8.GetBytes(CookieFingerprint(value) + "\n" + value.AccessToken + "\n" + value.UserAgent + "\n" +
+            System.Text.Json.JsonSerializer.Serialize(value.Headers.OrderBy(pair => pair.Key, StringComparer.OrdinalIgnoreCase)))));
 
     private async Task<WebCredentials> GetCredentialsAsync(string account, CancellationToken ct)
     {
