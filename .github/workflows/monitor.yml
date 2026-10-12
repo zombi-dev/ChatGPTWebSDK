@@ -59,7 +59,7 @@ jobs:
         run: |
           mkdir -p artifacts/monitor
           set +e
-          xvfb-run -a -s "-screen 0 1280x800x24 -nolisten tcp" dotnet examples/QuickStart/bin/Release/net8.0/QuickStart.dll --smoke-test --visible --report artifacts/monitor/smoke.json
+          xvfb-run -a -s "-screen 0 1280x800x24 -nolisten tcp" dotnet examples/QuickStart/bin/Release/net8.0/QuickStart.dll --smoke-test --visible --hybrid --report artifacts/monitor/smoke.json
           probe_status=$?
           set -e
           if [ "$probe_status" -ne 0 ]; then

@@ -51,7 +51,7 @@ test('Native browser bundles require real session reuse and the exact packaged S
 test('All platform tests gate the real official SDK integration before packaging', () => {
   const gate = read('test.ps1');
   assert(gate.includes('dotnet test tests/ChatGPTWebSdk.Native.Tests/ChatGPTWebSdk.Native.Tests.csproj'));
-  assert(gate.includes('native-tests.trx')); assert(gate.includes('passed -lt 18'));
+  assert(gate.includes('native-tests.trx')); assert(gate.includes('passed -lt 22'));
   const project = read('src/ChatGPTWebSdk.Native/ChatGPTWebSdk.Native.csproj');
   assert(project.includes('<PackageReference Include="OpenAI" Version="2.14.0" />'));
   assert(!project.includes('ProjectReference Include="../ChatGPTWebSdk.OpenAI'));
@@ -72,4 +72,10 @@ test('Daily authenticated probe is limited to the default branch and its credent
 test('Dependabot covers actions and NuGet, and the README delegates references', () => {
   const deps = read('.github/dependabot.yml'); assert(deps.includes('package-ecosystem: github-actions')); assert(deps.includes('package-ecosystem: nuget'));
   assert(!read('README.md').includes('## Sources')); assert(read('README.md').includes('docs/REFERENCES.md')); assert(read('SECURITY.md').includes('private vulnerability'));
+});
+test('The example defaults to HTTP Sentinel while the daily UI monitor explicitly selects Hybrid', () => {
+  assert(read('examples/QuickStart/SmokeCheck.cs').includes('bool apiOnly = true'));
+  assert(read('examples/QuickStart/Program.cs').includes('apiOnly: !args.Contains("--hybrid")'));
+  assert(read('.github/workflows/monitor.yml').includes('--smoke-test --visible --hybrid'));
+  assert(read('test.ps1').includes('passed -lt 1584'));
 });

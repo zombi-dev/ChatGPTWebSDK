@@ -17,7 +17,7 @@ if (args.Contains("--smoke-test"))
     {
         BundledBrowserDirectory = Directory.Exists(browserDirectory) ? browserDirectory : null, Headless = !args.Contains("--visible"),
         Timeout = TimeSpan.FromSeconds(90), MaxRetries = 1, UiFingerprintObserved = fingerprint => uiFingerprint = fingerprint
-    }, apiOnly: args.Contains("--api-only"), ct: timeout.Token);
+    }, apiOnly: !args.Contains("--hybrid"), ct: timeout.Token);
     report["uiFingerprint"] = uiFingerprint;
     var output = Argument("--report") ?? "smoke-report.json";
     await File.WriteAllTextAsync(output, report.ToJsonString(new() { WriteIndented = true }));

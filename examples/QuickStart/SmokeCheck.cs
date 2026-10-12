@@ -22,7 +22,7 @@ internal static class SmokeCheck
         ["gpt-5-5", "gpt-5-5-thinking", "gpt-5-5-instant", "gpt-5.5-wm"]
     ];
 
-    internal static async Task<JsonObject> RunAsync(string? authentication, BrowserSentinelOptions browser, bool apiOnly = false,
+    internal static async Task<JsonObject> RunAsync(string? authentication, BrowserSentinelOptions browser, bool apiOnly = true,
         HttpClient? http = null, WebEndpointProfile? endpoints = null, CancellationToken ct = default)
     {
         var report = new JsonObject { ["schema"] = 1, ["status"] = "blocked", ["code"] = "authentication_missing", ["catalog"] = new JsonArray(), ["models"] = new JsonArray() };
