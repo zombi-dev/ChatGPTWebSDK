@@ -18,7 +18,8 @@ var config = ProxyConfiguration.Load();
 using var http = config.HttpDriver == "systemCurl" ? WebHttpClient.CreateCurl() : WebHttpClient.Create();
 builder.Services.AddSingleton<IConversationStore>(new FileConversationStore(config.SessionDirectory));
 if (config.Mode == "hybrid") builder.Services.AddSingleton<BrowserSentinelProvider>(_ => new(config.Browser));
-builder.Services.AddSingleton(sp => new ChatGptWebTransport(http, new StaticWebCredentialProvider(config.Accounts.ToDictionary(a => a.Id, a => a.Credentials)), new() { BaseUri = config.BaseUri, Endpoints = config.Profile, IgnoreModelRestrictions = config.IgnoreModelRestrictions, SentinelSessionProvider = config.Mode == "hybrid" ? sp.GetRequiredService<BrowserSentinelProvider>() : null }));
+if (config.Mode == "apiOnly") builder.Services.AddSingleton<HttpSentinelProvider>(_ => new(http, new() { BaseUri = config.BaseUri, Endpoints = config.Profile }));
+builder.Services.AddSingleton(sp => new ChatGptWebTransport(http, new StaticWebCredentialProvider(config.Accounts.ToDictionary(a => a.Id, a => a.Credentials)), new() { BaseUri = config.BaseUri, Endpoints = config.Profile, IgnoreModelRestrictions = config.IgnoreModelRestrictions, SentinelSessionProvider = config.Mode switch { "apiOnly" => sp.GetRequiredService<HttpSentinelProvider>(), "hybrid" => sp.GetRequiredService<BrowserSentinelProvider>(), _ => null } }));
 builder.Services.AddSingleton(sp => new ChatGptWebClient(sp.GetRequiredService<ChatGptWebTransport>(), sp.GetRequiredService<IConversationStore>(), new McpConversationOptions
 {
     Servers = config.Mcp.Servers, MaxToolRounds = config.Mcp.MaxToolRounds, MaxToolCalls = config.Mcp.MaxToolCalls,

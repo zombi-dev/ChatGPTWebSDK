@@ -46,8 +46,8 @@
     }
   ],
   "modelAliases": {},
-  "mode": "hybrid",
-  "httpDriver": "systemCurl",
+  "mode": "apiOnly",
+  "httpDriver": "dotNet",
   "browser": {
     "timeout": "00:02:00",
     "maxRetries": 3,

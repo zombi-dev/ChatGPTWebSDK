@@ -9,8 +9,9 @@ public sealed class ProxyConfiguration
 {
     public Uri BaseUri { get; init; } = new("https://chatgpt.com/");
     public WebEndpointProfile Profile { get; init; } = WebEndpointProfile.Modern;
-    public string Mode { get; init; } = "hybrid";
-    public string HttpDriver { get; init; } = "systemCurl";
+    public string Mode { get; init; } = "apiOnly";
+    private string? _httpDriver;
+    public string HttpDriver { get => _httpDriver ?? (Mode == "apiOnly" ? "dotNet" : "systemCurl"); init => _httpDriver = value; }
     public BrowserSentinelOptions Browser { get; init; } = new();
     public List<ProxyAccount> Accounts { get; init; } = [];
     public List<ProxyClient> Clients { get; init; } = [];
@@ -44,7 +45,7 @@ public sealed class ProxyConfiguration
         if (config.Accounts.Select(a => a.Id).Distinct().Count() != config.Accounts.Count || config.Clients.Select(c => c.ApiKey).Distinct().Count() != config.Clients.Count)
             throw new InvalidDataException("Account IDs and client API keys must be unique.");
         if (config.Mode == "browserOnly") throw new NotSupportedException("Browser-only mode is reserved and is not implemented.");
-        if (config.Mode is not ("apiOnly" or "hybrid") || config.HttpDriver is not ("systemCurl" or "dotNet")) throw new InvalidDataException("Invalid web mode or HTTP driver.");
+        if (config.Mode is not ("apiOnly" or "externalApi" or "hybrid") || config.HttpDriver is not ("systemCurl" or "dotNet")) throw new InvalidDataException("Invalid web mode or HTTP driver.");
         return config;
     }
 }

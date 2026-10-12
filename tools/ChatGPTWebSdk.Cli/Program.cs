@@ -57,7 +57,7 @@ try
         if (File.Exists(output)) throw new IOException("Output already exists. Choose a new file to preserve existing configuration.");
         var configuration = new
         {
-            baseUri = "https://chatgpt.com/", profile = import.Endpoints, mode = "hybrid", httpDriver = "systemCurl",
+            baseUri = "https://chatgpt.com/", profile = import.Endpoints, mode = "apiOnly", httpDriver = "dotNet",
             sessionDirectory = Path.Combine(Path.GetDirectoryName(output)!, ".sessions"),
             accounts = new[] { new { id = "default", credentials = import.Credentials } },
             clients = new[] { new { apiKey = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant(), accountId = "default", userId = "default" } },
@@ -78,9 +78,11 @@ try
         if (mode == global::OpenAI.ChatGPTWebMode.BrowserOnly) throw new NotSupportedException("Browser-only mode is reserved and is not implemented.");
         using var http = DiagnosticHttp(config);
         await using var sentinel = mode == global::OpenAI.ChatGPTWebMode.Hybrid ? new ChatGPTWebSdk.Browser.BrowserSentinelProvider(Browser(config)) : null;
+        using var apiSentinel = mode == global::OpenAI.ChatGPTWebMode.ApiOnly ? new HttpSentinelProvider(http,
+            new() { BaseUri = new(config["baseUri"]?.GetValue<string>() ?? "https://chatgpt.com/"), Endpoints = profile }) : null;
         var transport = new ChatGptWebTransport(http, new StaticWebCredentialProvider(account["id"]!.GetValue<string>(), credentials),
             new() { BaseUri = new(config["baseUri"]?.GetValue<string>() ?? "https://chatgpt.com/"), Endpoints = profile,
-                SentinelSessionProvider = sentinel });
+                SentinelSessionProvider = (IWebSentinelSessionProvider?)apiSentinel ?? sentinel });
         var models = await transport.GetModelsAsync(account["id"]!.GetValue<string>());
         Console.WriteLine("Authenticated models request succeeded.");
         if (models["models"] is JsonArray modelList) Console.WriteLine("Available model slugs: " + string.Join(", ", modelList.Select(m => m!["slug"]?.GetValue<string>())));
@@ -148,7 +150,7 @@ try
             Credentials = new StaticWebCredentialProvider(account["id"]!.GetValue<string>(), account["credentials"]!.Deserialize<WebCredentials>(json)!),
             AccountId = account["id"]!.GetValue<string>(), UserId = "sdk-smoke", SessionDirectory = config["sessionDirectory"]!.GetValue<string>(),
             Endpoints = config["profile"]?.Deserialize<WebEndpointProfile>(json) ?? WebEndpointProfile.Modern,
-            Mode = global::OpenAI.ChatGPTWebMode.ApiOnly, HttpClient = http
+            Mode = global::OpenAI.ChatGPTWebMode.ExternalApi, HttpClient = http
         });
         var scope = runtime.ResolveScope(runtime.ClientKey, args[2]);
         var state = await runtime.Web.GetStateAsync(scope);
@@ -339,7 +341,7 @@ catch (Exception ex)
     return 1;
 }
 
-static global::OpenAI.ChatGPTWebMode Mode(JsonNode config) => Enum.TryParse<global::OpenAI.ChatGPTWebMode>(config["mode"]?.GetValue<string>() ?? "hybrid", true, out var mode) && Enum.IsDefined(mode) ? mode : throw new ArgumentException("Invalid initialization mode.");
+static global::OpenAI.ChatGPTWebMode Mode(JsonNode config) => Enum.TryParse<global::OpenAI.ChatGPTWebMode>(config["mode"]?.GetValue<string>() ?? "apiOnly", true, out var mode) && Enum.IsDefined(mode) ? mode : throw new ArgumentException("Invalid initialization mode.");
 
 static async Task VerifyRemote(global::OpenAI.ChatGPTWebRuntime runtime, ConversationScope scope)
 {
@@ -392,7 +394,7 @@ static TimeSpan BrowserRequestTimeout(JsonNode config)
 
 static HttpClient DiagnosticHttp(JsonNode config)
 {
-    var driver = config["httpDriver"]?.GetValue<string>() ?? "systemCurl";
+    var driver = config["httpDriver"]?.GetValue<string>() ?? (Mode(config) == global::OpenAI.ChatGPTWebMode.ApiOnly ? "dotNet" : "systemCurl");
     if (driver == "dotNet") return WebHttpClient.Create();
     if (driver != "systemCurl") throw new ArgumentException("Invalid HTTP driver.");
     var path = Environment.GetEnvironmentVariable("CHATGPT_WEB_HTTP_ERROR_FILE");
