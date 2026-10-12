@@ -19,7 +19,7 @@ ChatGPT web generation now defaults to **ApiOnly**, a native C# HTTP Sentinel im
 ## Verification and downloads
 
 - Add **100 core regression cases**, **four native integration cases** and one workflow check. The gate requires **1,584 core/drop-in, 22 native, 168 automation and 12 extension checks**. Tests on all four platforms and native browser bundle verification precede publication.
-- A fresh authenticated live run passed a collected reply, an SSE follow-up with only the new message, an independent remote conversation read and a temporary-chat MCP tool loop. The test conversation was deleted afterwards. The extension export and challenge fixtures stay private.
+- A fresh authenticated live run passed a collected reply, an SSE follow-up with only the new message, an independent remote conversation read and a temporary-chat MCP tool loop. The test conversation was deleted afterwards. A repeat packaged MCP assertion failed while a separate fresh control passed; live tool invocation remains variable. The extension export and challenge fixtures stay private.
 - Synchronize all four NuGet packages, DLL/proxy archives, Chromium/Firefox extensions and four browser bundles at **1.7.0**. The OpenAI compatibility assembly remains **2.14.0.0**. The existing OAuth and official-platform backends retain their separate authentication contracts.
 
 See the [verification record](https://github.com/zombi-dev/ChatGPTWebSDK/blob/v1.7.0/docs/VERIFICATION.md) for timings, protocol scope and remaining live-test limits. All commits are linked in the collapsed appendix below.
