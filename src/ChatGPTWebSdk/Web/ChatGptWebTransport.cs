@@ -45,13 +45,16 @@ public sealed partial class ChatGptWebTransport(HttpClient http, IWebCredentialP
         finally { gate.Release(); }
     }
 
-    private HttpRequestMessage Build(WebCredentials value, HttpMethod method, string path, JsonNode? body, bool authorize = true)
+    private HttpRequestMessage Build(WebCredentials value, HttpMethod method, string path, JsonNode? body, bool authorize = true) =>
+        BuildRequest(value, method, path, body, _options.BaseUri, authorize);
+
+    internal static HttpRequestMessage BuildRequest(WebCredentials value, HttpMethod method, string path, JsonNode? body, Uri baseUri, bool authorize = true)
     {
-        var request = new HttpRequestMessage(method, HttpProtocol.RelativeUri(_options.BaseUri, path));
+        var request = new HttpRequestMessage(method, HttpProtocol.RelativeUri(baseUri, path));
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         request.Headers.Add("User-Agent", value.UserAgent);
-        request.Headers.Add("Origin", _options.BaseUri.GetLeftPart(UriPartial.Authority));
-        request.Headers.Referrer = _options.BaseUri;
+        request.Headers.Add("Origin", baseUri.GetLeftPart(UriPartial.Authority));
+        request.Headers.Referrer = baseUri;
         if (authorize && value.AccessToken is not null) request.Headers.Authorization = new("Bearer", value.AccessToken);
         var cookieHeader = value.Cookies.Count > 0 ? WebAuthentication.CookieHeader(value.Cookies, request.RequestUri!) : value.CookieHeader;
         if (!string.IsNullOrWhiteSpace(cookieHeader)) request.Headers.Add("Cookie", cookieHeader);
@@ -142,7 +145,7 @@ public sealed partial class ChatGptWebTransport(HttpClient http, IWebCredentialP
         {
             var source = await credentials.GetAsync(account, ct).ConfigureAwait(false);
             var authorized = await _options.SentinelSessionProvider.GetSessionAsync(account, value, (JsonObject)body.DeepClone(), ct).ConfigureAwait(false);
-            if (!authorized.Sentinel.IsCurrent) throw new SdkException("The browser returned expired Sentinel credentials.", "expired_sentinel_session");
+            if (!authorized.Sentinel.IsCurrent) throw new SdkException("The provider returned expired Sentinel credentials.", "expired_sentinel_session");
             value = new WebCredentials { AccessToken = authorized.Credentials.AccessToken, CookieHeader = authorized.Credentials.CookieHeader, UserAgent = authorized.Credentials.UserAgent,
                 Cookies = authorized.Credentials.Cookies, ExpiresAt = authorized.Credentials.ExpiresAt, Headers = authorized.Credentials.Headers, SentinelSession = authorized.Sentinel };
             _browserCredentials[account] = (CredentialFingerprint(source), new WebCredentials { AccessToken = value.AccessToken, CookieHeader = value.CookieHeader,
