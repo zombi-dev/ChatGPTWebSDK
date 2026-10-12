@@ -2,7 +2,7 @@ using System.Text.Json.Nodes;
 
 namespace ChatGPTWebSdk.Web;
 
-/// <summary>Short-lived authorized browser answers. These are credentials, not reusable protocol defaults.</summary>
+/// <summary>Short-lived authorized challenge answers. These are credentials, not reusable protocol defaults.</summary>
 public sealed class WebSentinelSession
 {
     public required string Token { get; init; }
