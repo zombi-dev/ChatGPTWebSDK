@@ -100,7 +100,7 @@ public sealed class ModelPolicyTests
         using var handler = new FakeWebHandler(); using var http = new HttpClient(handler);
         using var runtime = new ChatGPTWebRuntime(new()
         {
-            Credentials = new StaticWebCredentialProvider("account", new() { AccessToken = "fixture-token" }), AccountId = "account", Mode = ChatGPTWebMode.ApiOnly,
+            Credentials = new StaticWebCredentialProvider("account", new() { AccessToken = "fixture-token" }), AccountId = "account", Mode = ChatGPTWebMode.ExternalApi,
             Endpoints = new(), ConversationStore = new InMemoryConversationStore(), HttpClient = http, IgnoreModelRestrictions = bypass
         });
         async Task Send()

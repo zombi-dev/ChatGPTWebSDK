@@ -17,10 +17,10 @@ public sealed class RuntimeLifetimeTests
     }
 
     [Fact]
-    public async Task Runtime_warmup_in_API_only_mode_needs_neither_a_browser_nor_an_HTTP_request()
+    public async Task Runtime_warmup_in_external_mode_needs_neither_credentials_nor_an_HTTP_request()
     {
         using var handler = new FakeWebHandler(); using var http = new HttpClient(handler, false);
-        await using var runtime = new ChatGPTWebRuntime(new() { Mode = ChatGPTWebMode.ApiOnly, Credentials = new StaticWebCredentialProvider("default", new()), HttpClient = http, ConversationStore = new InMemoryConversationStore() });
+        await using var runtime = new ChatGPTWebRuntime(new() { Mode = ChatGPTWebMode.ExternalApi, Credentials = new StaticWebCredentialProvider(new Dictionary<string, WebCredentials>()), HttpClient = http, ConversationStore = new InMemoryConversationStore() });
         await runtime.WarmUpAsync(); Assert.Empty(handler.Turns);
     }
 
@@ -28,7 +28,7 @@ public sealed class RuntimeLifetimeTests
     public async Task Runtime_disposal_leaves_external_authentication_providers_owned_by_the_application()
     {
         var provider = new ExternalProvider();
-        var runtime = new ChatGPTWebRuntime(new() { Mode = ChatGPTWebMode.ApiOnly, Credentials = new StaticWebCredentialProvider("default", new()), SentinelSessionProvider = provider, ConversationStore = new InMemoryConversationStore() });
+        var runtime = new ChatGPTWebRuntime(new() { Mode = ChatGPTWebMode.ExternalApi, Credentials = new StaticWebCredentialProvider("default", new()), SentinelSessionProvider = provider, ConversationStore = new InMemoryConversationStore() });
         await runtime.DisposeAsync(); runtime.Dispose(); Assert.Equal(0, provider.Closed);
         await Assert.ThrowsAsync<ObjectDisposedException>(() => runtime.WarmUpAsync());
     }
@@ -41,7 +41,7 @@ public sealed class RuntimeLifetimeTests
         handler.StreamFactory = (body, index) => McpBridgeTests.Stream(body, index, "[[final:" + McpBridgeTests.Nonce(body) + "]]Ready");
         var runtime = new ChatGPTWebRuntime(new()
         {
-            Mode = ChatGPTWebMode.ApiOnly, Credentials = new StaticWebCredentialProvider("default", new() { AccessToken = "synthetic" }), HttpClient = http, Endpoints = new(), ConversationStore = new InMemoryConversationStore(),
+            Mode = ChatGPTWebMode.ExternalApi, Credentials = new StaticWebCredentialProvider("default", new() { AccessToken = "synthetic" }), HttpClient = http, Endpoints = new(), ConversationStore = new InMemoryConversationStore(),
             Mcp = new() { Servers = [new() { Label = "tools", Endpoint = fixture.Endpoint }] }
         });
         var scope = runtime.ResolveScope(runtime.ClientKey);

@@ -79,7 +79,7 @@ public sealed class McpTransportTests
         await using var fixture = await HttpFixture.StartAsync("http-json");
         using var handler = new FakeWebHandler();
         handler.StreamFactory = (body, index) => McpBridgeTests.Stream(body, index, index == 1 ? McpBridgeTests.ToolReply(McpBridgeTests.Nonce(body)) : "[[final:" + McpBridgeTests.Nonce(body) + "]]5");
-        using var runtime = new ChatGPTWebRuntime(new() { Mode = ChatGPTWebMode.ApiOnly, Credentials = new StaticWebCredentialProvider("account", new() { AccessToken = "synthetic" }),
+        using var runtime = new ChatGPTWebRuntime(new() { Mode = ChatGPTWebMode.ExternalApi, Credentials = new StaticWebCredentialProvider("account", new() { AccessToken = "synthetic" }),
             AccountId = "account", UserId = "alice", HttpClient = new(handler, false), ConversationStore = new InMemoryConversationStore(), Endpoints = new(),
             Mcp = new() { Servers = [new() { Label = "calculator", Endpoint = fixture.Endpoint }] } });
         var options = new CreateResponseOptions { Model = "gpt-6", StreamingEnabled = streaming };

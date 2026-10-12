@@ -123,7 +123,7 @@ public sealed class ExampleSmokeTests
         var directory = Path.Combine(Path.GetTempPath(), "websdk-model-init-" + Guid.NewGuid());
         try
         {
-            using var runtime = global::OpenAI.ChatGPTWeb.Initialize(Authentication(), ignoreModelRestrictions: bypass, sessionDirectory: directory, mode: global::OpenAI.ChatGPTWebMode.ApiOnly);
+            using var runtime = global::OpenAI.ChatGPTWeb.Initialize(Authentication(), ignoreModelRestrictions: bypass, sessionDirectory: directory, mode: global::OpenAI.ChatGPTWebMode.ExternalApi);
             Assert.Equal(bypass, runtime.Web.Transport.ModelPolicy.IgnoreRestrictions);
         }
         finally { TestDirectory.Delete(directory); }

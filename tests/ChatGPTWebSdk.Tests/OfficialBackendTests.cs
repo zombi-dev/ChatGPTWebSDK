@@ -14,7 +14,7 @@ public sealed class OfficialBackendTests
     public async Task Drop_in_clients_can_call_the_official_API_alongside_configured_web_clients(bool streaming)
     {
         using var webHandler = new FakeWebHandler(); using var webHttp = new HttpClient(webHandler, false);
-        await using var web = ChatGPTWeb.Initialize(new ChatGPTWebRuntimeOptions { Mode = ChatGPTWebMode.ApiOnly, Credentials = new StaticWebCredentialProvider("default", new()), HttpClient = webHttp, ConversationStore = new InMemoryConversationStore() });
+        await using var web = ChatGPTWeb.Initialize(new ChatGPTWebRuntimeOptions { Mode = ChatGPTWebMode.ExternalApi, Credentials = new StaticWebCredentialProvider("default", new()), HttpClient = webHttp, ConversationStore = new InMemoryConversationStore() });
         using var handler = new RecordingHandler((request, _) =>
         {
             Assert.Equal("https://api.openai.com/v1/chat/completions", request.RequestUri!.AbsoluteUri);

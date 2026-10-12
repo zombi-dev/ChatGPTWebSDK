@@ -44,7 +44,7 @@ public sealed class McpScopeTransportTests
         using var handler = new FakeWebHandler { StreamFactory = PidReply };
         using var runtime = new ChatGPTWebRuntime(new()
         {
-            Mode = ChatGPTWebMode.ApiOnly, Credentials = new StaticWebCredentialProvider("account", new() { AccessToken = "synthetic" }), AccountId = "account", UserId = "alice",
+            Mode = ChatGPTWebMode.ExternalApi, Credentials = new StaticWebCredentialProvider("account", new() { AccessToken = "synthetic" }), AccountId = "account", UserId = "alice",
             HttpClient = new(handler, false), ConversationStore = new InMemoryConversationStore(), Endpoints = new(), TemporaryChat = context == "temporary", ProjectId = context == "project" ? "g-p-project" : null,
             Mcp = new() { Servers = [Http(initial.Endpoint, "Bearer synthetic-initial")] }
         });

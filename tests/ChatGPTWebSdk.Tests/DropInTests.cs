@@ -11,7 +11,7 @@ public sealed class DropInTests
 {
     private static ChatGPTWebRuntime Runtime(FakeWebHandler handler) => new(new()
     {
-        Mode = ChatGPTWebMode.ApiOnly, HttpClient = new HttpClient(handler, false),
+        Mode = ChatGPTWebMode.ExternalApi, HttpClient = new HttpClient(handler, false),
         Credentials = new StaticWebCredentialProvider("account", new() { AccessToken = "synthetic-token" }),
         AccountId = "account", UserId = "alice", ClientKey = "synthetic-app-key", ConversationStore = new InMemoryConversationStore(), Endpoints = new()
     });

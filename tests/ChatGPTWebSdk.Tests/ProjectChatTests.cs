@@ -143,7 +143,7 @@ public sealed class ProjectChatTests
     public async Task Runtime_client_options_select_project_or_temporary_chat(bool temporary)
     {
         using var fake = new FakeWebHandler(); using var http = new HttpClient(fake);
-        using var runtime = ChatGPTWeb.Initialize(new ChatGPTWebRuntimeOptions { Credentials = new StaticWebCredentialProvider("account", new() { AccessToken = "fixture" }), AccountId = "account", UserId = "alice", Mode = ChatGPTWebMode.ApiOnly, HttpClient = http, Endpoints = new(), ConversationStore = new InMemoryConversationStore() });
+        using var runtime = ChatGPTWeb.Initialize(new ChatGPTWebRuntimeOptions { Credentials = new StaticWebCredentialProvider("account", new() { AccessToken = "fixture" }), AccountId = "account", UserId = "alice", Mode = ChatGPTWebMode.ExternalApi, HttpClient = http, Endpoints = new(), ConversationStore = new InMemoryConversationStore() });
         var chat = runtime.CreateClient(threadId: "selected", projectId: temporary ? null : Project, temporaryChat: temporary).GetChatClient("gpt-6");
         await chat.CompleteChatAsync("hello");
         var body = Assert.Single(fake.Turns).Body;

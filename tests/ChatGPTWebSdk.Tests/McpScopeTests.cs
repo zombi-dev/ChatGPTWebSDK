@@ -34,7 +34,7 @@ public sealed class McpScopeTests
     }
     private static ChatGPTWebRuntime Runtime(FakeWebHandler handler, McpConversationOptions? mcp = null) => new(new()
     {
-        Mode = ChatGPTWebMode.ApiOnly, Credentials = new StaticWebCredentialProvider("account", new() { AccessToken = "synthetic" }),
+        Mode = ChatGPTWebMode.ExternalApi, Credentials = new StaticWebCredentialProvider("account", new() { AccessToken = "synthetic" }),
         AccountId = "account", UserId = "alice", HttpClient = new(handler, false), ConversationStore = new InMemoryConversationStore(), Endpoints = new(), Mcp = mcp
     });
 

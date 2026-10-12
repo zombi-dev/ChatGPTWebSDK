@@ -77,7 +77,7 @@ public sealed class McpBridgeTests
         handler.StreamFactory = (body, index) => Stream(body, index, index % 2 == 1
             ? (escaped ? "<escape>" : "") + ToolReply(Nonce(body)) + (escaped ? "</escape>" : "")
             : (escapedFinal ? "<escape>" : "") + "[[final:" + Nonce(body) + "]]" + (escapedFinal ? "</escape>" : "") + "5", 1);
-        using var runtime = new ChatGPTWebRuntime(new() { Mode = ChatGPTWebMode.ApiOnly, Credentials = new StaticWebCredentialProvider("account", new() { AccessToken = "synthetic" }),
+        using var runtime = new ChatGPTWebRuntime(new() { Mode = ChatGPTWebMode.ExternalApi, Credentials = new StaticWebCredentialProvider("account", new() { AccessToken = "synthetic" }),
             AccountId = "account", UserId = "alice", HttpClient = new(handler, false), ConversationStore = new InMemoryConversationStore(), Endpoints = new(),
             Mcp = new() { Servers = [new() { Label = "calculator", Client = server }] } });
         var chat = runtime.CreateClient(threadId: "chat").GetChatClient("gpt-6");

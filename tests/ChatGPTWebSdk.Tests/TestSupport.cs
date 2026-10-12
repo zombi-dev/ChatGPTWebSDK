@@ -56,6 +56,7 @@ public sealed class FakeWebHandler : HttpMessageHandler
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
     {
         var path = request.RequestUri!.AbsolutePath;
+        if (request.Method == HttpMethod.Get && path == "/") return new(HttpStatusCode.OK) { Content = new StringContent("<html data-build=\"fixture-build\"></html>", Encoding.UTF8, "text/html") };
         if (path.EndsWith("chat-requirements")) return Json(Requirements.DeepClone());
         if (path.EndsWith("/models")) return Json(new JsonObject { ["models"] = ModelCatalog.DeepClone() });
         if (path == "/api/auth/session") return Json(new JsonObject { ["accessToken"] = "refreshed-fixture-token", ["expires"] = DateTimeOffset.UtcNow.AddHours(1).ToString("O") });

@@ -37,10 +37,10 @@ public sealed class AuthenticationTests
     }
 
     [Fact]
-    public void One_string_initialization_defaults_to_hybrid_and_accepts_account_user_and_directory_options()
+    public void One_string_initialization_defaults_to_api_only_and_accepts_account_user_and_directory_options()
     {
         using var runtime = ChatGPTWeb.Initialize(Fixture, "unused-synthetic-directory", "alice", accountId: "account");
-        Assert.Equal(ChatGPTWebMode.Hybrid, runtime.Mode);
+        Assert.Equal(ChatGPTWebMode.ApiOnly, runtime.Mode);
         Assert.Equal("account", runtime.ResolveScope(runtime.ClientKey).AccountId);
         Assert.Equal("alice", runtime.ResolveScope(runtime.ClientKey).UserId);
         Assert.NotNull(runtime.CreateClient().GetChatClient("synthetic-model"));

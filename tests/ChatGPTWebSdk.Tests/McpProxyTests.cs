@@ -25,7 +25,7 @@ public sealed class McpProxyTests
             var path = Path.Combine(_directory, "config.json");
             File.WriteAllText(path, JsonSerializer.Serialize(new
             {
-                sessionDirectory = Path.Combine(_directory, "sessions"), mode = "apiOnly", httpDriver = "dotNet",
+                sessionDirectory = Path.Combine(_directory, "sessions"), mode = "externalApi", httpDriver = "dotNet",
                 accounts = new[] { new { id = "account", credentials = new { accessToken = "synthetic-proxy-token" } } },
                 clients = new[] { new { apiKey = "alice-synthetic-key-0000", accountId = "account", userId = "alice", mcpServers = new[] { "calculator" } },
                     new { apiKey = "bob-synthetic-key-0000", accountId = "account", userId = "bob", mcpServers = Array.Empty<string>() } },

@@ -22,7 +22,7 @@ public sealed class ModernFeaturesTests
         Credentials = new StaticWebCredentialProvider("account", new() { AccessToken = "synthetic-account-token" }), AccountId = "account", UserId = "alice",
         ClientKey = "alice-key", Clients = new Dictionary<string, ConversationScope> { ["alice-key"] = Scope, ["bob-key"] = new("account", "bob") },
         HttpClient = new(handler, false), ConversationStore = store ?? new InMemoryConversationStore(), Endpoints = new(),
-        Mode = sentinel is null ? ChatGPTWebMode.ApiOnly : ChatGPTWebMode.Hybrid, SentinelSessionProvider = sentinel
+        Mode = sentinel is null ? ChatGPTWebMode.ExternalApi : ChatGPTWebMode.Hybrid, SentinelSessionProvider = sentinel
     });
 
     [Fact]
@@ -88,7 +88,7 @@ public sealed class ModernFeaturesTests
     }
 
     [Fact]
-    public async Task Original_ChatClient_constructor_uses_initialization_without_launching_a_browser_in_ApiOnly()
+    public async Task Original_ChatClient_constructor_uses_initialization_without_launching_a_browser_in_ExternalApi()
     {
         using var handler = new FakeWebHandler(); using var runtime = Runtime(handler);
         ChatGPTWeb.Configure(runtime);
