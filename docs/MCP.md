@@ -1,4 +1,4 @@
-# MCP tools through ChatGPT conversations (v1.6.1)
+# MCP tools through ChatGPT conversations (v1.6.2)
 
 Register MCP servers once, then use the normal ChatClient or ResponsesClient. The SDK lists the servers' tools, adds a tool manifest to the appended user input, recognizes assistant tool requests, calls the selected MCP server, appends an internal user message containing the results, and continues the same remote ChatGPT conversation until a final answer arrives. Every generation uses fresh Sentinel authorization through your selected authentication mode.
 
@@ -134,6 +134,8 @@ For interrupted SSE responses, each server's `MaxReconnectionAttempts` defaults 
 `MaxProtocolRepairs = 1` permits one hidden correction exchange when the model produces malformed tool JSON or omits required arguments. The entire batch is rejected before execution; its IDs become consumed only after validation succeeds. Disallowed tools and unknown server labels are rejected immediately. A correction consumes a normal ChatGPT generation and counts toward the tool-round limit. Set `MaxProtocolRepairs = 0` for strict parsing. Markdown fences around an otherwise exact tool-request block and trailing whitespace are tolerated, with protocol text withheld from streamed final-answer output. The model can still fail to follow this message-adapter protocol; the configured repair budget bounds recovery.
 
 Version 1.6.1 also recognizes a whole tool-request block inside `<escape>...</escape>`, including on follow-ups and mixed or resubmitted histories. The wrapper and protocol remain hidden from text deltas. The complete block must have the current nonce, matching tool markers and a closing wrapper before normal batch validation and approval can run. Malformed, incomplete or stale wrapped blocks use the same bounded repair budget instead of becoming a successful final answer. Ordinary escaped text and tool blocks quoted in prose or after an explicit final-answer marker remain ordinary text.
+
+Version 1.6.2 also hides a leading `<escape>[[final:NONCE]]</escape>` when `NONCE` matches the current exchange. The answer follows the closing tag and streams normally, with its whitespace preserved. Partial markers and closing tags are buffered across SSE snapshots, so they do not appear in text deltas, returned responses or the saved visible transcript. Quoted markers inside an answer and ordinary escaped text retain their original text. This formatting fix does not require another generation or repeat tool execution.
 
 Progress observers cannot turn a completed execution into an uncertain one by throwing. Approval callbacks still control execution and must return a decision successfully.
 

@@ -2,6 +2,16 @@
 
 Earlier releases were verified on 2026-10-02 and 2026-10-03 on Windows; the v1.3.0 scope checks below were recorded on 2026-10-04 on Linux. The earlier live checks used the user's authorized ChatGPT account, fresh browser-obtained Sentinel answers, system curl, and new disposable SDK conversations. No platform API generation requests were made. Credentials, private captures and signed asset URLs are excluded from this record and from packages.
 
+## v1.6.2 escaped MCP final markers
+
+Recorded on 2026-10-12 on Linux. The retained offline consumer probe failed against the published **1.6.1 binary**: ordinary final markers were hidden and escaped tool requests were recognized, but `<escape>[[final:NONCE]]</escape>` remained visible before the answer. No browser or generation request was needed. The source decoder unwrapped tool blocks without recognizing this wrapped final-marker form.
+
+Before the fix, **34 of 44 focused cases failed** while the ordinary-text and bare-marker controls passed. After the shared decoder change, **288 focused MCP cases passed**. The **40 new cases** exercise six stream chunk sizes across fresh, follow-up, mixed and resubmitted histories, persisted responses, visible history, partial closing tags, empty answers, whitespace and Unicode, literal examples and answer replacement. Typed Chat Completions and Responses clients cover streamed and collected output. Tool execution still occurs once, with no pending outcome or reconciliation requirement in successful fixture exchanges.
+
+The full local gate passed **1,484 core/drop-in SDK**, **18 native SDK**, **167 automation** and **12 extension** cases: **1,681 passing checks, zero failures and zero skips**. The solution and all local release packages built with zero warnings or errors. The unchanged probe source also passed all three controls against freshly packaged **1.6.2 NuGets** restored from local feeds into an isolated cache. Package inspection confirmed the exact tested core DLL, synchronized extension versions and the unchanged OpenAI compatibility assembly version **2.14.0.0**. The original consumer probe and its failing assertion remain intact.
+
+These checks use deterministic SSE fixtures and offline binary probes. Fresh live ChatGPT generation, the complete ten-user generation test, live Codex OAuth, images and every historical edit/regenerate scenario were not rerun. Four platform CI test jobs and native browser-bundle checks remain publication requirements. Private captures, prompts and credentials remain excluded from source and packages.
+
 ## v1.6.1 escaped MCP follow-ups
 
 Recorded on 2026-10-11 on Linux. A synthetic follow-up reproduced the reported failure through the actual `ChatGptWebClient` streaming path: the escaped tool command became final text and no tool ran. Bare-block controls passed, while escaped blocks failed with both single-character chunks and a complete response. The same prefix-only classification was confirmed in the v1.5.1 source; this is not established as a new v1.6.0 regression.
