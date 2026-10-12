@@ -305,17 +305,27 @@ internal sealed class McpConversationBridge(ChatGptWebClient client, McpConversa
 
     internal sealed class ReplyDecoder(string nonce)
     {
+        private const string EscapePrefix = "<escape>", EscapeEnd = "</escape>";
         private readonly string _toolPrefix = "[[mcp:" + nonce + "]]";
         private readonly string _toolEnd = "[[/mcp:" + nonce + "]]";
         private readonly string _finalPrefix = "[[final:" + nonce + "]]";
         private string _raw = "", _sent = "";
-        private bool _fenced;
+        private bool _fenced, _escaped;
         private int _mode; // 0 undecided, 1 tool request, 2 final with prefix, 3 plain final
         public bool IsFinal => _mode is 2 or 3;
         public string Text => _mode == 2 ? _raw[_finalPrefix.Length..] : _raw;
         public WebStreamUpdate? Decode(WebStreamUpdate update)
         {
             _raw = update.Text.TrimStart();
+            if (_mode == 0 && !update.Completed && EscapePrefix.StartsWith(_raw, StringComparison.Ordinal)) return null;
+            if (_mode is 0 or 1 && _raw.StartsWith(EscapePrefix, StringComparison.Ordinal))
+            {
+                var content = _raw[EscapePrefix.Length..].TrimStart();
+                // Keep wrapped candidates hidden until completion so malformed blocks can use bounded repair.
+                if (content.StartsWith("[[mcp:", StringComparison.Ordinal))
+                { _escaped = true; _mode = 1; _raw = content; }
+                else if (_mode == 0 && !update.Completed && _toolPrefix.StartsWith(content, StringComparison.Ordinal)) return null;
+            }
             if (_mode == 0 && _raw is "`" or "``" && !update.Completed) return null;
             if (_mode is 0 or 1 && _raw.StartsWith("```", StringComparison.Ordinal))
             {
@@ -349,8 +359,13 @@ internal sealed class McpConversationBridge(ChatGptWebClient client, McpConversa
         public string ToolJson()
         {
             _raw = _raw.TrimEnd();
+            if (_escaped)
+            {
+                if (!_raw.EndsWith(EscapeEnd, StringComparison.Ordinal)) throw new SdkException("The model returned an incomplete MCP tool request.", "mcp_invalid_call");
+                _raw = _raw[..^EscapeEnd.Length].TrimEnd();
+            }
             if (_fenced && _raw.EndsWith("```", StringComparison.Ordinal)) _raw = _raw[..^3].TrimEnd();
-            if (_mode != 1 || !_raw.EndsWith(_toolEnd, StringComparison.Ordinal)) throw new SdkException("The model returned an incomplete MCP tool request.", "mcp_invalid_call");
+            if (_mode != 1 || !_raw.StartsWith(_toolPrefix, StringComparison.Ordinal) || !_raw.EndsWith(_toolEnd, StringComparison.Ordinal)) throw new SdkException("The model returned an incomplete MCP tool request.", "mcp_invalid_call");
             return _raw[_toolPrefix.Length..^_toolEnd.Length].Trim();
         }
     }
