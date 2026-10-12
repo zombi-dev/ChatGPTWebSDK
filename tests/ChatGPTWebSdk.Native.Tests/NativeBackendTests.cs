@@ -27,7 +27,7 @@ public sealed class NativeBackendTests
     private static Native.ChatGPTWebRuntime Web(HttpClient http) => Native.ChatGPTWeb.Initialize(new Native.ChatGPTWebRuntimeOptions
     {
         Credentials = new StaticWebCredentialProvider("default", new() { AccessToken = "synthetic-native-web" }), HttpClient = http,
-        Mode = Native.ChatGPTWebMode.ApiOnly, Endpoints = new(), IgnoreModelRestrictions = true, ConversationStore = new InMemoryConversationStore()
+        Mode = Native.ChatGPTWebMode.ExternalApi, Endpoints = new(), IgnoreModelRestrictions = true, ConversationStore = new InMemoryConversationStore()
     });
 
     [Fact]
@@ -113,6 +113,33 @@ public sealed class NativeBackendTests
         var second = handler.Turns[1].Body; Assert.Equal("conversation-1", second["conversation_id"]!.GetValue<string>());
         Assert.Equal("assistant-1", second["parent_message_id"]!.GetValue<string>()); Assert.Single(second["messages"]!.AsArray());
         Assert.Equal("two", second["messages"]![0]!["content"]!["parts"]![0]!.GetValue<string>());
+    }
+
+    [Theory]
+    [InlineData(false, false)] [InlineData(false, true)] [InlineData(true, false)] [InlineData(true, true)]
+    public async Task Native_default_api_only_uses_original_clients_with_and_without_streaming(bool chat, bool streaming)
+    {
+        using var handler = new FakeWebHandler(); using var http = new HttpClient(handler, false);
+        await using var runtime = Native.ChatGPTWeb.Initialize(new Native.ChatGPTWebRuntimeOptions
+        {
+            Credentials = new StaticWebCredentialProvider("default", new() { AccessToken = "synthetic-native-web" }), HttpClient = http,
+            Endpoints = new(), IgnoreModelRestrictions = true, ConversationStore = new InMemoryConversationStore()
+        });
+        Assert.Equal(Native.ChatGPTWebMode.ApiOnly, runtime.Mode);
+        var client = runtime.CreateClient(); var text = "";
+        if (chat)
+        {
+            var chats = client.GetChatClient("test-model");
+            if (streaming) await foreach (var update in chats.CompleteChatStreamingAsync("Hello")) text += string.Concat(update.ContentUpdate.Select(p => p.Text));
+            else text = (await chats.CompleteChatAsync("Hello")).Value.Content[0].Text;
+        }
+        else
+        {
+            var responses = client.GetResponsesClient();
+            if (streaming) await foreach (var update in responses.CreateResponseStreamingAsync("test-model", "Hello")) { if (update is StreamingResponseOutputTextDeltaUpdate delta) text += delta.Delta; }
+            else text = (await responses.CreateResponseAsync("test-model", "Hello")).Value.GetOutputText();
+        }
+        Assert.Equal("Hello world", text); Assert.Single(handler.Turns);
     }
 
     [Fact]
