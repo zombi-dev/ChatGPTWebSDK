@@ -10,7 +10,7 @@ var client = runtime.CreateClient().GetChatClient("AVAILABLE_WEB_MODEL_SLUG");
 var reply = await client.CompleteChatAsync("Hello!");
 ```
 
-The default is Hybrid: generation uses HTTP, and a visible temporary Chromium browser obtains a fresh authorized Sentinel handshake for each turn. The extension does not keep a background browser running. Exporting a session does not remove the need for fresh Sentinel answers.
+The default is `ApiOnly`: native C# obtains fresh Sentinel requirements, proof of work and challenge answers over HTTP, then sends through the authenticated web API. No browser or Python process starts. The extension exports authentication; the SDK still obtains separate fresh Sentinel answers for every generation. Choose `Hybrid` explicitly for browser assistance or `ExternalApi` to supply your own answers.
 
 ## Install in Chromium browsers
 
@@ -62,7 +62,7 @@ using var runtime = ChatGPTWeb.Initialize(new ChatGPTWebRuntimeOptions
     Credentials = new StaticWebCredentialProvider("account", credentials),
     AccountId = "account",
     UserId = "alice",
-    Mode = ChatGPTWebMode.ApiOnly,
+    Mode = ChatGPTWebMode.ExternalApi,
     SentinelSessionProvider = myAuthorizedSessionProvider
 });
 ```
@@ -89,7 +89,13 @@ The build reads the root `VERSION` and verifies both manifest versions. It creat
 
 Primary browser references: [clipboard access](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Interact_with_the_clipboard), [browser background implementations](https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/manifest.json/background), [Chrome cookies API](https://developer.chrome.com/docs/extensions/reference/api/cookies), and [Firefox data-consent declarations](https://extensionworkshop.com/documentation/develop/firefox-builtin-data-consent/).
 
-## Warm browser sessions (v1.6.0)
+## HTTP preparation (v1.7.0)
+
+`await runtime.WarmUpAsync()` in `ApiOnly` loads only public ChatGPT build/location metadata. It caches that metadata per account and credential fingerprint for 30 minutes and reuses HTTP connections. No third-party location service, downloaded JavaScript execution or cached proof replay is involved. The legacy requirements endpoint is tried first; a missing endpoint can fall back to modern prepare/finalize before any generation is sent. Browser observer telemetry is unnecessary on the verified legacy flow. Unknown required challenge formats return a redacted error; no generation is blindly retried or silently moved to a browser.
+
+The old `ApiOnly` is now `ExternalApi`. Existing compiled enum value 0 retains that external behavior; rebuild source consumers to adopt the new default. Both the drop-in and native SDK packages expose the same modes.
+
+## Warm browser sessions
 
 Hybrid mode reuses its isolated account context/page by default. `Browser.ReuseSession = false` restores per-handshake cleanup; `SessionIdleTimeout` and `MaxSessions` bound retained resources. `await runtime.WarmUpAsync()` loads ChatGPT ahead of a request without obtaining challenge answers. Fresh proofs are still requested for each send, and `TimingObserved` reports credential-free phase timings. Use `await using` or dispose the runtime to close owned sessions immediately. Externally supplied authentication providers remain application-owned.
 

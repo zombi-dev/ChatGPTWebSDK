@@ -27,10 +27,10 @@ A confirmed API/UI/catalog change or a partial example failure produces `[CHANGE
 ```powershell
 # Build and verify first; keep your export in a private file or environment variable.
 ./build.ps1 -BuildRoot artifacts/build -BundleBrowser
-dotnet run --project examples/QuickStart -p:ChatGPTWebBundleDirectory=artifacts/bundles/linux-x64-1.5.0 -- --smoke-test --visible --auth-file /private/authentication.txt --report artifacts/monitor/smoke.json
+dotnet run --project examples/QuickStart -p:ChatGPTWebBundleDirectory=artifacts/bundles/linux-x64-1.5.0 -- --smoke-test --visible --hybrid --auth-file /private/authentication.txt --report artifacts/monitor/smoke.json
 node tools/monitor/check.mjs --accept-baseline
 ```
 
-Use your platform's bundle path and an absolute `ChatGPTWebBundleDirectory` if necessary. Add `--visible` for a desktop browser locally; without it the automated example uses headless mode. Daily CI passes `--visible` inside `xvfb-run` to use its virtual display. `--api-only` tests an external Sentinel/session setup when available. Both generation and UI checks must pass to accept a new baseline. Commit the reviewed baseline with the next versioned update.
+Use your platform's bundle path and an absolute `ChatGPTWebBundleDirectory` if necessary. Add `--visible` for a desktop browser locally; without it the automated example uses headless mode. Daily CI passes `--visible --hybrid` inside `xvfb-run` to inspect both generation and the UI on its virtual display. The example now defaults to native `ApiOnly`; `--api-only` remains accepted, and `--hybrid` selects browser assistance. Both generation and UI checks must pass to accept a new baseline. Commit the reviewed baseline with the next versioned update.
 
 The report contains status codes, hashes, model slugs and boolean test results. It contains no response text, marker values, HARs, session IDs or credentials. A monitor infrastructure failure with no example report is reported as an incomplete check.
