@@ -10,19 +10,19 @@ This was designed by zombi.dev and made with GPT 6.1 Sol (max). This means it is
 
 ## 1. Download the authentication extension
 
-- **Chrome, Edge, Brave, Opera and other Chromium browsers:** [Chromium extension ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.6.0/chatgpt-web-sdk-auth-chromium-1.6.0.zip). Extract it, enable Developer mode in your browser's extension page, and choose **Load unpacked**.
-- **Firefox:** [Firefox XPI](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.6.0/chatgpt-web-sdk-auth-firefox-1.6.0.xpi) or [Firefox extension ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.6.0/chatgpt-web-sdk-auth-firefox-1.6.0.zip). Open `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on**, and select the XPI. This unsigned build must be loaded again after Firefox restarts.
+- **Chrome, Edge, Brave, Opera and other Chromium browsers:** [Chromium extension ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.6.1/chatgpt-web-sdk-auth-chromium-1.6.1.zip). Extract it, enable Developer mode in your browser's extension page, and choose **Load unpacked**.
+- **Firefox:** [Firefox XPI](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.6.1/chatgpt-web-sdk-auth-firefox-1.6.1.xpi) or [Firefox extension ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.6.1/chatgpt-web-sdk-auth-firefox-1.6.1.zip). Open `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on**, and select the XPI. This unsigned build must be loaded again after Firefox restarts.
 
 ## 2. Download the library
 
-**v1.6.0 complete downloads include the SDK DLLs, dependencies, proxy, example app, and Chromium browser.**
+**v1.6.1 complete downloads include the SDK DLLs, dependencies, proxy, example app, and Chromium browser.**
 
 | Your platform | Download |
 | --- | --- |
-| Windows x64 | [SDK + browser ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.6.0/ChatGPTWebSdk-Bundle-win-x64-1.6.0.zip) |
-| Linux x64 | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.6.0/ChatGPTWebSdk-Bundle-linux-x64-1.6.0.tar.gz) |
-| macOS Intel | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.6.0/ChatGPTWebSdk-Bundle-osx-x64-1.6.0.tar.gz) |
-| macOS Apple Silicon | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.6.0/ChatGPTWebSdk-Bundle-osx-arm64-1.6.0.tar.gz) |
+| Windows x64 | [SDK + browser ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.6.1/ChatGPTWebSdk-Bundle-win-x64-1.6.1.zip) |
+| Linux x64 | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.6.1/ChatGPTWebSdk-Bundle-linux-x64-1.6.1.tar.gz) |
+| macOS Intel | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.6.1/ChatGPTWebSdk-Bundle-osx-x64-1.6.1.tar.gz) |
+| macOS Apple Silicon | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.6.1/ChatGPTWebSdk-Bundle-osx-arm64-1.6.1.tar.gz) |
 
 Extract the whole archive. On Linux/macOS use `tar -xzf` so executable permissions and symlinks survive. Libraries and the example need **.NET 8 or later**; the optional proxy needs **.NET 10**. Linux also needs Chromium's [system libraries](https://playwright.dev/dotnet/docs/browsers#install-system-dependencies).
 
@@ -56,7 +56,7 @@ For your own application, reference the replacement `ChatGPTWebSdk.OpenAI` packa
 
 ## Keep the official OpenAI SDK
 
-Use [ChatGPTWebSdk.Native 1.6.0](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.6.0/ChatGPTWebSdk.Native.1.6.0.nupkg) to keep the real `OpenAI` NuGet package and choose **official API**, **Codex OAuth**, or **ChatGPT website** clients in one application. It returns the original SDK types and preserves normal native constructors. Choose this package or the drop-in replacement; both alternatives cannot be installed together.
+Use [ChatGPTWebSdk.Native 1.6.1](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.6.1/ChatGPTWebSdk.Native.1.6.1.nupkg) to keep the real `OpenAI` NuGet package and choose **official API**, **Codex OAuth**, or **ChatGPT website** clients in one application. It returns the original SDK types and preserves normal native constructors. Choose this package or the drop-in replacement; both alternatives cannot be installed together.
 
 ```csharp
 using ChatGPTWebSdk.Native;
@@ -68,7 +68,7 @@ var reply = await official.GetChatClient("YOUR_API_MODEL").CompleteChatAsync("He
 
 The drop-in package also exposes `OpenAI.ChatGPTOfficial` for explicit API-key clients alongside its web clients. Backend selection is explicit; credentials and conversation IDs stay with their original method. [Native SDK setup and all three methods](docs/NATIVE_SDK.md).
 
-## Models (v1.6.0)
+## Models (v1.6.1)
 
 Defaults allow **GPT-6** (`gpt-6`), **GPT-5.6 Sol** (`gpt-5-6`), and **GPT-5.5** (`gpt-5-5`). Their advertised Instant/Thinking variants are included. GPT-5.5 leaves the default set on **October 14, 2026 at 00:00 UTC**, following the date shown in ChatGPT. The official-compatible model list shows only allowed entries; `runtime.Web.Transport.GetModelsAsync(accountId)` remains raw discovery. Account access still applies.
 
@@ -82,7 +82,7 @@ You can also set `IgnoreModelRestrictions = true` in `ChatGPTWebRuntimeOptions` 
 
 The [daily compatibility monitor](docs/MONITORING.md) checks UI/API changes and the real example app, including two-turn context and SSE. Set the repository secret `CHATGPT_WEB_MONITOR_AUTH` to enable authenticated checks. It reports confirmed changes as `[CHANGE]` and complete SDK failures as `[CRITICAL]`. Blocked checks produce workflow warnings without opening issues. See the [security policy](SECURITY.md) for private reporting and credential handling.
 
-## MCP servers (v1.6.0)
+## MCP servers (v1.6.1)
 
 Register remote HTTP/SSE or local stdio MCP servers, then use the same ChatClient/ResponsesClient calls and streaming methods. The SDK discovers tools, translates assistant tool requests into real MCP calls, appends the results to the linked ChatGPT thread, and returns only the final answer to your application.
 
@@ -125,7 +125,7 @@ Owned MCP connections now stay warm within the same account/user/thread and clos
 
 Intermediate exchanges are hidden from SDK completion text and SSE text deltas. They remain actual turns in the remote ChatGPT thread and may be visible on the ChatGPT website. Project/temporary context and per-user bindings are retained. [MCP setup, local servers, official tool declarations, approvals and recovery](docs/MCP.md).
 
-## Browser-free OAuth (v1.6.0)
+## Browser-free OAuth (v1.6.1)
 
 The optional **Codex OAuth transport** supports Responses, Chat Completions, SSE, function tools, image generation/editing and account-aware model discovery without a Sentinel browser. It uses the stateless Codex endpoint: history is replayed from an isolated in-memory cache, and these requests do not create chats in the ChatGPT website. Keep the default web runtime for linked conversations, projects, temporary chats and web asset management.
 
@@ -163,7 +163,7 @@ Live acceptance, independent remote conversation checks and test results are rec
 
 An optional loopback `Browser.CdpEndpoint` connects to an existing signed-in Chromium browser. The SDK owns its isolated context/page and leaves your existing browser and original tabs open. Without CDP it launches an owned Chromium process. It uses bundled Chromium when present, otherwise installed Chrome/Edge or explicitly installed Playwright Chromium. `Browser.BundledBrowserDirectory` selects another extracted directory. The page uses the executable's actual user-agent, client hints and window size.
 
-`Browser.ReuseSession = true` is the default in v1.6.0. Sessions remain separate by account and credentials, with at most **2** warm sessions. `SessionIdleTimeout` defaults to **2 minutes**; `MaxSessions` controls the limit. `PreloadNextTurn = true` reloads the next composer immediately after capture, overlapping page loading with the current HTTP generation without collecting proofs while idle. Disable preloading to load only when another send starts. Set `ReuseSession = false` for cleanup after every handshake. Initialize once and keep the runtime for subsequent messages. Prefer `await using` for asynchronous cleanup; `using` remains supported. An externally supplied authentication provider stays owned by your application.
+`Browser.ReuseSession = true` is the default in v1.6.1. Sessions remain separate by account and credentials, with at most **2** warm sessions. `SessionIdleTimeout` defaults to **2 minutes**; `MaxSessions` controls the limit. `PreloadNextTurn = true` reloads the next composer immediately after capture, overlapping page loading with the current HTTP generation without collecting proofs while idle. Disable preloading to load only when another send starts. Set `ReuseSession = false` for cleanup after every handshake. Initialize once and keep the runtime for subsequent messages. Prefer `await using` for asynchronous cleanup; `using` remains supported. An externally supplied authentication provider stays owned by your application.
 
 ```csharp
 await using var runtime = ChatGPTWeb.Initialize(authenticationString, browser: new()
