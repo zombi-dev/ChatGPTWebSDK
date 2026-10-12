@@ -69,11 +69,13 @@ public sealed class McpBridgeTests
         Assert.Single(state.McpExecutions); Assert.True(state.McpExecutions[0].Delivered); Assert.False(state.RequiresReconciliation);
     }
 
-    [Theory, InlineData(false), InlineData(true)]
-    public async Task Official_chat_and_responses_clients_receive_only_the_final_answer(bool streaming)
+    [Theory, InlineData(false, false), InlineData(false, true), InlineData(true, false), InlineData(true, true)]
+    public async Task Official_chat_and_responses_clients_receive_only_the_final_answer(bool streaming, bool escaped)
     {
         using var handler = new FakeWebHandler(); var server = new Server();
-        handler.StreamFactory = (body, index) => Stream(body, index, index % 2 == 1 ? ToolReply(Nonce(body)) : "[[final:" + Nonce(body) + "]]5");
+        handler.StreamFactory = (body, index) => Stream(body, index, index % 2 == 1
+            ? (escaped ? "<escape>" : "") + ToolReply(Nonce(body)) + (escaped ? "</escape>" : "")
+            : "[[final:" + Nonce(body) + "]]5");
         using var runtime = new ChatGPTWebRuntime(new() { Mode = ChatGPTWebMode.ApiOnly, Credentials = new StaticWebCredentialProvider("account", new() { AccessToken = "synthetic" }),
             AccountId = "account", UserId = "alice", HttpClient = new(handler, false), ConversationStore = new InMemoryConversationStore(), Endpoints = new(),
             Mcp = new() { Servers = [new() { Label = "calculator", Client = server }] } });
