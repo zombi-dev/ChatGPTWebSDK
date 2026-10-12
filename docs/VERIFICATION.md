@@ -2,6 +2,16 @@
 
 Earlier releases were verified on 2026-10-02 and 2026-10-03 on Windows; the v1.3.0 scope checks below were recorded on 2026-10-04 on Linux. The earlier live checks used the user's authorized ChatGPT account, fresh browser-obtained Sentinel answers, system curl, and new disposable SDK conversations. No platform API generation requests were made. Credentials, private captures and signed asset URLs are excluded from this record and from packages.
 
+## v1.6.1 escaped MCP follow-ups
+
+Recorded on 2026-10-11 on Linux. A synthetic follow-up reproduced the reported failure through the actual `ChatGptWebClient` streaming path: the escaped tool command became final text and no tool ran. Bare-block controls passed, while escaped blocks failed with both single-character chunks and a complete response. The same prefix-only classification was confirmed in the v1.5.1 source; this is not established as a new v1.6.0 regression.
+
+After the parser fix, **227 focused MCP cases passed**, including **83 new cases**. These cover fresh chats, follow-ups, mixed history, visible-history resubmission, six stream chunk sizes, hidden protocol/deltas, malformed JSON, stale nonces, incomplete markers/wrappers, bounded correction, ordinary quoted text, application approval, a three-call batch and durable uncertain outcomes without replay. Typed Chat Completions and Responses clients passed with both streaming and collected output. Invalid batches execute no tools; corrected batches execute once and deliver their results through the same conversation parent.
+
+The complete local gate passed **1,444 core/drop-in SDK tests**, **18 native SDK integration tests**, **167 automation tests** and **12 extension tests**: **1,641 passing cases, zero failures and zero skips**. The CI minimum now includes the new regression cases. Four platform test jobs and native browser-bundle verification remain required before publication.
+
+These checks use synthetic ChatGPT SSE streams and local or in-process MCP fixtures. Fresh live ChatGPT follow-ups were not repeated for this patch. Private captures, prompts and credentials are excluded from source and packages.
+
 ## v1.6.0 MCP recovery and warm browser sessions
 
 Recorded on 2026-10-11 on Linux. The complete gate passed **1,361 core/drop-in SDK tests**, **18 native SDK integration tests**, **167 automation tests** and **12 extension tests**: **1,558 passing cases, zero failures and zero skips**. The 155 additional core/drop-in SDK cases exercise exclusive resource leases, cancellation and idle cleanup, connection identity isolation, discovery recovery, actual HTTP/SSE and stdio reuse, tool-protocol correction, browser session ownership, repeated challenge waiting and runtime disposal. The solution and release packages built with zero warnings and errors. Actionlint and the GitHub Actions CodeQL security-extended scan passed with zero findings.
