@@ -318,13 +318,20 @@ internal sealed class McpConversationBridge(ChatGptWebClient client, McpConversa
         {
             _raw = update.Text.TrimStart();
             if (_mode == 0 && !update.Completed && EscapePrefix.StartsWith(_raw, StringComparison.Ordinal)) return null;
-            if (_mode is 0 or 1 && _raw.StartsWith(EscapePrefix, StringComparison.Ordinal))
+            if (_mode is 0 or 1 or 2 && _raw.StartsWith(EscapePrefix, StringComparison.Ordinal))
             {
                 var content = _raw[EscapePrefix.Length..].TrimStart();
-                // Keep wrapped candidates hidden until completion so malformed blocks can use bounded repair.
-                if (content.StartsWith("[[mcp:", StringComparison.Ordinal))
+                // Keep wrapped tool candidates hidden until completion so malformed blocks can use bounded repair.
+                if (_mode is 0 or 1 && content.StartsWith("[[mcp:", StringComparison.Ordinal))
                 { _escaped = true; _mode = 1; _raw = content; }
-                else if (_mode == 0 && !update.Completed && _toolPrefix.StartsWith(content, StringComparison.Ordinal)) return null;
+                else if (content.StartsWith(_finalPrefix, StringComparison.Ordinal))
+                {
+                    var afterMarker = content[_finalPrefix.Length..].TrimStart();
+                    // Only the final marker is wrapped; wait for its closing tag before streaming the answer.
+                    if (!update.Completed && EscapeEnd.StartsWith(afterMarker, StringComparison.Ordinal)) return null;
+                    if (afterMarker.StartsWith(EscapeEnd, StringComparison.Ordinal)) _raw = _finalPrefix + afterMarker[EscapeEnd.Length..];
+                }
+                else if (_mode == 0 && !update.Completed && (_toolPrefix.StartsWith(content, StringComparison.Ordinal) || _finalPrefix.StartsWith(content, StringComparison.Ordinal))) return null;
             }
             if (_mode == 0 && _raw is "`" or "``" && !update.Completed) return null;
             if (_mode is 0 or 1 && _raw.StartsWith("```", StringComparison.Ordinal))
