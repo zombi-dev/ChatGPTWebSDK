@@ -1,18 +1,25 @@
-# v1.6.2
+# v1.7.0
 
-Hide a leading `<escape>[[final:NONCE]]</escape>` before an MCP-assisted answer. The answer now reaches streamed output, returned responses and the saved visible conversation without the escaped protocol prefix. This fixes final-answer formatting after successful tool execution; the escaped tool-request support introduced in v1.6.1 remains in place.
+## Up to 100× faster Sentinel startup
 
-## Fixes
+ChatGPT web generation now defaults to **ApiOnly**, a native C# HTTP Sentinel implementation. It obtains fresh requirements, solves proof of work and decodes supported challenges without starting Chromium or Python. A complete cold authenticated handshake measured **0.89 seconds**, with three warm handshakes at **0.38–0.42 seconds**. The headline compares this path with the up-to-100-second browser waits reported in the live example; it describes Sentinel preparation, and total response time still depends on the service and network.
 
-- Recognize the current exchange's final marker when only that marker is wrapped in escape tags and the answer follows the closing tag. Preserve the answer's original whitespace, Unicode and subsequent literal text.
-- Buffer partial opening tags, final markers and closing tags across SSE snapshots. Apply the same normalization to every cumulative snapshot, including the completed response used for persistence, so a later update cannot reintroduce the prefix.
-- Preserve quoted markers in prose or explicitly marked answers, ordinary escaped text and text that does not form a complete matching wrapped final marker. The decoder removes the leading protocol wrapper rather than replacing matching strings throughout an answer.
-- Keep application approval, bounded repair and durable tool outcomes on their existing paths. Formatting cleanup uses the current response and requires neither another generation nor repeated tool execution.
+## Features and compatibility
 
-## Validation and downloads
+- Add `HttpSentinelProvider` for direct web clients and select it automatically in both the drop-in and native OpenAI runtimes, proxy, CLI and quick-start example. Signed-in access, append-only remote conversations, SSE and MCP use the existing shared conversation implementation.
+- Rename the previous `ApiOnly` mode to **ExternalApi**. Keep externally supplied session/challenge providers, explicit **Hybrid** browser assistance and reserved **BrowserOnly**. Preserve compiled enum values 0, 1 and 2; the new native `ApiOnly` is 3. Source consumers should rebuild to adopt the new initializer default.
+- Default native `ApiOnly` to managed .NET HTTP; retain system curl defaults for `Hybrid` and `ExternalApi`, with explicit driver overrides. The daily UI monitor selects Hybrid explicitly so it continues observing frontend changes.
 
-- Add 40 regression cases covering fresh chats, follow-ups, mixed and resubmitted history, six stream chunk sizes, saved responses, visible history, empty answers, partial wrappers, quoted text and replacement updates. Typed Chat Completions and Responses clients are checked with streamed and collected output.
-- Require at least 1,484 core/drop-in SDK cases, plus 18 native SDK, 167 automation and 12 extension cases: 1,681 passing checks in the local gate. Four platform test jobs and all bundled-browser checks remain required before publication.
-- Synchronize SDK packages, Chromium and Firefox extensions, install instructions and download links at 1.6.2. The OpenAI compatibility assembly retains version 2.14.0.0.
+## Performance and safeguards
 
-See the [verification record](https://github.com/zombi-dev/ChatGPTWebSDK/blob/v1.6.2/docs/VERIFICATION.md) for the deterministic binary probe and test scope. Fresh live generation, OAuth, images and the full historical edit/regenerate suite were not rerun for this formatting patch. All commits are linked in the collapsed appendix below.
+- Read build and location metadata from ChatGPT itself, eliminating the reference client's two external geolocation requests. Cache metadata separately by account and credentials for 30 minutes, reuse HTTP connections and keep `WarmUpAsync()` free of proof collection.
+- Decode bounded symbolic instructions directly instead of generating JavaScript and parsing an AST. The same captured challenge measured **3.1 ms** median warm C# decoding versus **1.3 seconds** for the Python reference. Pre-serialize fixed proof fields and bound instruction depth, size and CPU work; no downloaded code executes.
+- Obtain fresh answers for every turn, preserve credential redaction and never replay proofs or automatically repeat uncertain generations. Unsupported formats and Cloudflare blocks remain explicit errors; the application can select Hybrid or ExternalApi when needed.
+
+## Verification and downloads
+
+- Add **100 core regression cases**, **four native integration cases** and one workflow check. The gate requires **1,584 core/drop-in, 22 native, 168 automation and 12 extension checks**. Tests on all four platforms and native browser bundle verification precede publication.
+- A fresh authenticated live run passed a collected reply, an SSE follow-up with only the new message, an independent remote conversation read and a temporary-chat MCP tool loop. The test conversation was deleted afterwards. The extension export and challenge fixtures stay private.
+- Synchronize all four NuGet packages, DLL/proxy archives, Chromium/Firefox extensions and four browser bundles at **1.7.0**. The OpenAI compatibility assembly remains **2.14.0.0**. The existing OAuth and official-platform backends retain their separate authentication contracts.
+
+See the [verification record](https://github.com/zombi-dev/ChatGPTWebSDK/blob/v1.7.0/docs/VERIFICATION.md) for timings, protocol scope and remaining live-test limits. All commits are linked in the collapsed appendix below.
