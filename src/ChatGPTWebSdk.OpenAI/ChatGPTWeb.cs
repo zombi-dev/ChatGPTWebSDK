@@ -23,7 +23,7 @@ namespace ChatGPTWebSdk.Native;
 namespace OpenAI;
 #endif
 
-public enum ChatGPTWebMode { ApiOnly, Hybrid, BrowserOnly }
+public enum ChatGPTWebMode { ExternalApi = 0, Hybrid = 1, BrowserOnly = 2, ApiOnly = 3 }
 public enum ChatGPTWebHttpDriver { DotNet, SystemCurl }
 
 public sealed class ChatGPTWebRuntimeOptions
@@ -33,8 +33,9 @@ public sealed class ChatGPTWebRuntimeOptions
     public string UserId { get; init; } = "default";
     public string? ClientKey { get; init; }
     public IReadOnlyDictionary<string, ConversationScope>? Clients { get; init; }
-    public ChatGPTWebMode Mode { get; init; } = ChatGPTWebMode.Hybrid;
-    public ChatGPTWebHttpDriver HttpDriver { get; init; } = ChatGPTWebHttpDriver.SystemCurl;
+    public ChatGPTWebMode Mode { get; init; } = ChatGPTWebMode.ApiOnly;
+    private ChatGPTWebHttpDriver? _httpDriver;
+    public ChatGPTWebHttpDriver HttpDriver { get => _httpDriver ?? (Mode == ChatGPTWebMode.ApiOnly ? ChatGPTWebHttpDriver.DotNet : ChatGPTWebHttpDriver.SystemCurl); init => _httpDriver = value; }
     public string CurlExecutable { get; init; } = "curl";
     public Uri BaseUri { get; init; } = new("https://chatgpt.com/");
     public HttpClient? HttpClient { get; init; }
@@ -82,9 +83,14 @@ public sealed class ChatGPTWebRuntime : IDisposable, IAsyncDisposable
         _clients = options.Clients ?? new Dictionary<string, ConversationScope> { [ClientKey] = new(options.AccountId, options.UserId) };
         if (!_clients.ContainsKey(ClientKey)) throw new ArgumentException("ClientKey must identify a configured application user.");
         _http = options.HttpClient ?? (options.HttpDriver == ChatGPTWebHttpDriver.SystemCurl ? WebHttpClient.CreateCurl(options.CurlExecutable) : WebHttpClient.Create());
-        var browser = options.SentinelSessionProvider ?? (options.Mode == ChatGPTWebMode.Hybrid ? new BrowserSentinelProvider(options.Browser) : null);
-        _sentinel = browser; _ownsSentinel = options.SentinelSessionProvider is null;
-        var transport = new ChatGptWebTransport(_http, options.Credentials, new() { BaseUri = options.BaseUri, Endpoints = options.Endpoints, SentinelSessionProvider = browser, IgnoreModelRestrictions = options.IgnoreModelRestrictions,
+        var sentinel = options.SentinelSessionProvider ?? options.Mode switch
+        {
+            ChatGPTWebMode.ApiOnly => new HttpSentinelProvider(_http, new() { BaseUri = options.BaseUri, Endpoints = options.Endpoints }),
+            ChatGPTWebMode.Hybrid => new BrowserSentinelProvider(options.Browser),
+            _ => null
+        };
+        _sentinel = sentinel; _ownsSentinel = options.SentinelSessionProvider is null;
+        var transport = new ChatGptWebTransport(_http, options.Credentials, new() { BaseUri = options.BaseUri, Endpoints = options.Endpoints, SentinelSessionProvider = sentinel, IgnoreModelRestrictions = options.IgnoreModelRestrictions,
             SentinelChallengeProvider = options.SentinelChallengeProvider, RequirementsBodyProvider = options.RequirementsBodyProvider });
         var store = options.ConversationStore ?? new FileConversationStore(options.SessionDirectory);
         Web = options.Mcp is null ? new(transport, store) : new(transport, store, options.Mcp);
@@ -130,14 +136,15 @@ public sealed class ChatGPTWebRuntime : IDisposable, IAsyncDisposable
         options.RetryPolicy = new ClientRetryPolicy(0);
         options.NetworkTimeout = _options.RequestTimeout;
     }
-    /// <summary>Loads the browser session ahead of a send without requesting challenge answers.</summary>
+    /// <summary>Loads HTTP metadata or the browser session ahead of a send without requesting challenge answers.</summary>
     public async Task WarmUpAsync(string? accountId = null, CancellationToken ct = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        if (_sentinel is not BrowserSentinelProvider browser) return;
+        if (_sentinel is not HttpSentinelProvider && _sentinel is not BrowserSentinelProvider) return;
         var account = accountId ?? _clients[ClientKey].AccountId;
         var credentials = await _options.Credentials.GetAsync(account, ct).ConfigureAwait(false);
-        await browser.WarmUpAsync(account, credentials, ct).ConfigureAwait(false);
+        if (_sentinel is HttpSentinelProvider api) await api.WarmUpAsync(account, credentials, ct).ConfigureAwait(false);
+        else if (_sentinel is BrowserSentinelProvider browser) await browser.WarmUpAsync(account, credentials, ct).ConfigureAwait(false);
     }
     public void Dispose() => DisposeAsync().AsTask().GetAwaiter().GetResult();
     public async ValueTask DisposeAsync()
@@ -147,7 +154,11 @@ public sealed class ChatGPTWebRuntime : IDisposable, IAsyncDisposable
         try { await Web.DisposeAsync().ConfigureAwait(false); }
         finally
         {
-            try { if (_ownsSentinel && _sentinel is IAsyncDisposable disposable) await disposable.DisposeAsync().ConfigureAwait(false); }
+            try
+            {
+                if (_ownsSentinel && _sentinel is IAsyncDisposable disposable) await disposable.DisposeAsync().ConfigureAwait(false);
+                else if (_ownsSentinel && _sentinel is IDisposable synchronous) synchronous.Dispose();
+            }
             finally
             {
                 _compatibilityHttp.Dispose(); if (_options.HttpClient is null) _http.Dispose();
@@ -212,7 +223,7 @@ public static class ChatGPTWeb
     }
     /// <summary>Initializes from the one string copied by the Chromium or Firefox authentication extension.</summary>
     public static ChatGPTWebRuntime Initialize(string authenticationString, string sessionDirectory = ".sessions",
-        string userId = "default", ChatGPTWebMode mode = ChatGPTWebMode.Hybrid, BrowserSentinelOptions? browser = null, string accountId = "default", string? projectId = null, bool temporaryChat = false) =>
+        string userId = "default", ChatGPTWebMode mode = ChatGPTWebMode.ApiOnly, BrowserSentinelOptions? browser = null, string accountId = "default", string? projectId = null, bool temporaryChat = false) =>
         Initialize(new ChatGPTWebRuntimeOptions
         {
             Credentials = new StaticWebCredentialProvider(accountId, WebAuthentication.Import(authenticationString)),
@@ -221,7 +232,7 @@ public static class ChatGPTWeb
     public static void Configure(ChatGPTWebRuntime runtime) => Interlocked.Exchange(ref _current, runtime ?? throw new ArgumentNullException(nameof(runtime)));
     /// <summary>Opt out of the default web model restrictions when initializing from an extension export.</summary>
     public static ChatGPTWebRuntime Initialize(string authenticationString, bool ignoreModelRestrictions, string sessionDirectory = ".sessions",
-        string userId = "default", ChatGPTWebMode mode = ChatGPTWebMode.Hybrid, BrowserSentinelOptions? browser = null, string accountId = "default", string? projectId = null, bool temporaryChat = false, McpConversationOptions? mcp = null) =>
+        string userId = "default", ChatGPTWebMode mode = ChatGPTWebMode.ApiOnly, BrowserSentinelOptions? browser = null, string accountId = "default", string? projectId = null, bool temporaryChat = false, McpConversationOptions? mcp = null) =>
         Initialize(new ChatGPTWebRuntimeOptions
         {
             Credentials = new StaticWebCredentialProvider(accountId, WebAuthentication.Import(authenticationString)), IgnoreModelRestrictions = ignoreModelRestrictions, Mcp = mcp,
@@ -229,7 +240,7 @@ public static class ChatGPTWeb
         });
     /// <summary>Initializes extension authentication and registered MCP servers for automatic conversation tool calls.</summary>
     public static ChatGPTWebRuntime Initialize(string authenticationString, McpConversationOptions mcp, string sessionDirectory = ".sessions",
-        string userId = "default", ChatGPTWebMode mode = ChatGPTWebMode.Hybrid, BrowserSentinelOptions? browser = null, string accountId = "default", string? projectId = null, bool temporaryChat = false) =>
+        string userId = "default", ChatGPTWebMode mode = ChatGPTWebMode.ApiOnly, BrowserSentinelOptions? browser = null, string accountId = "default", string? projectId = null, bool temporaryChat = false) =>
         Initialize(new ChatGPTWebRuntimeOptions
         {
             Credentials = new StaticWebCredentialProvider(accountId, WebAuthentication.Import(authenticationString)), Mcp = mcp,
@@ -237,10 +248,10 @@ public static class ChatGPTWeb
         });
     internal static void Unconfigure(ChatGPTWebRuntime runtime) => Interlocked.CompareExchange(ref _current, null, runtime);
     public static Task<ChatGPTWebRuntime> InitializeFromHarAsync(string harPath, string sessionDirectory,
-        string userId = "default", ChatGPTWebMode mode = ChatGPTWebMode.Hybrid, BrowserSentinelOptions? browser = null, CancellationToken ct = default) =>
+        string userId = "default", ChatGPTWebMode mode = ChatGPTWebMode.ApiOnly, BrowserSentinelOptions? browser = null, CancellationToken ct = default) =>
         InitializeFromHarAsync(harPath, sessionDirectory, false, userId, mode, browser, ct);
     public static async Task<ChatGPTWebRuntime> InitializeFromHarAsync(string harPath, string sessionDirectory, bool ignoreModelRestrictions,
-        string userId = "default", ChatGPTWebMode mode = ChatGPTWebMode.Hybrid, BrowserSentinelOptions? browser = null, CancellationToken ct = default)
+        string userId = "default", ChatGPTWebMode mode = ChatGPTWebMode.ApiOnly, BrowserSentinelOptions? browser = null, CancellationToken ct = default)
     {
         await using var input = File.OpenRead(harPath);
         var capture = await HarCapture.ImportAsync(input, ct).ConfigureAwait(false);
