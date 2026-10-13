@@ -10,19 +10,19 @@ This was designed by zombi.dev and made with GPT 6.1 Sol (max). This means it is
 
 ## 1. Download the authentication extension
 
-- **Chrome, Edge, Brave, Opera and other Chromium browsers:** [Chromium extension ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.7.0/chatgpt-web-sdk-auth-chromium-1.7.0.zip). Extract it, enable Developer mode in your browser's extension page, and choose **Load unpacked**.
-- **Firefox:** [Firefox XPI](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.7.0/chatgpt-web-sdk-auth-firefox-1.7.0.xpi) or [Firefox extension ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.7.0/chatgpt-web-sdk-auth-firefox-1.7.0.zip). Open `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on**, and select the XPI. This unsigned build must be loaded again after Firefox restarts.
+- **Chrome, Edge, Brave, Opera and other Chromium browsers:** [Chromium extension ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.7.1/chatgpt-web-sdk-auth-chromium-1.7.1.zip). Extract it, enable Developer mode in your browser's extension page, and choose **Load unpacked**.
+- **Firefox:** [Firefox XPI](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.7.1/chatgpt-web-sdk-auth-firefox-1.7.1.xpi) or [Firefox extension ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.7.1/chatgpt-web-sdk-auth-firefox-1.7.1.zip). Open `about:debugging#/runtime/this-firefox`, choose **Load Temporary Add-on**, and select the XPI. This unsigned build must be loaded again after Firefox restarts.
 
 ## 2. Download the library
 
-**v1.7.0 complete downloads include the SDK DLLs, dependencies, proxy, example app, and Chromium browser.**
+**v1.7.1 complete downloads include the SDK DLLs, dependencies, proxy, example app, and Chromium browser.**
 
 | Your platform | Download |
 | --- | --- |
-| Windows x64 | [SDK + browser ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.7.0/ChatGPTWebSdk-Bundle-win-x64-1.7.0.zip) |
-| Linux x64 | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.7.0/ChatGPTWebSdk-Bundle-linux-x64-1.7.0.tar.gz) |
-| macOS Intel | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.7.0/ChatGPTWebSdk-Bundle-osx-x64-1.7.0.tar.gz) |
-| macOS Apple Silicon | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.7.0/ChatGPTWebSdk-Bundle-osx-arm64-1.7.0.tar.gz) |
+| Windows x64 | [SDK + browser ZIP](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.7.1/ChatGPTWebSdk-Bundle-win-x64-1.7.1.zip) |
+| Linux x64 | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.7.1/ChatGPTWebSdk-Bundle-linux-x64-1.7.1.tar.gz) |
+| macOS Intel | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.7.1/ChatGPTWebSdk-Bundle-osx-x64-1.7.1.tar.gz) |
+| macOS Apple Silicon | [SDK + browser tar.gz](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.7.1/ChatGPTWebSdk-Bundle-osx-arm64-1.7.1.tar.gz) |
 
 Extract the whole archive. On Linux/macOS use `tar -xzf` so executable permissions and symlinks survive. Libraries and the example need **.NET 8 or later**; the optional proxy needs **.NET 10**. Hybrid mode on Linux also needs Chromium's [system libraries](https://playwright.dev/dotnet/docs/browsers#install-system-dependencies).
 
@@ -54,13 +54,13 @@ Console.WriteLine(second.Value.Content[0].Text);
 
 For your own application, reference the replacement `ChatGPTWebSdk.OpenAI` package or supplied DLLs. The included example demonstrates DLL references. `ApiOnly` needs no browser files. For `Hybrid`, keep `browsers/` beside the application output or set `browser: new() { BundledBrowserDirectory = "/path/to/extracted-sdk/browsers" }`.
 
-# v1.7.0: Up to 100× faster Sentinel startup
+# v1.7.1: Up to 100× faster Sentinel startup
 
 The new default **`ApiOnly`** handles Sentinel in native C# over HTTP. A complete cold authenticated handshake took **0.89 seconds**, compared with the **up-to-100-second browser waits reported in the live example**. Warm complete handshakes took **0.38–0.42 seconds**. On the same captured challenge, warm C# decoding took **3.1 ms** versus **1.3 seconds** for the Python reference. These measure Sentinel setup and decoding; network conditions and answer generation affect total latency. [Measurements and test scope](docs/VERIFICATION.md).
 
 ## Keep the official OpenAI SDK
 
-Use [ChatGPTWebSdk.Native 1.7.0](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.7.0/ChatGPTWebSdk.Native.1.7.0.nupkg) to keep the real `OpenAI` NuGet package and choose **official API**, **Codex OAuth**, or **ChatGPT website** clients in one application. It returns the original SDK types and preserves normal native constructors. Choose this package or the drop-in replacement; both alternatives cannot be installed together.
+Use [ChatGPTWebSdk.Native 1.7.1](https://github.com/zombi-dev/ChatGPTWebSDK/releases/download/v1.7.1/ChatGPTWebSdk.Native.1.7.1.nupkg) to keep the real `OpenAI` NuGet package and choose **official API**, **Codex OAuth**, or **ChatGPT website** clients in one application. It returns the original SDK types and preserves normal native constructors. Choose this package or the drop-in replacement; both alternatives cannot be installed together.
 
 ```csharp
 using ChatGPTWebSdk.Native;
@@ -72,7 +72,7 @@ var reply = await official.GetChatClient("YOUR_API_MODEL").CompleteChatAsync("He
 
 The drop-in package also exposes `OpenAI.ChatGPTOfficial` for explicit API-key clients alongside its web clients. Backend selection is explicit; credentials and conversation IDs stay with their original method. [Native SDK setup and all three methods](docs/NATIVE_SDK.md).
 
-## Models (v1.7.0)
+## Models (v1.7.1)
 
 Defaults allow **GPT-6** (`gpt-6`), **GPT-5.6 Sol** (`gpt-5-6`), and **GPT-5.5** (`gpt-5-5`). Their advertised Instant/Thinking variants are included. GPT-5.5 leaves the default set on **October 14, 2026 at 00:00 UTC**, following the date shown in ChatGPT. The official-compatible model list shows only allowed entries; `runtime.Web.Transport.GetModelsAsync(accountId)` remains raw discovery. Account access still applies.
 
@@ -86,7 +86,7 @@ You can also set `IgnoreModelRestrictions = true` in `ChatGPTWebRuntimeOptions` 
 
 The [daily compatibility monitor](docs/MONITORING.md) checks UI/API changes and the real example app, including two-turn context and SSE. Set the repository secret `CHATGPT_WEB_MONITOR_AUTH` to enable authenticated checks. It reports confirmed changes as `[CHANGE]` and complete SDK failures as `[CRITICAL]`. Blocked checks produce workflow warnings without opening issues. See the [security policy](SECURITY.md) for private reporting and credential handling.
 
-## MCP servers (v1.7.0)
+## MCP servers (v1.7.1)
 
 Register remote HTTP/SSE or local stdio MCP servers, then use the same ChatClient/ResponsesClient calls and streaming methods. The SDK discovers tools, translates assistant tool requests into real MCP calls, appends the results to the linked ChatGPT thread, and returns only the final answer to your application.
 
@@ -129,7 +129,7 @@ Owned MCP connections now stay warm within the same account/user/thread and clos
 
 Intermediate exchanges are hidden from SDK completion text and SSE text deltas. They remain actual turns in the remote ChatGPT thread and may be visible on the ChatGPT website. Project/temporary context and per-user bindings are retained. [MCP setup, local servers, official tool declarations, approvals and recovery](docs/MCP.md).
 
-## Browser-free OAuth (v1.7.0)
+## Browser-free OAuth (v1.7.1)
 
 The optional **Codex OAuth transport** supports Responses, Chat Completions, SSE, function tools, image generation/editing and account-aware model discovery without a Sentinel browser. It uses the stateless Codex endpoint: history is replayed from an isolated in-memory cache, and these requests do not create chats in the ChatGPT website. Keep the default web runtime for linked conversations, projects, temporary chats and web asset management.
 
@@ -305,16 +305,35 @@ For manual browser diagnostics, run `dotnet run --project tools/ChatGPTWebSdk.Cl
 
 For API-only generation, supply `SentinelSessionProvider`, or `RequirementsBodyProvider` plus `SentinelChallengeProvider`, using freshly authorized material for that account and turn. `WebSentinelSession` carries expiry, requirements, proof, Turnstile, observer and echo fields. `IsPrepareToken` selects the observed prepare-token header instead of the finalized-token header. Missing or expired requirements fail before an uncertain generation marker is written. Device/account restrictions remain real server errors.
 
+## Documents and ZIP attachments
+
+Pass PDF documents, text files, spreadsheets and ZIP archives through the web backend using the original SDK file types. Both Chat Completions `file` parts and Responses `input_file` parts accept inline base64/data URIs or an uploaded file ID owned by the same application user. The SDK keeps document attachments separate from image pointers and selects the upload category from the resolved MIME type: `my_files` for documents, `ace_upload` for ZIPs and `multimodal` for images. Filename detection is case-insensitive; an explicit MIME type takes precedence.
+
+```csharp
+using OpenAI.Responses;
+
+var response = await runtime.CreateClient().GetResponsesClient().CreateResponseAsync(
+    "gpt-6", [ResponseItem.CreateUserMessageItem([
+        ResponseContentPart.CreateInputFilePart(
+            BinaryData.FromBytes(await File.ReadAllBytesAsync("report.pdf")),
+            "application/pdf", "report.pdf"),
+        ResponseContentPart.CreateInputTextPart("Summarize this document.")
+    ])]);
+Console.WriteLine(response.Value.GetOutputText());
+```
+
+For an existing upload, use `ResponseContentPart.CreateInputFilePart(file.Id)` or `ChatMessageContentPart.CreateFilePart(file.Id)`. Collected replies, SSE, append-only follow-ups, project chats and temporary chats use the same attachment handling. Repeated file data in validated history reuses the user's uploaded file. Files are limited to 64 MiB by the SDK; account/backend limits can be lower. Remote file URLs and file rendering-detail overrides are rejected. These mappings apply to ChatGPT web; the official API and Codex backends keep their own file support and authentication.
+
 ## Web mappings and limits
 
 | Surface | Implemented behavior | Current evidence |
 | --- | --- | --- |
 | Official C# public API | Released 2.14.0 clients, models, constructors, methods, serializers and protected surface | Binary signature comparison; zero missing signatures |
 | Specification operations | All **353** operations in the pinned supplied OpenAPI snapshot, through the separate generic REST operation client | Recording-handler routing tests for every operation |
-| Chat Completions | Text, binary PNG/JPEG image input, non-streaming and streaming; append-only user messages or validated complete history | Live text/image input, typed streaming/stop, restart continuation and remote graph reads |
-| Responses | Text/image input, creation/streaming, latest `previous_response_id`, local retrieve/delete/input items; high reasoning effort mapped to web `extended` | Live typed streaming, completion and response retrieval; official client tests |
+| Chat Completions | Text, binary PNG/JPEG image input and file parts, non-streaming and streaming; append-only user messages or validated complete history | Live text/image input; typed file/SSE, history and ownership tests |
+| Responses | Text/image/file input, creation/streaming, latest `previous_response_id`, local retrieve/delete/input items; high reasoning effort mapped to web `extended` | Live PDF/ZIP file references and typed streaming; official client tests |
 | Conversations API | Empty resource creation, metadata retrieval/update, item list/retrieve, deletion; first generation creates its real ChatGPT conversation | Live official creation/binding, metadata, paginated items, item retrieval and remote deletion |
-| Files | Bounded upload, signed Azure PUT, processing stream, owned file list/retrieve/content; `user_data` and `vision` purposes | Live byte-for-byte round-trip; official client tests and purpose filtering |
+| Files | Bounded document/ZIP/image upload, MIME inference, signed Azure PUT, processing stream, owned file list/retrieve/content; `user_data` and `vision` purposes | Live PDF/ZIP uploads and content reads; image round-trip baseline; ownership/purpose tests |
 | Images | Single-image generation and single-reference editing, returned as downloaded binary/base64 data | Live official client generation/editing and remote graph verification |
 | Native web operations | Link/read/list, models/accounts, rename/archive/delete, edit/regenerate, temporary chats, assets/downloads, reconciliation | Live models, edit/regenerate, rename/archive/delete and recovery; HAR fixtures and local tests |
 | Per-user state | Account/user/thread bindings, real remote IDs, atomic persistent files, exclusive locks, remote ownership, per-user response index | Isolation/concurrency/restart tests |

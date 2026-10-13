@@ -4,17 +4,17 @@ Install `ChatGPTWebSdk.Native` to keep the unmodified official `OpenAI` NuGet pa
 
 OpenAI 2.14 requires ClientModel 1.15 for some public streaming signatures. The integration bounds that dependency below 1.16 and checks every public signature during tests. Applications requiring ClientModel 1.16 should use the drop-in package's compatibility facade or upgrade both official SDK and integration together once supported; forcing an incompatible dependency can break other native feature clients even when Chat/Responses work.
 
-Packages are distributed as GitHub release downloads, rather than through the public NuGet registry. Download these three files from [v1.7.0](https://github.com/zombi-dev/ChatGPTWebSDK/releases/tag/v1.7.0) into one folder:
+Packages are distributed as GitHub release downloads, rather than through the public NuGet registry. Download these three files from [v1.7.1](https://github.com/zombi-dev/ChatGPTWebSDK/releases/tag/v1.7.1) into one folder:
 
-- `ChatGPTWebSdk.Native.1.7.0.nupkg`
-- `ChatGPTWebSdk.1.7.0.nupkg`
-- `ChatGPTWebSdk.Browser.1.7.0.nupkg`
+- `ChatGPTWebSdk.Native.1.7.1.nupkg`
+- `ChatGPTWebSdk.1.7.1.nupkg`
+- `ChatGPTWebSdk.Browser.1.7.1.nupkg`
 
 Add that folder as a NuGet source, keeping nuget.org enabled for the official SDK and other dependencies, then install from your application's directory:
 
 ```sh
 dotnet nuget add source "/absolute/path/to/downloaded-packages" --name ChatGPTWebSdk-local
-dotnet add package ChatGPTWebSdk.Native --version 1.7.0
+dotnet add package ChatGPTWebSdk.Native --version 1.7.1
 ```
 
 ```csharp
@@ -27,14 +27,14 @@ using OpenAI;
 OpenAIClient official = ChatGPTOfficial.CreateClient(
     Environment.GetEnvironmentVariable("OPENAI_API_KEY")!);
 
-// ChatGPT website: authenticated HTTP with an explicit reusable Sentinel session.
+// ChatGPT website: authenticated HTTP with native Sentinel preparation.
 await using var web = ChatGPTWeb.Initialize(new ChatGPTWebRuntimeOptions
 {
     Credentials = new StaticWebCredentialProvider("default",
         WebAuthentication.Import(Environment.GetEnvironmentVariable("CHATGPT_WEB_AUTH")!)),
     UserId = "alice"
 });
-await web.WarmUpAsync(); // Optional; loads the composer, without requesting proofs.
+await web.WarmUpAsync(); // Optional; caches page metadata without requesting proofs.
 OpenAIClient website = web.CreateClient(threadId: "support-chat");
 
 // Codex: direct OAuth HTTP. The application explicitly chooses the auth file.

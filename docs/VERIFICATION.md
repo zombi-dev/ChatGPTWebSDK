@@ -2,6 +2,18 @@
 
 Earlier releases were verified on 2026-10-02 and 2026-10-03 on Windows; the v1.3.0 scope checks below were recorded on 2026-10-04 on Linux. The earlier live checks used the user's authorized ChatGPT account, fresh browser-obtained Sentinel answers, system curl, and new disposable SDK conversations. No platform API generation requests were made. Credentials, private captures and signed asset URLs are excluded from this record and from packages.
 
+## v1.7.1 documents, ZIP archives and original file types (2026-10-13)
+
+The complete local release build passed **1,639 core/drop-in**, **26 native integration**, **168 automation** and **12 extension** checks: **1,845 passing cases**, zero failures or skips. The update adds 55 core/drop-in cases and four native cases. The solution and release packages built with zero warnings/errors; the Linux Chromium bundle passed invisible launch, automatic/software rendering, JavaScript/canvas and offline Sentinel reuse checks.
+
+The file cases exercise MIME inference and explicit overrides, uppercase ZIP names, matching creation/storage/processing categories, document metadata without image pointers, mixed image/file content, Chat and Responses with and without SSE, ordinary/project/temporary context, account/user ownership, malformed input rejection before upload and deduplicated history resubmission. The native tests use the real strong-named OpenAI NuGet assembly; its compatibility version remains **2.14.0.0**.
+
+Separate .NET 8 consumers restored the actual built drop-in and native NuGet packages. Both passed collected/streamed Chat and Responses, inline file parts, metadata-only file attachment messages, a cached upload shared by two clients, fresh native Sentinel requirements, append-only bindings and exact package/assembly version checks. The binary API scan found **8,767 original**, **8,866 replacement** public/protected signatures and **zero missing signatures**.
+
+Signed-in live checks used the default native HTTP `ApiOnly` mode. A synthetic PDF uploaded with `my_files` and an uppercase `.ZIP` archive uploaded with `ace_upload`; signed storage PUTs returned 201 and both processing streams completed. Responses accepted each uploaded file ID, and the model recovered a unique marker present only inside that file. Bootstrap, requirements and generation returned 200; storage requests carried no account Authorization or Cookie header. No browser or modified upstream response was used. Both test conversations were deleted successfully. Attempts to purge the two uploaded test files through a direct DELETE returned 404; file retention remains a backend concern and remote file deletion is not claimed by this update. Private fixtures and response data remain ignored.
+
+The supplied HAR independently establishes the image upload shape only; live document/ZIP checks supply the additional evidence. These checks do not establish every document format or archive size on every account. Remote file URLs and rendering-detail overrides remain explicit unsupported features. OAuth, live image generation/editing, historical branches and live MCP tools were not rerun for this file update; their earlier verification records and limits remain below. No new Sentinel or Cloudflare reliability claim is made.
+
 ## v1.7.0 HTTP Sentinel and final live acceptance (2026-10-12)
 
 The new default `ApiOnly` uses native C# HTTP requests and a bounded symbolic decoder. The old external-provider mode is `ExternalApi`; Hybrid remains explicit. No browser, Python process or downloaded JavaScript is executed by the new provider. The independently implemented protocol was compared with the locally cloned reference at `a9544579d649fce7796c3e60460a975bfae7d5eb`. No Python source is distributed.
