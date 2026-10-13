@@ -26,6 +26,35 @@ public sealed class RecordingHandler(Func<HttpRequestMessage, CancellationToken,
 
 public sealed record RecordedTurn(JsonObject Body, string? Authorization);
 
+public sealed class FileWebHandler : DelegatingHandler
+{
+    public FakeWebHandler Conversations { get; } = new();
+    public List<JsonObject> Creations { get; } = [];
+    public List<JsonObject> Processing { get; } = [];
+    public List<(string? Mime, byte[] Bytes)> Uploads { get; } = [];
+    public FileWebHandler() => InnerHandler = Conversations;
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+    {
+        if (request.RequestUri!.Host == "files.openai.com")
+        {
+            Assert.Null(request.Headers.Authorization); Assert.False(request.Headers.Contains("Cookie"));
+            Uploads.Add((request.Content!.Headers.ContentType?.MediaType, await request.Content.ReadAsByteArrayAsync(ct)));
+            return new(HttpStatusCode.Created);
+        }
+        if (request.Method == HttpMethod.Post && request.RequestUri.AbsolutePath == "/backend-api/files")
+        {
+            Creations.Add((await request.Content!.ReadFromJsonAsync<JsonObject>(ct))!);
+            return FakeWebHandler.Json(new JsonObject { ["file_id"] = "file-fixture-" + Creations.Count, ["upload_url"] = "https://files.openai.com/upload" });
+        }
+        if (request.RequestUri.AbsolutePath.EndsWith("process_upload_stream", StringComparison.Ordinal))
+        {
+            Processing.Add((await request.Content!.ReadFromJsonAsync<JsonObject>(ct))!);
+            return new(HttpStatusCode.OK) { Content = new StringContent("data: {\"event\":\"file.processing.completed\"}\n\n", Encoding.UTF8, "text/event-stream") };
+        }
+        return await base.SendAsync(request, ct);
+    }
+}
+
 public sealed class FakeWebHandler : HttpMessageHandler
 {
     private int _turn;
