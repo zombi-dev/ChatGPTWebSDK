@@ -8,6 +8,7 @@ using ChatGPTWebSdk.Storage;
 using ChatGPTWebSdk.Tests;
 using ChatGPTWebSdk.Web;
 using OpenAI;
+using OpenAI.Chat;
 using OpenAI.Responses;
 using Native = ChatGPTWebSdk.Native;
 
@@ -113,6 +114,32 @@ public sealed class NativeBackendTests
         var second = handler.Turns[1].Body; Assert.Equal("conversation-1", second["conversation_id"]!.GetValue<string>());
         Assert.Equal("assistant-1", second["parent_message_id"]!.GetValue<string>()); Assert.Single(second["messages"]!.AsArray());
         Assert.Equal("two", second["messages"]![0]!["content"]!["parts"]![0]!.GetValue<string>());
+    }
+
+    [Theory]
+    [InlineData(false, false)] [InlineData(false, true)] [InlineData(true, false)] [InlineData(true, true)]
+    public async Task Original_native_file_parts_reach_web_attachments_with_and_without_SSE(bool chat, bool streaming)
+    {
+        using var handler = new FileWebHandler(); using var http = new HttpClient(handler, false); await using var runtime = Web(http);
+        var client = runtime.CreateClient(); var data = BinaryData.FromString("synthetic native file"); var text = "";
+        if (chat)
+        {
+            UserChatMessage[] messages = [new(ChatMessageContentPart.CreateFilePart(data, "text/plain", "notes.txt"))];
+            var chats = client.GetChatClient("test-model");
+            if (streaming) await foreach (var update in chats.CompleteChatStreamingAsync(messages)) text += string.Concat(update.ContentUpdate.Select(p => p.Text));
+            else text = (await chats.CompleteChatAsync(messages)).Value.Content[0].Text;
+        }
+        else
+        {
+            ResponseItem[] input = [ResponseItem.CreateUserMessageItem([ResponseContentPart.CreateInputFilePart(data, "text/plain", "notes.txt")])];
+            var responses = client.GetResponsesClient();
+            if (streaming) await foreach (var update in responses.CreateResponseStreamingAsync("test-model", input)) { if (update is StreamingResponseOutputTextDeltaUpdate delta) text += delta.Delta; }
+            else text = (await responses.CreateResponseAsync("test-model", input)).Value.GetOutputText();
+        }
+        Assert.Equal("Hello world", text); Assert.Equal("my_files", Assert.Single(handler.Creations)["use_case"]!.GetValue<string>());
+        var message = Assert.Single(handler.Conversations.Turns).Body["messages"]![0]!;
+        Assert.Equal("text", message["content"]!["content_type"]!.GetValue<string>());
+        Assert.Equal("file-fixture-1", message["metadata"]!["attachments"]![0]!["id"]!.GetValue<string>());
     }
 
     [Theory]
