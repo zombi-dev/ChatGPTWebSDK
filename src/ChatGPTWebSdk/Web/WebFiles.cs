@@ -23,6 +23,8 @@ public sealed partial class ChatGptWebTransport
     public async Task<WebUploadedFile> UploadFileAsync(string account, Stream content, WebFileUploadOptions options, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(options.FileName) || options.FileName.Any(char.IsControl) || options.MaxBytes <= 0) throw new ArgumentException("Invalid upload options.");
+        var mime = WebFileTypes.ResolveMimeType(options.FileName, options.MimeType);
+        var useCase = WebFileTypes.UploadUseCase(mime);
         // A bounded buffer supports non-seekable input and supplies the exact file_size required by the web endpoint.
         using var buffer = new MemoryStream();
         var bytes = new byte[81920];
@@ -34,9 +36,9 @@ public sealed partial class ChatGptWebTransport
         }
         var creationBody = new JsonObject
         {
-            ["file_name"] = options.FileName, ["file_size"] = buffer.Length, ["mime_type"] = options.MimeType,
-            ["client_resolved_mime_type"] = options.MimeType, ["mime_resolution_source"] = "user_provided",
-            ["use_case"] = "multimodal", ["store_in_library"] = options.StoreInLibrary,
+            ["file_name"] = options.FileName, ["file_size"] = buffer.Length, ["mime_type"] = mime,
+            ["client_resolved_mime_type"] = mime, ["mime_resolution_source"] = "user_provided",
+            ["use_case"] = useCase, ["store_in_library"] = options.StoreInLibrary,
             ["reset_rate_limits"] = false, ["supports_direct_azure_multipart"] = true,
             ["timezone_offset_min"] = _options.Endpoints.ConversationDefaults["timezone_offset_min"]?.DeepClone() ?? JsonValue.Create(0)
         };
@@ -50,15 +52,15 @@ public sealed partial class ChatGptWebTransport
         {
             request.Headers.Add("x-ms-blob-type", "BlockBlob");
             request.Headers.Add("x-ms-version", "2020-04-08");
-            request.Headers.Add("x-ms-blob-content-type", options.MimeType);
+            request.Headers.Add("x-ms-blob-content-type", mime);
             request.Content = new ByteArrayContent(buffer.ToArray());
-            request.Content.Headers.ContentType = new(options.MimeType);
+            request.Content.Headers.ContentType = new(mime);
             using var response = await http.SendAsync(request, ct).ConfigureAwait(false);
             await HttpProtocol.EnsureSuccessAsync(response, ct).ConfigureAwait(false);
         }
         var credentials = await GetCredentialsAsync(account, ct).ConfigureAwait(false);
-        var processBody = new JsonObject { ["file_id"] = id, ["file_name"] = options.FileName, ["mime_type"] = options.MimeType,
-            ["use_case"] = "multimodal", ["index_for_retrieval"] = options.IndexForRetrieval,
+        var processBody = new JsonObject { ["file_id"] = id, ["file_name"] = options.FileName, ["mime_type"] = mime,
+            ["use_case"] = useCase, ["index_for_retrieval"] = options.IndexForRetrieval,
             ["metadata"] = new JsonObject { ["store_in_library"] = options.StoreInLibrary } };
         if (options.EntrySurface is { } processSurface) processBody["entry_surface"] = processSurface;
         if (options.LibraryPersistenceMode is { } processPersistence) processBody["library_persistence_mode"] = processPersistence;
@@ -80,7 +82,7 @@ public sealed partial class ChatGptWebTransport
             }
             if (!completed) throw new SdkException("Upload stream did not confirm processing completion. No automatic upload retry was attempted.", "web_file_processing_incomplete");
         }
-        return new(id, options.FileName, options.MimeType, buffer.Length, options.Width, options.Height) { Purpose = options.Purpose, CreatedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds() };
+        return new(id, options.FileName, mime, buffer.Length, options.Width, options.Height) { Purpose = options.Purpose, CreatedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds() };
     }
 
     public Task<JsonNode> GetFileAsync(string account, string fileId, CancellationToken ct = default) =>
@@ -107,5 +109,30 @@ public sealed partial class ChatGptWebTransport
             (uri.Authority != _options.BaseUri.Authority && uri.Host != "files.openai.com" && !uri.Host.EndsWith(".oaiusercontent.com", StringComparison.OrdinalIgnoreCase)))
             throw new SdkException("Asset endpoint returned an unexpected origin. No account credentials were forwarded.", "untrusted_asset_origin");
         return uri;
+    }
+}
+
+internal static class WebFileTypes
+{
+    internal static bool IsImage(string mime) => mime.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+    internal static string UploadUseCase(string mime) => IsImage(mime) ? "multimodal" :
+        mime is "application/zip" or "application/x-zip-compressed" ? "ace_upload" : "my_files";
+    internal static string ResolveMimeType(string fileName, string mime)
+    {
+        if (string.IsNullOrWhiteSpace(fileName) || fileName.Any(char.IsControl)) throw new ArgumentException("Invalid file name.");
+        if (!MediaTypeHeaderValue.TryParse(mime, out var parsed) || parsed.MediaType is not { } media || !media.Contains('/') || media.Contains('*'))
+            throw new ArgumentException("Invalid file MIME type.");
+        media = media.ToLowerInvariant();
+        if (media != "application/octet-stream") return media;
+        return Path.GetExtension(fileName).ToLowerInvariant() switch
+        {
+            ".png" => "image/png", ".jpg" or ".jpeg" => "image/jpeg", ".gif" => "image/gif", ".webp" => "image/webp",
+            ".pdf" => "application/pdf", ".zip" => "application/zip", ".csv" => "text/csv", ".json" => "application/json",
+            ".md" or ".markdown" => "text/markdown", ".xml" => "application/xml", ".html" or ".htm" => "text/html", ".rtf" => "application/rtf",
+            ".doc" => "application/msword", ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ".xls" => "application/vnd.ms-excel", ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ".ppt" => "application/vnd.ms-powerpoint", ".pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            ".txt" or ".log" or ".cs" or ".py" or ".js" or ".ts" or ".sql" or ".sh" => "text/plain", _ => media
+        };
     }
 }

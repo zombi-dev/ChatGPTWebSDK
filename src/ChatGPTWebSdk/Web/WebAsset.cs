@@ -8,11 +8,20 @@ public sealed record WebUploadedFile(string Id, string Name, string MimeType, lo
     public long CreatedAt { get; init; }
     public WebInputMessage ToMessage(string text)
     {
+        var attachment = new System.Text.Json.Nodes.JsonObject { ["id"] = Id, ["name"] = Name, ["mime_type"] = MimeType, ["size"] = SizeBytes };
+        var metadata = new System.Text.Json.Nodes.JsonObject { ["attachments"] = new System.Text.Json.Nodes.JsonArray(attachment) };
+        if (!WebFileTypes.IsImage(MimeType))
+            return WebInputMessage.User(text) with
+            {
+                Content = new() { ["content_type"] = "text", ["parts"] = new System.Text.Json.Nodes.JsonArray(System.Text.Json.Nodes.JsonValue.Create(text)) },
+                Metadata = metadata
+            };
+        attachment["width"] = Width; attachment["height"] = Height;
         var pointer = new System.Text.Json.Nodes.JsonObject { ["content_type"] = "image_asset_pointer", ["asset_pointer"] = "sediment://" + Id, ["size_bytes"] = SizeBytes, ["width"] = Width, ["height"] = Height };
         return WebInputMessage.User(text) with
         {
             Content = new() { ["content_type"] = "multimodal_text", ["parts"] = new System.Text.Json.Nodes.JsonArray(pointer, System.Text.Json.Nodes.JsonValue.Create(text)) },
-            Metadata = new() { ["attachments"] = new System.Text.Json.Nodes.JsonArray(new System.Text.Json.Nodes.JsonObject { ["id"] = Id, ["name"] = Name, ["mime_type"] = MimeType, ["size"] = SizeBytes, ["width"] = Width, ["height"] = Height }) }
+            Metadata = metadata
         };
     }
 }
