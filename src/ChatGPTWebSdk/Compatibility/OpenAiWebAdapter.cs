@@ -193,26 +193,35 @@ public sealed class OpenAiWebAdapter(ChatGptWebClient client, IReadOnlyDictionar
     {
         if (content is JsonValue scalar && scalar.TryGetValue<string>(out var text)) return new(Guid.NewGuid().ToString(), role, text);
         if (content is not JsonArray { Count: > 0 } parts) throw new ArgumentException("Message content must be text or a nonempty array.");
-        var textParts = new List<string>(); var images = new List<WebUploadedFile>();
-        // Reject unknown part kinds before any upload is sent.
+        var textParts = new List<string>();
+        var inputs = new List<(WebUploadedFile? File, byte[]? Data, WebFileUploadOptions? Options)>();
+        // Validate every part and its ownership before any upload is sent.
         foreach (var node in parts)
         {
             var part = node as JsonObject ?? throw new ArgumentException("Invalid content part.");
-            var type = part["type"]?.GetValue<string>();
-            if (type == textType) { CheckFields(part, ["type", "text"]); textParts.Add(part["text"]?.GetValue<string>() ?? throw new ArgumentException("Missing text.")); }
-            else if (role == "user" && type is "image_url" or "input_image") CheckFields(part, ["type", "image_url", "detail", "file_id"]);
-            else throw new UnsupportedWebFeatureException("content part " + type);
-        }
-        foreach (var part in parts.OfType<JsonObject>().Where(p => p["type"]?.GetValue<string>() is "image_url" or "input_image"))
-        {
-            string? id = part["file_id"]?.GetValue<string>();
-            if (id is not null) images.Add(await GetOwnedFileAsync(scope, id, ct).ConfigureAwait(false));
-            else
+            var type = PartString(part, "type");
+            if (type == textType) { CheckFields(part, ["type", "text"]); textParts.Add(PartString(part, "text") ?? throw new ArgumentException("Missing text.")); }
+            else if (role == "user" && type is "image_url" or "input_image")
             {
+                CheckFields(part, ["type", "image_url", "detail", "file_id"]);
+                if (PartString(part, "detail") is not (null or "auto")) throw new UnsupportedWebFeatureException("image detail override");
+                var id = PartString(part, "file_id");
                 var imageUrl = part["image_url"];
-                string? url = imageUrl is JsonObject obj ? obj["url"]?.GetValue<string>() : imageUrl?.GetValue<string>();
-                if (imageUrl is JsonObject details) { CheckFields(details, ["url", "detail"]); if (details["detail"]?.GetValue<string>() is not (null or "auto")) throw new UnsupportedWebFeatureException("image detail override"); }
-                if (part["detail"]?.GetValue<string>() is not (null or "auto")) throw new UnsupportedWebFeatureException("image detail override");
+                if (id is not null)
+                {
+                    if (string.IsNullOrWhiteSpace(id) || imageUrl is not null) throw new ArgumentException("Specify one image source.");
+                    var file = await GetOwnedFileAsync(scope, id, ct).ConfigureAwait(false);
+                    if (!WebFileTypes.IsImage(file.MimeType)) throw new ArgumentException("An image input requires an image file.");
+                    inputs.Add((file, null, null)); continue;
+                }
+                string? url;
+                if (imageUrl is JsonObject details)
+                {
+                    CheckFields(details, ["url", "detail"]);
+                    if (PartString(details, "detail") is not (null or "auto")) throw new UnsupportedWebFeatureException("image detail override");
+                    url = PartString(details, "url");
+                }
+                else url = PartString(part, "image_url");
                 if (url is null || !url.StartsWith("data:image/", StringComparison.Ordinal) || !url.Contains(";base64,", StringComparison.Ordinal))
                     throw new UnsupportedWebFeatureException("external image URLs; use binary image data or an uploaded file ID");
                 var comma = url.IndexOf(','); var mime = url[5..url.IndexOf(';')];
@@ -221,32 +230,83 @@ public sealed class OpenAiWebAdapter(ChatGptWebClient client, IReadOnlyDictionar
                 try { bytes = Convert.FromBase64String(url[(comma + 1)..]); } catch (FormatException) { throw new ArgumentException("Invalid base64 image input."); }
                 var dimensions = ImageDimensions.Read(bytes, mime);
                 var name = mime == "image/png" ? "image.png" : "image.jpg";
-                images.Add(await UploadOwnedFileAsync(scope, new MemoryStream(bytes, writable: false), new() { FileName = name, MimeType = mime, Width = dimensions.Width, Height = dimensions.Height }, ct).ConfigureAwait(false));
+                inputs.Add((null, bytes, new() { FileName = name, MimeType = mime, Width = dimensions.Width, Height = dimensions.Height }));
             }
+            else if (role == "user" && (textType == "text" && type == "file" || textType == "input_text" && type == "input_file"))
+            {
+                if (type == "file") CheckFields(part, ["type", "file"]);
+                var file = type == "file" ? part["file"] as JsonObject ?? throw new ArgumentException("Missing file input.") : part;
+                CheckFields(file, type == "file" ? ["file_id", "filename", "file_data"] : ["type", "file_id", "filename", "file_data", "detail"]);
+                if (PartString(file, "detail") is not (null or "auto")) throw new UnsupportedWebFeatureException("file detail override");
+                var id = PartString(file, "file_id"); var data = PartString(file, "file_data"); var name = PartString(file, "filename");
+                if ((id is null) == (data is null)) throw new ArgumentException("Specify one file ID or inline file data.");
+                if (id is not null)
+                {
+                    if (string.IsNullOrWhiteSpace(id) || name is not null) throw new ArgumentException("Invalid uploaded file reference.");
+                    inputs.Add((await GetOwnedFileAsync(scope, id, ct).ConfigureAwait(false), null, null));
+                }
+                else
+                {
+                    if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Inline files require a filename.");
+                    var (bytes, mime) = DecodeFileData(data!, name);
+                    var dimensions = WebFileTypes.IsImage(mime) ? ImageDimensions.Read(bytes, mime) : (0, 0);
+                    inputs.Add((null, bytes, new() { FileName = name, MimeType = mime, Width = dimensions.Item1, Height = dimensions.Item2, IndexForRetrieval = !WebFileTypes.IsImage(mime) }));
+                }
+            }
+            else throw new UnsupportedWebFeatureException("content part " + type);
         }
         var joined = string.Concat(textParts);
-        if (images.Count == 0) return new(Guid.NewGuid().ToString(), role, joined);
+        if (inputs.Count == 0) return new(Guid.NewGuid().ToString(), role, joined);
         var nativeParts = new JsonArray(); var attachments = new JsonArray();
-        foreach (var image in images)
+        foreach (var input in inputs)
         {
-            var message = image.ToMessage("");
-            nativeParts.Add(message.Content!["parts"]![0]!.DeepClone());
+            var file = input.File;
+            if (file is null)
+            {
+                using var stream = new MemoryStream(input.Data!, writable: false);
+                file = await UploadOwnedFileAsync(scope, stream, input.Options!, ct).ConfigureAwait(false);
+            }
+            var message = file.ToMessage("");
+            if (WebFileTypes.IsImage(file.MimeType)) nativeParts.Add(message.Content!["parts"]![0]!.DeepClone());
             attachments.Add(message.Metadata!["attachments"]![0]!.DeepClone());
         }
-        if (joined.Length > 0) nativeParts.Add(joined);
-        return WebInputMessage.User(joined) with { Content = new() { ["content_type"] = "multimodal_text", ["parts"] = nativeParts }, Metadata = new() { ["attachments"] = attachments } };
+        var contentType = nativeParts.Count == 0 ? "text" : "multimodal_text";
+        if (joined.Length > 0 || nativeParts.Count == 0) nativeParts.Add(joined);
+        return WebInputMessage.User(joined) with { Content = new() { ["content_type"] = contentType, ["parts"] = nativeParts }, Metadata = new() { ["attachments"] = attachments } };
+    }
+
+    private static string? PartString(JsonObject part, string name) => part[name] is null ? null :
+        part[name] is JsonValue value && value.TryGetValue<string>(out var text) ? text : throw new ArgumentException("Invalid content field " + name + ".");
+
+    private static (byte[] Bytes, string Mime) DecodeFileData(string data, string name)
+    {
+        const int maxBytes = 64 * 1024 * 1024;
+        if (data.Length > (maxBytes + 2) / 3 * 4 + 1024) throw new ArgumentException("Inline file is too large.");
+        var mime = "application/octet-stream";
+        if (data.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+        {
+            var comma = data.IndexOf(',');
+            if (comma < 12 || !data[..comma].EndsWith(";base64", StringComparison.OrdinalIgnoreCase)) throw new ArgumentException("Invalid base64 file data URI.");
+            mime = data[5..(comma - 7)]; data = data[(comma + 1)..];
+        }
+        mime = WebFileTypes.ResolveMimeType(name, mime);
+        byte[] bytes;
+        try { bytes = Convert.FromBase64String(data); } catch (FormatException) { throw new ArgumentException("Invalid base64 file input."); }
+        if (bytes.Length is 0 or > maxBytes) throw new ArgumentException("Inline file is empty or too large.");
+        return (bytes, mime);
     }
 
     public async Task<WebUploadedFile> UploadOwnedFileAsync(ConversationScope scope, Stream input, WebFileUploadOptions options, CancellationToken ct = default)
     {
+        var mime = WebFileTypes.ResolveMimeType(options.FileName, options.MimeType);
         await using var lease = await client.Store.AcquireAsync(new(scope.AccountId, scope.UserId, "__sdk_files"), ct).ConfigureAwait(false);
-        // Image data is hashed for history resubmissions so the same attachment isn't uploaded on every turn.
+        // File data is hashed for history resubmissions so the same attachment isn't uploaded on every turn.
         using var data = new MemoryStream();
         var buffer = new byte[81920]; int count;
         while ((count = await input.ReadAsync(buffer, ct).ConfigureAwait(false)) > 0)
         { if (data.Length + count > options.MaxBytes) throw new ArgumentException("Upload exceeds MaxBytes."); await data.WriteAsync(buffer.AsMemory(0, count), ct).ConfigureAwait(false); }
         var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(data.ToArray()));
-        var cached = lease.State.Files.Values.FirstOrDefault(f => f.Sha256 == hash && f.MimeType == options.MimeType && f.Purpose == options.Purpose && f.Name == options.FileName);
+        var cached = lease.State.Files.Values.FirstOrDefault(f => f.Sha256 == hash && f.MimeType == mime && f.Purpose == options.Purpose && f.Name == options.FileName);
         if (cached is not null) return cached;
         data.Position = 0;
         var file = await client.Transport.UploadFileAsync(scope.AccountId, data, options, ct).ConfigureAwait(false) with { Sha256 = hash };

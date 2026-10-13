@@ -263,8 +263,7 @@ public sealed class OpenAiWebHttpHandler(OpenAiWebAdapter adapter, Func<string, 
     private static void Fields(JsonObject body, params string[] names) { foreach (var pair in body) if (pair.Value is not null && !names.Contains(pair.Key)) throw new UnsupportedWebFeatureException(pair.Key); }
 
     private sealed record MultipartPart(string Name, string? FileName, string ContentType, byte[] Bytes) { public string Text => Encoding.UTF8.GetString(Bytes); }
-    private static string FileMime(MultipartPart part) => part.ContentType != "application/octet-stream" ? part.ContentType : Path.GetExtension(part.FileName)?.ToLowerInvariant() switch
-    { ".png" => "image/png", ".jpg" or ".jpeg" => "image/jpeg", ".pdf" => "application/pdf", ".txt" => "text/plain", _ => part.ContentType };
+    private static string FileMime(MultipartPart part) => WebFileTypes.ResolveMimeType(part.FileName ?? "upload.bin", part.ContentType);
     private static async Task<List<MultipartPart>> MultipartAsync(HttpRequestMessage request, CancellationToken ct)
     {
         var content = request.Content ?? throw new ArgumentException("Missing upload content.");
