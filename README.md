@@ -1,5 +1,5 @@
-# Want to see a live example?
-See https://ai.zombidev.me, just make any free authentik account and you can have unlimited ChatGPT 5.6 and 6 usage for FREE! (5.5 too available until October 14th)
+# Archive notice
+I am currently dealing with much bigger tasks so I don't have enough time to do this right now. I will get back to working on this sometime in the future. **(forks are welcome)**
 
 # Notice!
 This was designed by zombi.dev and made with GPT 6.1 Sol (max). This means it is made of a high standard by a smart AI model, and it is personally used, verified, and tested by me (a human), so issues are not expected.
